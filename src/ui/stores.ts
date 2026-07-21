@@ -170,18 +170,19 @@ function resToken(id: ResourceId): string {
       return 'gold'; // wood
   }
 }
-/** Format a cost map into "🪵15 🪨10". */
+/** Format a cost map into "🪵 Wood 15 · 🪨 Stone 10" — always name the resource (never
+ *  rely on the glyph alone). */
 function costText(cost: Partial<Record<ResourceId, number>>): string {
   return (Object.entries(cost) as [ResourceId, number][])
-    .map(([id, amt]) => `${RESOURCE_BY_ID[id].glyph}${numStr(amt)}`)
-    .join(' ');
+    .map(([id, amt]) => `${RESOURCE_BY_ID[id].glyph} ${RESOURCE_BY_ID[id].label} ${numStr(amt)}`)
+    .join(' · ');
 }
-/** A job's per-worker gross output as "🪵 +0.5/s". */
+/** A job's per-worker gross output as "🪵 Wood +0.5/s" (name it, don't rely on the glyph). */
 function jobProduceText(id: JobId): string {
   const def = JOB_BY_ID[id];
   return (Object.entries(def.produces) as [ResourceId, number][])
-    .map(([res, per]) => `${RESOURCE_BY_ID[res].glyph} +${numStr(per)}/s`)
-    .join(' ');
+    .map(([res, per]) => `${RESOURCE_BY_ID[res].glyph} ${RESOURCE_BY_ID[res].label} +${numStr(per)}/s`)
+    .join(' · ');
 }
 function mmss(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
@@ -270,7 +271,7 @@ export function toView(state: GameState): UiState {
       name: t.name,
       blurb: t.blurb,
       cost: t.cost,
-      costText: `${RESOURCE_BY_ID.research.glyph}${numStr(t.cost)}`,
+      costText: `${RESOURCE_BY_ID.research.glyph} ${RESOURCE_BY_ID.research.label} ${numStr(t.cost)}`,
       unlocks: t.unlocks,
       researched: t.researched,
       available: t.available,

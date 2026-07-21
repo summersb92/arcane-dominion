@@ -64,7 +64,6 @@
               role="button"
               tabindex={b.disabled ? -1 : 0}
               aria-disabled={b.disabled}
-              title="Click to build"
               style="border-left-color:var(--edge)"
               on:click={() => onBuild(b)}
               on:keydown={(e) => onBuildKey(e, b)}
@@ -94,7 +93,6 @@
               role="button"
               tabindex={b.disabled ? -1 : 0}
               aria-disabled={b.disabled}
-              title="Click to build"
               style="border-left-color:var(--mana)"
               on:click={() => onBuild(b)}
               on:keydown={(e) => onBuildKey(e, b)}
@@ -140,7 +138,7 @@
             >
               <div class="jinfo">
                 <span class="nm">{j.name}</span>
-                <span class="jmeta">{j.produceText} · eats 🍞 {j.foodUpkeep}/s</span>
+                <span class="jmeta">{j.produceText} · eats 🍞 Food {j.foodUpkeep}/s</span>
               </div>
               <div class="jctl">
                 <button
