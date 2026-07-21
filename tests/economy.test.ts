@@ -5,7 +5,7 @@ import { doGather } from '../src/engine/systems/actions';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
-import { productionRates } from '../src/engine/systems/production';
+import { productionRates, resourceBreakdown } from '../src/engine/systems/production';
 
 describe('gather actions', () => {
   it('adds a resource on a manual gather', () => {
@@ -116,6 +116,26 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
     expect(unassignJob(s, 'woodcutter', 1)).toBe(1);
     expect(s.run.population.jobs.woodcutter).toBe(1);
+  });
+});
+
+describe('resource breakdown (hover math)', () => {
+  it('decomposes a resource into producers, consumers, and net', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 25;
+    s.run.buildings.hut = 1; // Hut prereq
+    build(s, 'woodcutters-lodge');
+    s.run.population.total = 1;
+    assignJob(s, 'woodcutter', 1);
+
+    const wood = resourceBreakdown(s, 'wood');
+    expect(wood.producers.some((p) => p.label.startsWith("Woodcutter"))).toBe(true);
+    expect(wood.net).toBeCloseTo(productionRates(s).wood, 6);
+
+    const food = resourceBreakdown(s, 'food');
+    // A settler + a working woodcutter both eat food → consumers present, net negative.
+    expect(food.consumers.length).toBeGreaterThan(0);
+    expect(food.net).toBeLessThan(0);
   });
 });
 

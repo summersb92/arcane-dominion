@@ -47,5 +47,17 @@
 <style>
   .row {
     cursor: help;
+    padding: 2px 6px;
+    margin: 0 -6px; /* bleed the highlight to the column edges */
+    border-radius: 5px;
+    transition: background 0.1s;
+  }
+  .row:hover {
+    background: var(--hover);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .row {
+      transition: none;
+    }
   }
 </style>

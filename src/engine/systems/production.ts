@@ -83,6 +83,65 @@ export function foodBalance(state: GameState): number {
   return f.gross.food - f.foodUpkeep;
 }
 
+/** One line of a resource's math breakdown: a signed per-second contribution. */
+export interface BreakdownLine {
+  label: string;
+  amount: number; // + produces, − consumes
+}
+/** The full producer/consumer decomposition of a resource's net rate (for the hover tooltip). */
+export interface ResourceBreakdown {
+  producers: BreakdownLine[];
+  consumers: BreakdownLine[];
+  net: number;
+}
+
+/** Decompose a resource's net /s into who produces and who consumes it — the "show the math"
+ *  read model behind the resource-row hover. Pure read, no mutation. */
+export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBreakdown {
+  const run = state.run;
+  const producers: BreakdownLine[] = [];
+  const consumers: BreakdownLine[] = [];
+  const times = (n: number): string => (n > 1 ? ` ×${n}` : '');
+
+  // Jobs that produce this resource (workers × per-worker × tech efficiency).
+  for (const job of JOBS) {
+    const workers = run.population.jobs[job.id] ?? 0;
+    if (workers <= 0) continue;
+    const per = (job.produces as Partial<Record<ResourceId, number>>)[id];
+    if (per) producers.push({ label: `${job.name}${times(workers)}`, amount: workers * per * jobEfficiency(state, job.id) });
+  }
+  // Constructs that produce this resource (count × per-second, no pop/food).
+  for (const b of BUILDINGS) {
+    const count = run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const e of b.effects) {
+      if (e.kind === 'produce' && e.resource === id) producers.push({ label: `${b.name}${times(count)}`, amount: count * e.perSec });
+    }
+  }
+
+  // Consumers: food is eaten by settlers (base) + each job; mana by constructs.
+  if (id === 'food') {
+    if (run.population.total > 0) {
+      consumers.push({ label: `Settler upkeep${times(run.population.total)}`, amount: -(POPULATION.baseFoodUpkeep * run.population.total) });
+    }
+    for (const job of JOBS) {
+      const workers = run.population.jobs[job.id] ?? 0;
+      if (workers > 0 && job.foodUpkeep > 0) consumers.push({ label: `${job.name}${times(workers)}`, amount: -(workers * job.foodUpkeep) });
+    }
+  }
+  if (id === 'mana') {
+    for (const b of BUILDINGS) {
+      const count = run.buildings[b.id] ?? 0;
+      if (count <= 0) continue;
+      for (const e of b.effects) {
+        if (e.kind === 'manaUpkeep') consumers.push({ label: `${b.name}${times(count)}`, amount: -(count * e.perSec) });
+      }
+    }
+  }
+
+  return { producers, consumers, net: productionRates(state)[id] };
+}
+
 /**
  * Advance the economy by `dt`. Mutates resources, clamps to caps, and sets
  * run.flags.starving. Runs BEFORE population so growth/starvation sees fresh stock.

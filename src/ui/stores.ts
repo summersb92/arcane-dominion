@@ -15,7 +15,7 @@ import {
 import { JOB_BY_ID, type JobId } from '../content/jobs';
 import type { BuildingId } from '../content/buildings';
 import type { TechId } from '../content/tech';
-import { productionRates, foodBalance } from '../engine/systems/production';
+import { productionRates, foodBalance, resourceBreakdown } from '../engine/systems/production';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -346,17 +346,30 @@ export function openTip(e: Event, content: TooltipContent): void {
 
 /** Resource row tooltip: net rate + storage note. */
 export function resourceTooltip(r: ResourceView): TooltipContent {
-  const sections: TooltipSection[] = [
-    {
-      label: 'Per second',
-      lines: [
-        {
-          text: r.rate === 0 ? '—' : signedRate(r.rate),
-          cls: r.rate > EPS ? 'ok' : r.rate < -EPS ? 'life' : undefined,
-        },
-      ],
-    },
-  ];
+  // Show the MATH: who produces this resource, who consumes it, and the net /s.
+  const bd = resourceBreakdown(getState(), r.id);
+  const sections: TooltipSection[] = [];
+  if (bd.producers.length) {
+    sections.push({
+      label: 'Produced by',
+      lines: bd.producers.map((p) => ({ text: `${p.label}  ${signedRate(p.amount)}`, cls: 'ok' })),
+    });
+  }
+  if (bd.consumers.length) {
+    sections.push({
+      label: 'Consumed by',
+      lines: bd.consumers.map((c) => ({ text: `${c.label}  ${signedRate(c.amount)}`, cls: 'life' })),
+    });
+  }
+  sections.push({
+    label: 'Net',
+    lines: [
+      {
+        text: Math.abs(bd.net) < EPS ? '—' : signedRate(bd.net),
+        cls: bd.net > EPS ? 'ok' : bd.net < -EPS ? 'life' : undefined,
+      },
+    ],
+  });
   if (r.capped) {
     sections.push({ label: 'Stored', lines: [{ text: `${numStr(r.amount)} / ${numStr(r.cap)}` }] });
   }
