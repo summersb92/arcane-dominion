@@ -59,6 +59,19 @@
   $: visibleTech = $game.tech.filter((t) => t.available || (showResearched && t.researched));
 
   $: pop = $game.population;
+
+  function growthLabel(status: string): string {
+    switch (status) {
+      case 'growing':
+        return 'Next settler';
+      case 'starving':
+        return 'Losing settlers to hunger';
+      case 'full':
+        return 'Housing full — build a House';
+      default:
+        return 'Growth paused — needs a food surplus';
+    }
+  }
 </script>
 
 <main>
@@ -142,6 +155,22 @@
               </strong>
             </span>
             {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
+          </div>
+
+          <div class="growth" title="Progress toward the next settler">
+            <div class="glabel">
+              <span>{growthLabel(pop.growth.status)}</span>
+              {#if pop.growth.status === 'growing' || pop.growth.status === 'starving'}
+                <span class="gpct">{Math.round(pop.growth.progress * 100)}%</span>
+              {/if}
+            </div>
+            <div
+              class="gbar"
+              class:grow={pop.growth.status === 'growing'}
+              class:starve={pop.growth.status === 'starving'}
+            >
+              <i style="width:{Math.round(pop.growth.progress * 100)}%"></i>
+            </div>
           </div>
 
           {#if openJobs.length === 0}
@@ -336,6 +365,44 @@
   .govnote {
     color: var(--faint);
     font-size: 12.5px;
+  }
+  /* Next-settler progress */
+  .growth {
+    margin-bottom: 12px;
+  }
+  .glabel {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 4px;
+  }
+  .glabel .gpct {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .gbar {
+    height: 7px;
+    border-radius: 4px;
+    background: var(--mtr-bg);
+    overflow: hidden;
+  }
+  .gbar i {
+    display: block;
+    height: 100%;
+    background: var(--bar-off);
+    transition: width 0.2s;
+  }
+  .gbar.grow i {
+    background: var(--ok);
+  }
+  .gbar.starve i {
+    background: var(--life);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gbar i {
+      transition: none;
+    }
   }
   /* Population summary bar */
   .popbar {

@@ -57,6 +57,38 @@ export function runPopulation(state: GameState, dt: number): void {
   }
 }
 
+/** Where the next settler stands. `progress` is 0..1 toward the next event:
+ *   growing  → filling toward the next arrival
+ *   starving → filling toward the next loss (you're losing settlers)
+ *   full     → housing is full; build more to grow
+ *   stalled  → has room but no food surplus (or no housing yet) — growth paused */
+export type GrowthStatus = 'growing' | 'starving' | 'full' | 'stalled';
+export interface GrowthInfo {
+  status: GrowthStatus;
+  progress: number; // 0..1
+}
+
+/** Read model (no mutation): the next-settler status + progress, for the UI bar. Mirrors
+ *  the growth/starve gates in runPopulation so the bar matches what will actually happen. */
+export function growthStatus(state: GameState): GrowthInfo {
+  const run = state.run;
+  const total = run.population.total;
+  const starving = run.flags.starving === true;
+  const hasRoom = run.popCap > 0 && total < run.popCap;
+  const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
+
+  if (starving && total > 0) {
+    return { status: 'starving', progress: clamp01(-run.growthProgress / POPULATION.starveIntervalSec) };
+  }
+  if (run.popCap > 0 && total >= run.popCap) return { status: 'full', progress: 0 };
+  const netFood = foodBalance(state);
+  const canGrow = hasRoom && run.resources.food > EPS && netFood >= -EPS;
+  if (canGrow) {
+    return { status: 'growing', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };
+  }
+  return { status: 'stalled', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };
+}
+
 // idleSettlers is re-exported so callers/tests can read the derived idle count without
 // reaching into systems/jobs directly.
 export { idleSettlers };

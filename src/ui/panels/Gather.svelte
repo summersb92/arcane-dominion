@@ -5,20 +5,25 @@
   import type { ActionRowView } from '../stores';
 
   const ORDER = ['wood', 'stone', 'food'];
+  // Retired actions (storage cap ≥ 1000) drop off — by then production covers them.
   $: buttons = ORDER
     .map((res) => $game.actions.find((a) => a.resource === res))
-    .filter((a): a is ActionRowView => a !== undefined);
+    .filter((a): a is ActionRowView => a !== undefined && !a.retired);
 </script>
 
 <div class="gather">
   <h2>Gather</h2>
-  <div class="gbtns">
-    {#each buttons as a (a.id)}
-      <button class="gbtn" disabled={!a.available} on:click={() => doGather(a.id)}>
-        <span class="l">{a.resLabel}</span>
-      </button>
-    {/each}
-  </div>
+  {#if buttons.length}
+    <div class="gbtns">
+      {#each buttons as a (a.id)}
+        <button class="gbtn" disabled={!a.available} on:click={() => doGather(a.id)}>
+          <span class="l">{a.resLabel}</span>
+        </button>
+      {/each}
+    </div>
+  {:else}
+    <div class="retired">Hand-gathering retired — your settlement supplies itself now.</div>
+  {/if}
 </div>
 
 <style>
@@ -62,6 +67,11 @@
   }
   .gbtn .l {
     font-weight: 600;
+  }
+  .retired {
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.5;
   }
   @media (prefers-reduced-motion: reduce) {
     .gbtn {

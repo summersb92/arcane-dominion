@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
-import { doGather } from '../src/engine/systems/actions';
+import { doGather, actionsView } from '../src/engine/systems/actions';
+import { growthStatus } from '../src/engine/systems/population';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
@@ -116,6 +117,48 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
     expect(unassignJob(s, 'woodcutter', 1)).toBe(1);
     expect(s.run.population.jobs.woodcutter).toBe(1);
+  });
+});
+
+describe('manual gather retires at a 1000 cap', () => {
+  it('turns off hand-gathering for a resource once its cap reaches 1000', () => {
+    const s = newGame(1);
+    expect(doGather(s, 'gather-wood')).toBe(true); // works at the base 200 cap
+    s.run.caps.wood = 1000; // storage scaled up — production now covers it
+    const wood = actionsView(s).find((a) => a.resource === 'wood')!;
+    expect(wood.retired).toBe(true);
+    expect(wood.available).toBe(false);
+    expect(doGather(s, 'gather-wood')).toBe(false); // manual earning is off
+    // Other resources still hand-gatherable while their cap is below 1000.
+    expect(actionsView(s).find((a) => a.resource === 'stone')!.retired).toBe(false);
+    expect(doGather(s, 'quarry-stone')).toBe(true);
+  });
+});
+
+describe('next-settler growth status', () => {
+  it('reports growing progress toward the next settler under a food surplus', () => {
+    const s = newGame(1);
+    s.run.popCap = 5;
+    s.run.buildings.hut = 1; // prereq for the Farm
+    s.run.buildings['forager-hut'] = 1; // Farm → Farmer capacity
+    s.run.population.total = 1;
+    assignJob(s, 'forager', 1); // a Farmer nets +food over base upkeep → sustainable
+    s.run.resources.food = 40;
+    const before = growthStatus(s);
+    expect(before.status).toBe('growing');
+    simulate(s, 4); // ~half the 8s growth interval
+    const after = growthStatus(s);
+    expect(after.status).toBe('growing');
+    expect(after.progress).toBeGreaterThan(before.progress);
+    expect(after.progress).toBeLessThanOrEqual(1);
+  });
+
+  it('flags full housing when at popCap', () => {
+    const s = newGame(1);
+    s.run.popCap = 2;
+    s.run.population.total = 2;
+    s.run.resources.food = 40;
+    expect(growthStatus(s).status).toBe('full');
   });
 });
 

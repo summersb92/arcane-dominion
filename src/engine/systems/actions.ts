@@ -3,12 +3,20 @@
 // Pure engine, no DOM.
 
 import { ACTIONS, ACTION_BY_ID, type ActionDef } from '../../content/actions';
+import { MANUAL_GATHER_RETIRE_CAP } from '../../content/config';
 import type { GameState } from '../state';
-import { clampToCap } from './caps';
+import { clampToCap, effectiveCap } from './caps';
 
-/** True once the action's tech gate (if any) is satisfied. All actions are ungated this slice. */
+/** True once this resource's storage cap has grown enough that hand-gathering is RETIRED
+ *  — production covers it, so the manual button turns off. */
+export function isActionRetired(state: GameState, def: ActionDef): boolean {
+  return effectiveCap(state, def.resource) >= MANUAL_GATHER_RETIRE_CAP;
+}
+
+/** Available = tech gate satisfied AND not yet retired by a large storage cap. */
 export function isActionAvailable(state: GameState, def: ActionDef): boolean {
   if (def.requiresTech && !state.run.tech.includes(def.requiresTech as never)) return false;
+  if (isActionRetired(state, def)) return false;
   return true;
 }
 
@@ -32,9 +40,10 @@ export interface ActionView {
   resource: string;
   amount: number;
   available: boolean;
+  retired: boolean; // storage cap ≥ retire threshold → hand-gathering turned off
 }
 
-/** Read model: every gather action + whether it is currently available. */
+/** Read model: every gather action + whether it is currently available / retired. */
 export function actionsView(state: GameState): ActionView[] {
   return ACTIONS.map((def) => ({
     id: def.id,
@@ -43,5 +52,6 @@ export function actionsView(state: GameState): ActionView[] {
     resource: def.resource,
     amount: def.amount,
     available: isActionAvailable(state, def),
+    retired: isActionRetired(state, def),
   }));
 }

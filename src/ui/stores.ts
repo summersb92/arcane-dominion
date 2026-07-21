@@ -15,6 +15,7 @@ import { JOB_BY_ID, type JobId } from '../content/jobs';
 import type { BuildingId } from '../content/buildings';
 import type { TechId } from '../content/tech';
 import { productionRates, foodBalance, resourceBreakdown } from '../engine/systems/production';
+import { growthStatus, type GrowthInfo } from '../engine/systems/population';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -54,6 +55,7 @@ export interface PopulationView {
   foodBalance: number; // net food /s
   starving: boolean;
   name: string; // the settlement's name for its size — grows Camp → Small Village → … → City
+  growth: GrowthInfo; // next-settler status + 0..1 progress toward it
 }
 
 /** The settlement's evolving name by population size — labels the settlement tab and its
@@ -113,6 +115,7 @@ export interface ActionRowView {
   glyph: string;
   gainText: string; // "+1 🪵"
   available: boolean;
+  retired: boolean; // storage cap hit the retire threshold → hand-gathering turned off
 }
 export interface ChronicleView {
   t: string;
@@ -304,6 +307,7 @@ export function toView(state: GameState): UiState {
       glyph: meta.glyph,
       gainText: `+${numStr(a.amount)} ${meta.glyph}`,
       available: a.available,
+      retired: a.retired,
     };
   });
 
@@ -316,6 +320,7 @@ export function toView(state: GameState): UiState {
       foodBalance: foodBalance(state),
       starving: run.flags.starving === true,
       name: settlementName(run.population.total),
+      growth: growthStatus(state),
     },
     jobs,
     buildings,

@@ -18,6 +18,11 @@ export const STARTING = {
   popCap: 0, // no housing yet — build a House to admit settlers
 };
 
+/** Once a resource's storage cap reaches this, hand-gathering that resource is RETIRED
+ *  (the manual button turns off) — by then jobs/constructs out-produce a click, so the
+ *  bootstrap is no longer needed. Per-resource: each retires as its own cap crosses this. */
+export const MANUAL_GATHER_RETIRE_CAP = 1000;
+
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
 export const POPULATION = {
   /** Food each settler consumes per second, regardless of job. */
