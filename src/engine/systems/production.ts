@@ -68,6 +68,13 @@ interface Flows {
   manaUpkeep: number;
 }
 
+/** Idle (unassigned) settlers = total − Σ workers across all jobs. Never negative. */
+function idleCount(run: GameState['run']): number {
+  let assigned = 0;
+  for (const n of Object.values(run.population.jobs)) assigned += n ?? 0;
+  return Math.max(0, run.population.total - assigned);
+}
+
 /** Compute every per-second flow from the current assignment + building counts. */
 function flows(state: GameState): Flows {
   const gross = {} as Record<ResourceId, number>;
@@ -91,6 +98,9 @@ function flows(state: GameState): Flows {
       gross[res as ResourceId] += workers * (per as number) * eff;
     }
   }
+
+  // Idle (unassigned) settlers forage a small subsistence trickle of food.
+  gross.food += POPULATION.idleFoodPerSettler * idleCount(run);
 
   // Constructs: passive production + mana upkeep, scaled by building count. NO food, NO pop.
   for (const b of BUILDINGS) {
@@ -158,6 +168,12 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     for (const e of b.effects) {
       if (e.kind === 'produce' && e.resource === id) producers.push({ label: `${b.name}${times(count)}`, amount: count * e.perSec });
     }
+  }
+
+  // Idle settlers forage a small subsistence trickle of food.
+  if (id === 'food') {
+    const idle = idleCount(run);
+    if (idle > 0) producers.push({ label: `Idle settlers${times(idle)}`, amount: POPULATION.idleFoodPerSettler * idle });
   }
 
   // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs.

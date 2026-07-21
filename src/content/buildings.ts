@@ -106,7 +106,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Tilled fields and pens. +1 Farmer job slot, +20 storage.',
     cost: { wood: 20 },
     costGrowth: 1.3,
-    requiresBuilding: 'hut',
+    requiresTech: 'agriculture',
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {

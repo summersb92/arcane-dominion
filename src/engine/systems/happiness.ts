@@ -25,10 +25,12 @@ export function happiness(state: GameState): HappinessInfo {
   const run = state.run;
   const breakdown: HappinessLine[] = [{ label: 'Base', amount: HAPPINESS.base }];
 
-  // Crowding: more settlers strain the settlement.
+  // Crowding: only settlers ABOVE the free buffer strain the settlement — the first
+  // HAPPINESS.freeBuffer live happily at no cost.
   const settlers = run.population.total;
-  const crowding = HAPPINESS.crowdingPerSettler * settlers;
-  if (crowding > 0) breakdown.push({ label: `Crowding (${settlers} settlers)`, amount: -crowding });
+  const crowded = Math.max(0, settlers - HAPPINESS.freeBuffer);
+  const crowding = HAPPINESS.crowdingPerSettler * crowded;
+  if (crowding > 0) breakdown.push({ label: `Crowding (${crowded} over ${HAPPINESS.freeBuffer})`, amount: -crowding });
 
   // Culture-job bonus: each assigned Bard raises spirits.
   const bards = run.population.jobs.bard ?? 0;

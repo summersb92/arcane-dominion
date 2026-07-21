@@ -64,7 +64,7 @@ describe('buildings', () => {
     const after = unlocked();
     expect(after).toContain('storehouse');
     expect(after).toContain('woodcutters-lodge');
-    expect(after).toContain('forager-hut');
+    expect(after).not.toContain('forager-hut'); // the Farm is now gated behind the Agriculture tech
     expect(after).not.toContain('hunters-lodge'); // now gated behind the Archery tech
     expect(after).not.toContain('library'); // the science building is still gated behind Writing
   });
@@ -76,6 +76,15 @@ describe('buildings', () => {
     s.run.tech.push('archery');
     expect(build(s, 'hunters-lodge')).toBe(true);
     expect(jobCapacity(s, 'hunter')).toBe(1); // one job per building
+  });
+
+  it('the Farm is gated behind the Agriculture tech', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 100;
+    expect(build(s, 'forager-hut')).toBe(false); // no Agriculture yet
+    s.run.tech.push('agriculture');
+    expect(build(s, 'forager-hut')).toBe(true);
+    expect(jobCapacity(s, 'forager')).toBe(1); // one Farmer slot per Farm
   });
 
   it('a locked (tech-gated) building refuses to build', () => {

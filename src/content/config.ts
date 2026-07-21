@@ -32,7 +32,8 @@ export const STARTING = {
  *  `base`, drops with crowding, and rises with Culture workers (Bards) + luxury buildings. */
 export const HAPPINESS = {
   base: 100, // a fresh, empty camp is fully content
-  crowdingPerSettler: 2, // −2 happiness per settler — bites in the mid tens
+  freeBuffer: 6, // the first N settlers cost NO happiness — crowding only bites beyond this
+  crowdingPerSettler: 2, // −2 happiness per settler ABOVE the free buffer
   cultureWorkerBonus: 4, // + per assigned Bard (Culture job)
   growthThreshold: 50, // growth pauses while happiness is below this
   /** Furs are a LUXURY: held furs raise happiness — +1 per this many furs held… */
@@ -63,6 +64,10 @@ export const POPULATION = {
    *  begins with your very first settler, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */
   researchPerSettler: 0.02,
+  /** Food each IDLE (unassigned) settler forages for themselves per second — a small
+   *  subsistence trickle that softens their upkeep. Below baseFoodUpkeep, so idle folk
+   *  are still a slight net drain; Farmers/Hunters are needed to truly grow. */
+  idleFoodPerSettler: 0.03,
   /** Seconds of sustained food surplus (and free housing) to gain one settler. */
   growthIntervalSec: 8,
   /** Seconds of sustained starvation before one settler is lost. */

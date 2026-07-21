@@ -68,16 +68,16 @@ describe('happiness gates growth', () => {
     expect(happiness(s).status).toBe('content');
 
     s.run.population.total = 10;
-    expect(happiness(s).value).toBe(80); // 100 − 2×10
+    expect(happiness(s).value).toBe(92); // 100 − 2×(10−6 buffer)
 
-    s.run.population.total = 30;
-    expect(happiness(s).value).toBe(40); // 100 − 60
+    s.run.population.total = 40;
+    expect(happiness(s).value).toBe(32); // 100 − 2×(40−6)
     expect(happiness(s).status).toBe('unhappy');
   });
 
   it('a Bard + an Amphitheater raise happiness', () => {
     const s = newGame(1);
-    s.run.population.total = 30; // value 40, unhappy
+    s.run.population.total = 30; // value 52 with the 6-pop buffer (100 − 2×24)
     const before = happiness(s).value;
 
     // Build the Amphitheater (luxury +10 happiness, +2 Bard slots).
@@ -97,19 +97,20 @@ describe('happiness gates growth', () => {
     const s = newGame(1);
     // Room + a sustainable food surplus, but too many settlers → unhappy.
     s.run.buildings.hut = 1;
+    s.run.tech.push('agriculture'); // the Farm is gated behind Agriculture
     s.run.resources.wood = 500;
     build(s, 'forager-hut'); // 1 Farmer slot
     build(s, 'forager-hut'); // 2
     build(s, 'forager-hut'); // 3 slots (one job per building)
     s.run.popCap = 100;
-    s.run.population.total = 26; // crowding 52 → happiness 48 (< 50)
-    assignJob(s, 'forager', 3); // 3 farmers × 0.5 = 1.5 food/s vs 1.3 upkeep → net positive
+    s.run.population.total = 32; // crowding 2×(32−6) = 52 → happiness 48 (< 50)
+    assignJob(s, 'forager', 3); // 3 farmers (agri ×1.5) + idle trickle > upkeep → net positive
     s.run.resources.food = 500;
 
     expect(happiness(s).status).toBe('unhappy');
     expect(growthStatus(s).status).toBe('unhappy');
     simulate(s, 30);
-    expect(s.run.population.total).toBe(26); // no growth while unhappy
+    expect(s.run.population.total).toBe(32); // no growth while unhappy
 
     // Build an Amphitheater (+10) → happiness 58, content → growth resumes.
     s.run.tech.push('the-arts');
@@ -118,7 +119,7 @@ describe('happiness gates growth', () => {
     expect(happiness(s).status).toBe('content');
     expect(growthStatus(s).status).toBe('growing');
     simulate(s, 30);
-    expect(s.run.population.total).toBeGreaterThan(26); // grows once content
+    expect(s.run.population.total).toBeGreaterThan(32); // grows once content
   });
 });
 
@@ -160,15 +161,15 @@ describe('furs luxury resource + Hunter', () => {
 
   it('held furs raise happiness (+1 per 10, capped at +15) and show in the breakdown', () => {
     const s = newGame(1);
-    s.run.population.total = 10; // crowding 20 → happiness 80
-    expect(happiness(s).value).toBe(80);
+    s.run.population.total = 20; // crowding 2×(20−6) = 28 → happiness 72
+    expect(happiness(s).value).toBe(72);
 
     s.run.resources.furs = 50; // 50 / 10 = +5
-    expect(happiness(s).value).toBe(85);
+    expect(happiness(s).value).toBe(77);
     expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furs'))).toBe(true);
 
     s.run.resources.furs = 1000; // would be +100 but the bonus caps at +15
-    expect(happiness(s).value).toBe(95); // 80 + 15
+    expect(happiness(s).value).toBe(87); // 72 + 15
   });
 });
 
