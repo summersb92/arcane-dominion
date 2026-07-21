@@ -12,7 +12,22 @@
     jobTooltip,
     techTooltip,
   } from '../stores';
+  import type { BuildingRowView } from '../stores';
   import { fmtRate } from '../format';
+
+  // The whole build card IS the build button: click to raise it (no-op if unbuildable).
+  // Cost + description live in the hover tooltip; red text means "can't afford".
+  function onBuild(b: BuildingRowView): void {
+    if (b.disabled) return;
+    hideTooltip();
+    build(b.id);
+  }
+  function onBuildKey(e: KeyboardEvent, b: BuildingRowView): void {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onBuild(b);
+    }
+  }
 
   // Only render buildings the player has unlocked (respect the engine's tech gate).
   $: visibleBuildings = $game.buildings.filter((b) => b.unlocked);
@@ -44,19 +59,23 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
               class="tcard bcard"
+              class:cant={!b.affordable && !b.maxed}
+              class:maxed={b.maxed}
+              role="button"
+              tabindex={b.disabled ? -1 : 0}
+              aria-disabled={b.disabled}
+              title="Click to build"
               style="border-left-color:var(--edge)"
+              on:click={() => onBuild(b)}
+              on:keydown={(e) => onBuildKey(e, b)}
               on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
+              on:focus={(e) => openTip(e, buildingTooltip(b))}
               on:mouseleave={hideTooltip}
+              on:blur={hideTooltip}
             >
               <div class="tt">
                 <span class="nm">{b.name}</span><span class="chip">×{b.count}</span>
               </div>
-              <div class="io">{b.blurb}</div>
-              <div class="io cost" class:cantpay={!b.affordable && !b.maxed}>Cost: {b.costText}</div>
-              <button class="btn build" disabled={b.disabled} on:click={() => { hideTooltip(); build(b.id); }}>
-                Build
-              </button>
-              {#if b.reason}<div class="io warn">{b.reason}</div>{/if}
             </div>
           {/each}
         </div>
@@ -70,19 +89,23 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
               class="tcard bcard"
+              class:cant={!b.affordable && !b.maxed}
+              class:maxed={b.maxed}
+              role="button"
+              tabindex={b.disabled ? -1 : 0}
+              aria-disabled={b.disabled}
+              title="Click to build"
               style="border-left-color:var(--mana)"
+              on:click={() => onBuild(b)}
+              on:keydown={(e) => onBuildKey(e, b)}
               on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
+              on:focus={(e) => openTip(e, buildingTooltip(b))}
               on:mouseleave={hideTooltip}
+              on:blur={hideTooltip}
             >
               <div class="tt">
                 <span class="nm">{b.name}</span><span class="chip construct">×{b.count} · construct</span>
               </div>
-              <div class="io">{b.blurb}</div>
-              <div class="io cost" class:cantpay={!b.affordable && !b.maxed}>Cost: {b.costText}</div>
-              <button class="btn build" disabled={b.disabled} on:click={() => { hideTooltip(); build(b.id); }}>
-                Build
-              </button>
-              {#if b.reason}<div class="io warn">{b.reason}</div>{/if}
             </div>
           {/each}
         </div>
@@ -186,12 +209,6 @@
     font-size: 12.5px;
     padding: 8px 0;
   }
-  .cost {
-    font-variant-numeric: tabular-nums;
-  }
-  .cost.cantpay {
-    color: var(--life);
-  }
   .warn {
     color: var(--life);
     font-size: 11px;
@@ -199,8 +216,39 @@
   .bcard {
     cursor: help;
   }
+  /* Build cards ARE the button: click to build. Cost + description are in the tooltip. */
+  .bcard[role='button'] {
+    cursor: pointer;
+    transition: border-color 0.12s, transform 0.05s;
+  }
+  .bcard[role='button']:hover {
+    border-color: var(--accent);
+  }
+  .bcard[role='button']:active {
+    transform: translateY(1px);
+  }
+  .bcard[role='button']:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  /* Can't afford → red name (the affordability signal); maxed → dimmed. Both un-clickable. */
+  .bcard.cant .nm {
+    color: var(--life);
+  }
+  .bcard.cant,
+  .bcard.maxed {
+    cursor: not-allowed;
+  }
+  .bcard.maxed {
+    opacity: 0.55;
+  }
   .bcard.done {
     opacity: 0.7;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bcard[role='button'] {
+      transition: none;
+    }
   }
   .chip.construct {
     color: var(--mana);
