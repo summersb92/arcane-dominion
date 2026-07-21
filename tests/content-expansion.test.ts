@@ -50,7 +50,7 @@ describe('Miner job (Mine opens Miner, not Stonecutter)', () => {
     s.run.resources.stone = 100;
     expect(build(s, 'mine')).toBe(true);
     // Mine opens Miner slots, NOT Stonecutter slots.
-    expect(jobCapacity(s, 'miner')).toBe(2);
+    expect(jobCapacity(s, 'miner')).toBe(1); // one building = one job slot
     expect(jobCapacity(s, 'quarry-worker')).toBe(0);
 
     s.run.population.total = 1;

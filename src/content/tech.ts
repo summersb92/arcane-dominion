@@ -24,6 +24,7 @@ export type TechId =
   | 'stone-axe'
   | 'stone-hoe'
   | 'stone-pick'
+  | 'archery'
   | 'pottery'
   | 'agriculture'
   | 'naturalism'
@@ -80,6 +81,13 @@ export const TECHS: TechDef[] = [
     cost: 10,
     resourceCost: { stone: 10 },
     unlocks: ['+25% Stonecutter output'],
+  },
+  {
+    id: 'archery',
+    name: 'Archery',
+    blurb: 'Bow and arrow — the hunt begins. Unlocks the Hunter’s Lodge (food + furs).',
+    cost: 15,
+    unlocks: ["Hunter's Lodge (building)"],
   },
   {
     id: 'pottery',

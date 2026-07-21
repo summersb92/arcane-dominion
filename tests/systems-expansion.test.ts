@@ -98,11 +98,12 @@ describe('happiness gates growth', () => {
     // Room + a sustainable food surplus, but too many settlers → unhappy.
     s.run.buildings.hut = 1;
     s.run.resources.wood = 500;
-    build(s, 'forager-hut'); // 2 Farmer slots
-    build(s, 'forager-hut'); // 4 total
+    build(s, 'forager-hut'); // 1 Farmer slot
+    build(s, 'forager-hut'); // 2
+    build(s, 'forager-hut'); // 3 slots (one job per building)
     s.run.popCap = 100;
     s.run.population.total = 26; // crowding 52 → happiness 48 (< 50)
-    assignJob(s, 'forager', 3); // 1.5 food/s vs 1.3 upkeep → net positive
+    assignJob(s, 'forager', 3); // 3 farmers × 0.5 = 1.5 food/s vs 1.3 upkeep → net positive
     s.run.resources.food = 500;
 
     expect(happiness(s).status).toBe('unhappy');
@@ -124,7 +125,7 @@ describe('happiness gates growth', () => {
 describe('furs luxury resource + Hunter', () => {
   it('a Hunter at the Hunter\'s Lodge produces both food and furs', () => {
     const s = newGame(1);
-    s.run.buildings.hut = 1; // Lodge prereq
+    s.run.tech.push('archery'); // the Lodge is now gated behind Archery
     s.run.resources.wood = 100;
     expect(build(s, 'hunters-lodge')).toBe(true);
     s.run.population.total = 1;
@@ -146,6 +147,7 @@ describe('furs luxury resource + Hunter', () => {
     expect(effectiveCap(s, 'furs')).toBe(250);
 
     // Producing past the cap clamps (excess lost). The Lodge adds +20 cap, so read it live.
+    s.run.tech.push('archery'); // Lodge gated behind Archery
     s.run.resources.wood = 100;
     build(s, 'hunters-lodge');
     s.run.population.total = 1;

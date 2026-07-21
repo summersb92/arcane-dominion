@@ -65,8 +65,17 @@ describe('buildings', () => {
     expect(after).toContain('storehouse');
     expect(after).toContain('woodcutters-lodge');
     expect(after).toContain('forager-hut');
-    expect(after).toContain('hunters-lodge'); // Hunter's Lodge also reveals after a Hut
+    expect(after).not.toContain('hunters-lodge'); // now gated behind the Archery tech
     expect(after).not.toContain('library'); // the science building is still gated behind Writing
+  });
+
+  it("the Hunter's Lodge is gated behind the Archery tech", () => {
+    const s = newGame(1);
+    s.run.resources.wood = 100;
+    expect(build(s, 'hunters-lodge')).toBe(false); // no Archery yet
+    s.run.tech.push('archery');
+    expect(build(s, 'hunters-lodge')).toBe(true);
+    expect(jobCapacity(s, 'hunter')).toBe(1); // one job per building
   });
 
   it('a locked (tech-gated) building refuses to build', () => {
@@ -76,7 +85,7 @@ describe('buildings', () => {
     expect(build(s, 'quarry')).toBe(false); // needs masonry
     s.run.tech.push('masonry');
     expect(build(s, 'quarry')).toBe(true);
-    expect(jobCapacity(s, 'quarry-worker')).toBe(2);
+    expect(jobCapacity(s, 'quarry-worker')).toBe(1);
   });
 });
 
@@ -115,11 +124,11 @@ describe('jobs', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
-    build(s, 'woodcutters-lodge'); // capacity 2
+    build(s, 'woodcutters-lodge'); // capacity 1 — one building, one slot
     s.run.population.total = 5;
-    expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
+    expect(assignJob(s, 'woodcutter', 5)).toBe(1); // capped at the single slot
     expect(unassignJob(s, 'woodcutter', 1)).toBe(1);
-    expect(s.run.population.jobs.woodcutter).toBe(1);
+    expect(s.run.population.jobs.woodcutter).toBe(0);
   });
 });
 
