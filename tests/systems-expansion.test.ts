@@ -38,19 +38,17 @@ describe('research is capped by science buildings', () => {
     expect(effectiveCap(s, 'research')).toBe(50);
   });
 
-  it("a Scholar's Study (+50) and a Library (+100) raise the research cap", () => {
+  it('the Library (+100) is the single science building and raises the research cap', () => {
     const s = newGame(1);
-    // Study prereqs: a Hut then a Farm (forager-hut).
-    s.run.buildings.hut = 1;
-    s.run.buildings['forager-hut'] = 1;
+    expect(researchCap(s)).toBe(50); // base
+    s.run.tech.push('writing'); // unlocks the Library (the merged science building)
     s.run.resources.wood = 500;
     s.run.resources.stone = 500;
-    expect(build(s, 'scholars-study')).toBe(true);
-    expect(researchCap(s)).toBe(100); // 50 base + 50 study
-
-    s.run.tech.push('writing'); // unlocks the Library
     expect(build(s, 'library')).toBe(true);
-    expect(researchCap(s)).toBe(200); // + 100 library
+    expect(researchCap(s)).toBe(150); // 50 base + 100 library
+    // A Scholar can be assigned to the Library (the merged Scholar's Study role).
+    s.run.population.total = 1;
+    expect(assignJob(s, 'scholar', 1)).toBe(1);
   });
 
   it('research clamps at its effective cap in a tick (excess is lost)', () => {
@@ -120,6 +118,55 @@ describe('happiness gates growth', () => {
     expect(growthStatus(s).status).toBe('growing');
     simulate(s, 30);
     expect(s.run.population.total).toBeGreaterThan(26); // grows once content
+  });
+});
+
+describe('furs luxury resource + Hunter', () => {
+  it('a Hunter at the Hunter\'s Lodge produces both food and furs', () => {
+    const s = newGame(1);
+    s.run.buildings.hut = 1; // Lodge prereq
+    s.run.resources.wood = 100;
+    expect(build(s, 'hunters-lodge')).toBe(true);
+    s.run.population.total = 1;
+    expect(assignJob(s, 'hunter', 1)).toBe(1);
+    const r = productionRates(s);
+    expect(r.food).toBeCloseTo(0.3 - 0.05, 6); // +0.3 hunter food − 0.05 settler upkeep
+    expect(r.furs).toBeCloseTo(0.15, 6); // +0.15 furs
+  });
+
+  it('furs are capped at 200 base, raised by Storehouses, and clamped in a tick', () => {
+    const s = newGame(1);
+    expect(effectiveCap(s, 'furs')).toBe(200);
+
+    // A Storehouse's `cap` effect (+50 each) raises the furs cap too.
+    s.run.buildings.hut = 1;
+    s.run.resources.wood = 100;
+    s.run.resources.stone = 100;
+    expect(build(s, 'storehouse')).toBe(true);
+    expect(effectiveCap(s, 'furs')).toBe(250);
+
+    // Producing past the cap clamps (excess lost). The Lodge adds +20 cap, so read it live.
+    s.run.resources.wood = 100;
+    build(s, 'hunters-lodge');
+    s.run.population.total = 1;
+    assignJob(s, 'hunter', 1);
+    const cap = effectiveCap(s, 'furs');
+    s.run.resources.furs = cap - 1;
+    runProduction(s, 1000);
+    expect(s.run.resources.furs).toBe(cap);
+  });
+
+  it('held furs raise happiness (+1 per 10, capped at +15) and show in the breakdown', () => {
+    const s = newGame(1);
+    s.run.population.total = 10; // crowding 20 → happiness 80
+    expect(happiness(s).value).toBe(80);
+
+    s.run.resources.furs = 50; // 50 / 10 = +5
+    expect(happiness(s).value).toBe(85);
+    expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furs'))).toBe(true);
+
+    s.run.resources.furs = 1000; // would be +100 but the bonus caps at +15
+    expect(happiness(s).value).toBe(95); // 80 + 15
   });
 });
 

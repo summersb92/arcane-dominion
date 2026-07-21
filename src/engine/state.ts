@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 2; // v2: added the `culture` resource (migrate rung backfills → 0)
+export const SAVE_VERSION = 3; // v3: added the `furs` luxury resource (migrate rung backfills → 0)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -67,15 +67,16 @@ export function freshResources(): Record<ResourceId, number> {
   r.wood = STARTING.wood;
   r.food = STARTING.food;
   r.stone = STARTING.stone;
+  r.furs = STARTING.furs;
   r.mana = STARTING.mana;
   r.research = STARTING.research;
   r.culture = STARTING.culture;
   return r;
 }
 
-/** A brand-new mundane-cap ledger. Exported for save normalize. */
+/** A brand-new capped-material ledger (mundane materials + furs). Exported for save normalize. */
 export function freshCaps(): Record<MundaneResourceId, number> {
-  return { wood: STARTING.woodCap, food: STARTING.foodCap, stone: STARTING.stoneCap };
+  return { wood: STARTING.woodCap, food: STARTING.foodCap, stone: STARTING.stoneCap, furs: STARTING.fursCap };
 }
 
 /** A brand-new settlement: settlers make camp with a little food and nothing else. */

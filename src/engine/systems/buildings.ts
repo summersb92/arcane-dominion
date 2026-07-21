@@ -5,7 +5,7 @@
 // gates (tech + affordability) are enforced before any resource is spent. Pure engine.
 
 import { BUILDINGS, BUILDING_BY_ID, type BuildingDef, type BuildingId } from '../../content/buildings';
-import type { MundaneResourceId, ResourceId } from '../../content/resources';
+import { MUNDANE_RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
@@ -65,7 +65,8 @@ export function build(state: GameState, id: BuildingId): boolean {
   for (const eff of def.effects) {
     if (eff.kind === 'popCap') state.run.popCap += eff.amount;
     else if (eff.kind === 'cap') {
-      for (const capId of ['wood', 'food', 'stone'] as MundaneResourceId[]) {
+      // Raise EACH capped material (mundane materials + furs) by the same amount.
+      for (const capId of MUNDANE_RESOURCE_IDS) {
         state.run.caps[capId] += eff.amount;
       }
     } else if (eff.kind === 'foodCap') {

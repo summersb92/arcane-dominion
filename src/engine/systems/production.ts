@@ -18,8 +18,10 @@ import { effectiveCap } from './caps';
 
 const EPS = 1e-9;
 
-/** The three GATHER jobs the tool-tier bonuses (Stone/Bronze/Iron) apply to. */
-const GATHER_JOBS = new Set(['woodcutter', 'forager', 'quarry-worker']);
+/** The GATHER jobs the GLOBAL tool-tier bonuses (Bronze/Iron Working) apply to. Includes the
+ *  Miner alongside the Stonecutter; the per-tool STONE techs stay job-specific (e.g. Stone Pick
+ *  boosts the Stonecutter only, not the Miner). */
+const GATHER_JOBS = new Set(['woodcutter', 'forager', 'quarry-worker', 'miner']);
 
 /** Global worker-output multiplier from buildings (Workshop/Forge jobOutputMult), applied
  *  to every job. 1 = no bonus; each qualifying building adds its fraction × its count. */
@@ -188,6 +190,7 @@ export function runProduction(state: GameState, dt: number): void {
   // Non-food, non-mana resources: pure additive production.
   run.resources.wood += f.gross.wood * dt;
   run.resources.stone += f.gross.stone * dt;
+  run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
   run.resources.research += f.gross.research * dt;
   run.resources.culture += f.gross.culture * dt; // uncapped, accumulates
 
@@ -206,9 +209,9 @@ export function runProduction(state: GameState, dt: number): void {
     run.flags.starving = false;
   }
 
-  // Clamp the capped resources to their effective caps (excess is lost): the three mundane
-  // materials plus RESEARCH (now capped by science buildings). Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'research'] as ResourceId[]) {
+  // Clamp the capped resources to their effective caps (excess is lost): the mundane
+  // materials + furs, plus RESEARCH (now capped by science buildings). Mana/culture are uncapped.
+  for (const id of ['wood', 'food', 'stone', 'furs', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

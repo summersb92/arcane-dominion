@@ -147,6 +147,32 @@
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
       <div class="jobscols">
         <div class="jobscol">
+          <!-- Prominent, always-present Population readout: the next-settler progress bar
+               fills while growing (with %), or names the paused reason when it can't grow. -->
+          <div
+            class="growth"
+            class:paused={pop.growth.status !== 'growing' && pop.growth.status !== 'starving'}
+            title="Progress toward the next settler"
+          >
+            <div class="ghead">
+              <span class="gtitle">Population</span>
+              <span class="gcount"><strong>{pop.total}</strong> / {pop.cap} settlers</span>
+            </div>
+            <div class="glabel">
+              <span>{growthLabel(pop.growth.status)}</span>
+              {#if pop.growth.status === 'growing' || pop.growth.status === 'starving'}
+                <span class="gpct">{Math.round(pop.growth.progress * 100)}%</span>
+              {/if}
+            </div>
+            <div
+              class="gbar"
+              class:grow={pop.growth.status === 'growing'}
+              class:starve={pop.growth.status === 'starving'}
+            >
+              <i style="width:{Math.round(pop.growth.progress * 100)}%"></i>
+            </div>
+          </div>
+
           <div class="popbar">
             <span>Settlers <strong>{pop.total}</strong> / {pop.cap}</span>
             <span>Idle <strong>{pop.idle}</strong></span>
@@ -163,22 +189,6 @@
               </strong>
             </span>
             {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
-          </div>
-
-          <div class="growth" title="Progress toward the next settler">
-            <div class="glabel">
-              <span>{growthLabel(pop.growth.status)}</span>
-              {#if pop.growth.status === 'growing' || pop.growth.status === 'starving'}
-                <span class="gpct">{Math.round(pop.growth.progress * 100)}%</span>
-              {/if}
-            </div>
-            <div
-              class="gbar"
-              class:grow={pop.growth.status === 'growing'}
-              class:starve={pop.growth.status === 'starving'}
-            >
-              <i style="width:{Math.round(pop.growth.progress * 100)}%"></i>
-            </div>
           </div>
 
           {#if openJobs.length === 0}
@@ -374,24 +384,55 @@
     color: var(--faint);
     font-size: 12.5px;
   }
-  /* Next-settler progress */
+  /* Next-settler progress — a prominent, always-present Population readout at the top of
+     the settlement tab. */
   .growth {
     margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .growth.paused {
+    border-left-color: var(--faint);
+  }
+  .ghead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .gtitle {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--label);
+  }
+  .gcount {
+    font-size: 12.5px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .gcount strong {
+    color: var(--ink);
   }
   .glabel {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--dim);
-    margin-bottom: 4px;
+    margin-bottom: 5px;
   }
   .glabel .gpct {
     color: var(--ink);
     font-variant-numeric: tabular-nums;
+    font-weight: 600;
   }
   .gbar {
-    height: 7px;
-    border-radius: 4px;
+    height: 10px;
+    border-radius: 5px;
     background: var(--mtr-bg);
     overflow: hidden;
   }

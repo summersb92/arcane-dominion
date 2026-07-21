@@ -65,7 +65,8 @@ describe('buildings', () => {
     expect(after).toContain('storehouse');
     expect(after).toContain('woodcutters-lodge');
     expect(after).toContain('forager-hut');
-    expect(after).not.toContain('scholars-study'); // still gated behind a Forager Hut
+    expect(after).toContain('hunters-lodge'); // Hunter's Lodge also reveals after a Hut
+    expect(after).not.toContain('library'); // the science building is still gated behind Writing
   });
 
   it('a locked (tech-gated) building refuses to build', () => {

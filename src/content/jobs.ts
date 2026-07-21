@@ -9,7 +9,7 @@
 import type { BuildingId } from './buildings';
 import type { ResourceId } from './resources';
 
-export type JobId = 'woodcutter' | 'forager' | 'quarry-worker' | 'scholar' | 'bard';
+export type JobId = 'woodcutter' | 'forager' | 'hunter' | 'quarry-worker' | 'miner' | 'scholar' | 'bard';
 
 export interface JobDef {
   id: JobId;
@@ -37,6 +37,13 @@ export const JOBS: JobDef[] = [
     requiresBuildingCapacity: 'forager-hut',
   },
   {
+    id: 'hunter',
+    name: 'Hunter',
+    blurb: 'Hunts and traps from the lodge. Produces food and furs (a luxury).',
+    produces: { food: 0.3, furs: 0.15 },
+    requiresBuildingCapacity: 'hunters-lodge',
+  },
+  {
     id: 'quarry-worker',
     name: 'Stonecutter',
     blurb: 'Hews stone at the quarry. Produces stone.',
@@ -44,11 +51,18 @@ export const JOBS: JobDef[] = [
     requiresBuildingCapacity: 'quarry',
   },
   {
+    id: 'miner',
+    name: 'Miner',
+    blurb: 'Digs stone from the mine shaft. Produces stone.',
+    produces: { stone: 0.4 },
+    requiresBuildingCapacity: 'mine',
+  },
+  {
     id: 'scholar',
     name: 'Scholar',
-    blurb: 'Studies at the study. Produces research.',
+    blurb: 'Studies at the Library. Produces research.',
     produces: { research: 0.2 },
-    requiresBuildingCapacity: 'scholars-study',
+    requiresBuildingCapacity: 'library',
   },
   {
     id: 'bard',

@@ -49,7 +49,13 @@ export function happiness(state: GameState): HappinessInfo {
     }
   }
 
-  const raw = HAPPINESS.base - crowding + bardBonus + luxury;
+  // Furs are a LUXURY good: held furs lift spirits — +1 happiness per `fursPerHappiness`
+  // furs, capped at `fursHappinessMax`. (Furs keep accumulating past the cap for future trade.)
+  const furs = run.resources.furs ?? 0;
+  const furBonus = Math.min(HAPPINESS.fursHappinessMax, Math.floor(furs / HAPPINESS.fursPerHappiness));
+  if (furBonus > 0) breakdown.push({ label: `Furs (${Math.floor(furs)})`, amount: furBonus });
+
+  const raw = HAPPINESS.base - crowding + bardBonus + luxury + furBonus;
   const value = Math.max(0, Math.min(100, raw));
   return {
     value,

@@ -94,6 +94,20 @@
   --air:#2a8079; --dark:#6a4fa0; --light:#8a6a12;
   --accent:#4666b0;
 }
+/* Sleek Dark — the dark counterpart to the default light Sleek. Near-black/charcoal
+   surfaces, light-gray text, thin subtle borders, one restrained blue accent. The same
+   minimal aesthetic as Kittens/Sleek, but dark — NOT the warm purple of Candlelight. */
+:root[data-theme="sleek-dark"] {
+  --bg:#121212; --bg-glow:#1a1a1a; --panel:#171717; --panel2:#141414; --col-left:#151515;
+  --head:#191919; --edge:#2b2b2b; --hover:#212121; --card:#1b1b1b; --card-active:#242424;
+  --mtr-bg:#282828; --row-edge:#202020; --foot:#161616; --bar-off:#3a3a3a;
+  --ink:#e8e8e8; --dim:#a6a6a6; --label:#8c8c8c; --faint:#6c6c6c;
+  --gold:#d0a84a; --insight:#7f9cf0; --renown:#e07aa8; --ok:#5cc98a;
+  --life:#e0685c; --stam:#c2c35c; --mana:#a68fe0;
+  --prism:#e8e8e8; --fire:#e0764a; --water:#4fa6e0; --earth:#5fbf6a;
+  --air:#5fd0c6; --dark:#b79ae8; --light:#e6c46a;
+  --accent:#5b8def;
+}
 /* data-theme="candlelight" simply opts out of the light media query; :root defaults hold. */
 
 /* ============ LAYOUT & COMPONENTS (all colors via tokens) ============ */

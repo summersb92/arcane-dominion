@@ -3,10 +3,11 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 2. `migrate` brings an older save's shape up to current (v1 → v2 added
-// the `culture` resource); `normalize` then backfills every run.* container the read models
-// touch so a partial/foreign save never dereferences undefined; `validate` finally rejects
-// anything structurally garbage (NaN, wrong type, out-of-range) rather than loading a broken run.
+// SAVE_VERSION is 3. `migrate` brings an older save's shape up to current (v1 → v2 added
+// the `culture` resource; v2 → v3 added the `furs` luxury resource); `normalize` then backfills
+// every run.* container the read models touch so a partial/foreign save never dereferences
+// undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
+// out-of-range) rather than loading a broken run.
 
 import { JOB_IDS } from '../content/jobs';
 import { MUNDANE_RESOURCE_IDS, RESOURCE_IDS, type MundaneResourceId } from '../content/resources';
@@ -95,14 +96,22 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v1 → v2: added the `culture` resource. It defaults to 0; normalize's per-id backfill
  *            (over RESOURCE_IDS) fills it, so this rung only documents the bump. Research
  *            and happiness became DERIVED (a cap and a read model) — no persistent fields.
+ *   v2 → v3: added the `furs` luxury resource (held → +happiness). It defaults to 0, and its
+ *            storage cap defaults to the base 200; normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS
+ *            backfills both, so this rung only documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
+  const hasResources =
+    state.run && typeof state.run === 'object' && state.run.resources && typeof state.run.resources === 'object';
   if (fromVersion < 2) {
     // culture backfilled to 0 by normalize (RESOURCE_IDS loop). Nothing else to rewrite.
-    if (state.run && typeof state.run === 'object' && state.run.resources && typeof state.run.resources === 'object') {
-      state.run.resources.culture ??= 0;
-    }
+    if (hasResources) state.run.resources.culture ??= 0;
+  }
+  if (fromVersion < 3) {
+    // furs backfilled to 0 (RESOURCE_IDS loop) and its cap to 200 (MUNDANE_RESOURCE_IDS loop)
+    // by normalize. Nothing else to rewrite.
+    if (hasResources) state.run.resources.furs ??= 0;
   }
 }
 

@@ -20,8 +20,8 @@ export type BuildingId =
   | 'storehouse'
   | 'woodcutters-lodge'
   | 'forager-hut'
+  | 'hunters-lodge'
   | 'quarry'
-  | 'scholars-study'
   | 'granary'
   | 'library'
   | 'mine'
@@ -106,6 +106,15 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
+    id: 'hunters-lodge',
+    name: "Hunter's Lodge",
+    blurb: 'A lodge for trackers and trappers. +2 Hunter job slots (food + furs), +20 storage.',
+    cost: { wood: 25 },
+    costGrowth: 1.3,
+    requiresBuilding: 'hut',
+    effects: [{ kind: 'jobCapacity', job: 'hunter', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
+  },
+  {
     id: 'quarry',
     name: 'Quarry',
     blurb: 'A worked stone pit. +2 Stonecutter job slots, +20 storage.',
@@ -113,19 +122,6 @@ export const BUILDINGS: BuildingDef[] = [
     costGrowth: 1.3,
     requiresTech: 'masonry',
     effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
-  },
-  {
-    id: 'scholars-study',
-    name: "Scholar's Study",
-    blurb: 'A place of learning. +2 Scholar job slots (research), +50 research cap, +20 storage.',
-    cost: { wood: 30, stone: 15 },
-    costGrowth: 1.3,
-    requiresBuilding: 'forager-hut',
-    effects: [
-      { kind: 'jobCapacity', job: 'scholar', slots: 2 },
-      { kind: 'researchCap', amount: 50 },
-      { kind: 'cap', amount: STRUCT_CAP },
-    ],
   },
   {
     id: 'granary',
@@ -153,12 +149,12 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'mine',
     name: 'Mine',
-    blurb: 'A deep shaft for ore and rock. +2 Stonecutter slots, +0.2 stone/s, +20 storage.',
+    blurb: 'A deep shaft for ore and rock. +2 Miner slots, +0.2 stone/s, +20 storage.',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'mining',
     effects: [
-      { kind: 'jobCapacity', job: 'quarry-worker', slots: 2 },
+      { kind: 'jobCapacity', job: 'miner', slots: 2 },
       { kind: 'produce', resource: 'stone', perSec: 0.2 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],

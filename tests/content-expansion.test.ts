@@ -4,9 +4,10 @@ import { JOB_BY_ID } from '../src/content/jobs';
 import { BUILDING_BY_ID } from '../src/content/buildings';
 import { TECH_BY_ID } from '../src/content/tech';
 import { build } from '../src/engine/systems/buildings';
-import { assignJob } from '../src/engine/systems/jobs';
+import { assignJob, jobCapacity } from '../src/engine/systems/jobs';
 import { techView } from '../src/engine/systems/tech';
 import { productionRates } from '../src/engine/systems/production';
+import { THEMES, isThemeId } from '../src/content/themes';
 
 describe('renames (display names change, ids preserved)', () => {
   it('renames the House, Farm, Farmer and Stonecutter while keeping ids', () => {
@@ -14,8 +15,58 @@ describe('renames (display names change, ids preserved)', () => {
     expect(BUILDING_BY_ID['forager-hut'].name).toBe('Farm');
     expect(JOB_BY_ID.forager.name).toBe('Farmer');
     expect(JOB_BY_ID['quarry-worker'].name).toBe('Stonecutter');
-    // Scholar's Study still references the Farm building by its stable id.
-    expect(BUILDING_BY_ID['scholars-study'].requiresBuilding).toBe('forager-hut');
+  });
+});
+
+describe('Library is the single science building (Scholar\'s Study merged in)', () => {
+  it('has no scholars-study; the Library is the Scholar workplace, gated by Writing', () => {
+    // The old Scholar's Study id is gone entirely.
+    expect(BUILDING_BY_ID['scholars-study' as never]).toBeUndefined();
+    // The Library keeps the science role: Scholar slots, passive research, research cap.
+    expect(BUILDING_BY_ID.library.requiresTech).toBe('writing');
+    expect(JOB_BY_ID.scholar.requiresBuildingCapacity).toBe('library');
+    const kinds = BUILDING_BY_ID.library.effects.map((e) => e.kind);
+    expect(kinds).toContain('jobCapacity');
+    expect(kinds).toContain('produce');
+    expect(kinds).toContain('researchCap');
+  });
+});
+
+describe('Sleek Dark theme registration', () => {
+  it('registers "sleek-dark" (label "Sleek Dark") without displacing the light Sleek default', () => {
+    expect(isThemeId('sleek-dark')).toBe(true);
+    const opt = THEMES.find((t) => t.id === 'sleek-dark');
+    expect(opt?.label).toBe('Sleek Dark');
+    // The light Sleek (kittens) is still present as the default theme.
+    expect(THEMES.some((t) => t.id === 'kittens')).toBe(true);
+  });
+});
+
+describe('Miner job (Mine opens Miner, not Stonecutter)', () => {
+  it('the Mine grants Miner capacity and the Miner produces stone with the global tool tiers', () => {
+    const s = newGame(1);
+    s.run.tech.push('mining');
+    s.run.resources.wood = 100;
+    s.run.resources.stone = 100;
+    expect(build(s, 'mine')).toBe(true);
+    // Mine opens Miner slots, NOT Stonecutter slots.
+    expect(jobCapacity(s, 'miner')).toBe(2);
+    expect(jobCapacity(s, 'quarry-worker')).toBe(0);
+
+    s.run.population.total = 1;
+    expect(assignJob(s, 'miner', 1)).toBe(1);
+    // 1 Miner × 0.4/s + the Mine's passive 0.2/s = 0.6/s stone.
+    expect(productionRates(s).stone).toBeCloseTo(0.6, 6);
+
+    // Stone Pick is Stonecutter-only → does NOT touch the Miner.
+    s.run.tech.push('stone-pick');
+    expect(productionRates(s).stone).toBeCloseTo(0.6, 6);
+
+    // Global tool tiers (Bronze/Iron Working) DO apply to the Miner's 0.4 base.
+    s.run.tech.push('bronze-working');
+    expect(productionRates(s).stone).toBeCloseTo(0.4 * 1.35 + 0.2, 6);
+    s.run.tech.push('iron-working');
+    expect(productionRates(s).stone).toBeCloseTo(0.4 * 1.35 * 1.5 + 0.2, 6);
   });
 });
 
