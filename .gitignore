@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+# build output
+dist/
+.vite/
+# local env / editor
+.env
+.env.local
+*.local
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+# logs
+*.log
+npm-debug.log*
+# local CLI save files
+*.aasave
+
+# local tooling/session config
+.claude/
+
+# session handoff (local, do not publish)
+HANDOFF.md
