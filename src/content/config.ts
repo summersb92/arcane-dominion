@@ -18,6 +18,15 @@ export const STARTING = {
   popCap: 0, // no housing yet — build a House to admit settlers
 };
 
+/** Time / calendar. Days tick at daySeconds each; daysPerSeason days make a season; the
+ *  four seasons make a year. Time always advances, but the current day/season is HIDDEN
+ *  until the Calendar tech is researched. */
+export const CALENDAR = {
+  daySeconds: 2, // real/sim seconds per in-game day
+  daysPerSeason: 100, // days in a season
+  seasons: ['Spring', 'Summer', 'Autumn', 'Winter'] as const, // 4 seasons → a year
+};
+
 /** Once a resource's storage cap reaches this, hand-gathering that resource is RETIRED
  *  (the manual button turns off) — by then jobs/constructs out-produce a click, so the
  *  bootstrap is no longer needed. Per-resource: each retires as its own cap crosses this. */

@@ -20,6 +20,7 @@ export type TechId =
   | 'agriculture'
   | 'masonry'
   | 'writing'
+  | 'calendar'
   // Bronze Age
   | 'mining'
   | 'the-wheel'
@@ -81,6 +82,14 @@ export const TECHS: TechDef[] = [
     cost: 30,
     requires: ['pottery'],
     unlocks: ['Library (building)'],
+  },
+  {
+    id: 'calendar',
+    name: 'Calendar',
+    blurb: 'Track the turning of the seasons. Reveals the current day, season, and year.',
+    cost: 20,
+    requires: ['pottery'],
+    unlocks: ['The date (day · season · year)'],
   },
 
   // ---- BRONZE AGE ----

@@ -3,6 +3,7 @@ import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { doGather, actionsView } from '../src/engine/systems/actions';
 import { growthStatus } from '../src/engine/systems/population';
+import { calendar } from '../src/engine/systems/calendar';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
@@ -117,6 +118,40 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
     expect(unassignJob(s, 'woodcutter', 1)).toBe(1);
     expect(s.run.population.jobs.woodcutter).toBe(1);
+  });
+});
+
+describe('calendar (100 days/season, 2s/day, 4 seasons; hidden until unlocked)', () => {
+  it('derives day/season/year from playtime and hides until the Calendar tech', () => {
+    const s = newGame(1);
+    s.playtime = 0;
+    let c = calendar(s);
+    expect(c.day).toBe(1);
+    expect(c.season).toBe('Spring');
+    expect(c.year).toBe(1);
+    expect(c.unlocked).toBe(false); // not researched yet → UI hides it
+
+    // 2s/day → day 50 of Spring at 98s (49 whole days elapsed → day 50).
+    s.playtime = 98;
+    c = calendar(s);
+    expect(c.day).toBe(50);
+    expect(c.season).toBe('Spring');
+
+    // 100 days = 200s → start of Summer (day 1).
+    s.playtime = 200;
+    c = calendar(s);
+    expect(c.season).toBe('Summer');
+    expect(c.day).toBe(1);
+
+    // 400 days = 800s → Year 2, Spring, day 1.
+    s.playtime = 800;
+    c = calendar(s);
+    expect(c.year).toBe(2);
+    expect(c.season).toBe('Spring');
+    expect(c.day).toBe(1);
+
+    s.run.tech.push('calendar');
+    expect(calendar(s).unlocked).toBe(true);
   });
 });
 

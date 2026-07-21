@@ -16,6 +16,7 @@ import type { BuildingId } from '../content/buildings';
 import type { TechId } from '../content/tech';
 import { productionRates, foodBalance, resourceBreakdown } from '../engine/systems/production';
 import { growthStatus, type GrowthInfo } from '../engine/systems/population';
+import { calendar, type CalendarInfo } from '../engine/systems/calendar';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -131,6 +132,7 @@ export interface UiState {
   actions: ActionRowView[];
   tabs: { id: string; label: string; visible: boolean; locked: boolean }[];
   chronicle: ChronicleView[];
+  calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
 }
 
 // ---- Tooltip system: ONE reusable, styled, themed hover tooltip ----
@@ -337,6 +339,7 @@ export function toView(state: GameState): UiState {
       .slice(-chronicleLines(state))
       .reverse()
       .map((c) => ({ t: mmss(c.at), text: c.text, kind: c.kind })),
+    calendar: calendar(state),
   };
 }
 

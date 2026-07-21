@@ -4,11 +4,18 @@
 
   // Live settlement identity from the game store: settler count + housing cap.
   $: pop = $game.population;
+  // The date is hidden until the Calendar tech is researched.
+  $: cal = $game.calendar;
 </script>
 
 <header>
   <div class="title">ARCANE DOMINION <span class="tag">· v0.1</span></div>
   <div class="who">
+    {#if cal.unlocked}
+      <span class="cal" title="Day {cal.day} of {cal.season}, Year {cal.year}">
+        {cal.season} · Day {cal.day} · Year {cal.year}
+      </span>
+    {/if}
     <span>{pop.total} settler{pop.total === 1 ? '' : 's'} · cap {pop.cap}</span>
     <ThemePicker />
     <button
@@ -22,6 +29,10 @@
 </header>
 
 <style>
+  .cal {
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
   .sysbtn {
     font-family: inherit;
     font-size: 11.5px;
