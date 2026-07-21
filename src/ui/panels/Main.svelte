@@ -129,7 +129,7 @@
   {:else if $activeTab === 'jobs'}
     <section>
       <h2>{$game.population.name}</h2>
-      <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade and eats food.</div>
+      <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
       <div class="jobscols">
         <div class="jobscol">
           <div class="popbar">

@@ -13,7 +13,7 @@ describe('newGame shape', () => {
     expect(s.run.resources.stone).toBe(0);
     expect(s.run.resources.mana).toBe(0);
     expect(s.run.resources.research).toBe(0);
-    expect(s.run.caps).toEqual({ wood: 50, food: 50, stone: 50 });
+    expect(s.run.caps).toEqual({ wood: 200, food: 200, stone: 200 });
     expect(s.run.population).toEqual({ total: 0, jobs: {} });
     expect(s.run.popCap).toBe(0);
     expect(s.run.buildings).toEqual({});
@@ -24,7 +24,7 @@ describe('newGame shape', () => {
   it('every resource id is present in a fresh ledger', () => {
     const r = freshResources();
     for (const id of RESOURCE_IDS) expect(typeof r[id]).toBe('number');
-    expect(freshCaps()).toEqual({ wood: 50, food: 50, stone: 50 });
+    expect(freshCaps()).toEqual({ wood: 200, food: 200, stone: 200 });
   });
 });
 
@@ -55,7 +55,7 @@ describe('normalize backfill', () => {
     };
     normalize(partial);
     expect(partial.settings).toBeDefined();
-    expect(partial.run.caps).toEqual({ wood: 50, food: 50, stone: 50 });
+    expect(partial.run.caps).toEqual({ wood: 200, food: 200, stone: 200 });
     expect(partial.run.population).toEqual({
       total: 0,
       jobs: Object.fromEntries(JOB_IDS.map((j) => [j, 0])),

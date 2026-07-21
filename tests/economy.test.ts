@@ -18,8 +18,8 @@ describe('gather actions', () => {
 
   it('respects the storage cap', () => {
     const s = newGame(1);
-    for (let i = 0; i < 60; i++) doGather(s, 'gather-wood');
-    expect(s.run.resources.wood).toBe(50); // clamped to the wood cap
+    for (let i = 0; i < 250; i++) doGather(s, 'gather-wood');
+    expect(s.run.resources.wood).toBe(200); // clamped to the 200 base wood cap
   });
 
   it('refuses an unknown action', () => {
@@ -77,7 +77,7 @@ describe('buildings', () => {
 });
 
 describe('jobs', () => {
-  it('assigning a woodcutter produces wood and applies food upkeep', () => {
+  it('assigning a woodcutter produces wood and consumes only base settler food', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
@@ -87,7 +87,7 @@ describe('jobs', () => {
 
     const rates = productionRates(s);
     expect(rates.wood).toBeCloseTo(0.5, 6); // 1 worker × 0.5/s
-    expect(rates.food).toBeCloseTo(-(0.1 + 0.05), 6); // job upkeep + base settler upkeep
+    expect(rates.food).toBeCloseTo(-0.05, 6); // base settler upkeep only — jobs no longer eat food
 
     const woodBefore = s.run.resources.wood;
     const foodBefore = s.run.resources.food;
@@ -154,13 +154,13 @@ describe('resource breakdown (hover math)', () => {
 describe('tech', () => {
   it('researching a tech spends research and unlocks it', () => {
     const s = newGame(1);
-    s.run.resources.research = 10;
-    expect(research(s, 'woodworking')).toBe(true); // cost 5
-    expect(s.run.tech).toContain('woodworking');
-    expect(s.run.resources.research).toBe(5);
+    s.run.resources.research = 20;
+    expect(research(s, 'stone-tools')).toBe(true); // cost 10 (doubled scale)
+    expect(s.run.tech).toContain('stone-tools');
+    expect(s.run.resources.research).toBe(10);
   });
 
-  it('woodworking boosts woodcutter output', () => {
+  it('stone-tools boosts gather output (+25%)', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
@@ -168,21 +168,22 @@ describe('tech', () => {
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
     expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
-    s.run.tech.push('woodworking');
-    expect(productionRates(s).wood).toBeCloseTo(0.75, 6); // ×1.5
+    s.run.tech.push('stone-tools');
+    expect(productionRates(s).wood).toBeCloseTo(0.625, 6); // ×1.25
   });
 
-  it('gates a tech on its prerequisites', () => {
+  it('gates Awakening behind Iron Working (magic arrives at the Iron tier)', () => {
     const s = newGame(1);
-    s.run.resources.research = 100;
-    expect(research(s, 'animation')).toBe(false); // needs awakening first
+    s.run.resources.research = 1000;
+    expect(research(s, 'awakening')).toBe(false); // needs iron-working first
+    s.run.tech.push('iron-working'); // stand in the Iron tier
     expect(research(s, 'awakening')).toBe(true);
-    expect(research(s, 'animation')).toBe(true);
+    expect(research(s, 'animation')).toBe(true); // animation follows awakening
   });
 
   it('cannot research without enough research on hand', () => {
     const s = newGame(1);
     s.run.resources.research = 2;
-    expect(research(s, 'woodworking')).toBe(false); // costs 5
+    expect(research(s, 'stone-tools')).toBe(false); // costs 10
   });
 });

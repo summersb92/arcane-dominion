@@ -5,7 +5,6 @@
   import Resources from './panels/Resources.svelte';
   import Chronicle from './panels/Chronicle.svelte';
   import Gather from './panels/Gather.svelte';
-  import Settlement from './panels/Settlement.svelte';
   import Main from './panels/Main.svelte';
   import System from './panels/System.svelte';
   import OfflinePanel from './components/OfflinePanel.svelte';
@@ -102,12 +101,11 @@
     ></div>
     <aside class="right">
       <Gather />
-      <Settlement />
       <Chronicle />
     </aside>
   </div>
   <div class="foot">
-    <span>Left = resources · center = build · right = gather, settlement &amp; Chronicle. Theme &amp; Settings in the header. Drag the edges to resize.</span>
+    <span>Left = resources · center = build · right = gather &amp; Chronicle. Theme &amp; Settings in the header. Drag the edges to resize.</span>
     <span>Magic base-builder · idle-first · no server</span>
   </div>
 </div>

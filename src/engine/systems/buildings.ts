@@ -68,6 +68,8 @@ export function build(state: GameState, id: BuildingId): boolean {
       for (const capId of ['wood', 'food', 'stone'] as MundaneResourceId[]) {
         state.run.caps[capId] += eff.amount;
       }
+    } else if (eff.kind === 'foodCap') {
+      state.run.caps.food += eff.amount;
     }
   }
 

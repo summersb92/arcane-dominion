@@ -18,18 +18,43 @@ import { effectiveCap } from './caps';
 
 const EPS = 1e-9;
 
-/** Tech-driven output multiplier for a job (Woodworking / Agriculture). */
-function jobEfficiency(state: GameState, jobId: string): number {
+/** The three GATHER jobs the tool-tier bonuses (Stone/Bronze/Iron) apply to. */
+const GATHER_JOBS = new Set(['woodcutter', 'forager', 'quarry-worker']);
+
+/** Global worker-output multiplier from buildings (Workshop/Forge jobOutputMult), applied
+ *  to every job. 1 = no bonus; each qualifying building adds its fraction × its count. */
+function globalJobMult(state: GameState): number {
   let m = 1;
-  if (jobId === 'woodcutter' && state.run.tech.includes('woodworking')) m *= TECH_BONUS.woodworking;
-  if (jobId === 'forager' && state.run.tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'jobOutputMult') m += count * eff.amount;
+    }
+  }
+  return m;
+}
+
+/** Tech-driven output multiplier for a job. The three TOOL TIERS (Stone Tools <
+ *  Bronze Working < Iron Working) stack on the gather jobs; Agriculture is a Farmer-only
+ *  crop bonus. The global Workshop/Forge output boost applies to every job. */
+function jobEfficiency(state: GameState, jobId: string): number {
+  const tech = state.run.tech;
+  let m = 1;
+  if (GATHER_JOBS.has(jobId)) {
+    if (tech.includes('stone-tools')) m *= TECH_BONUS.stoneTools;
+    if (tech.includes('bronze-working')) m *= TECH_BONUS.bronzeWorking;
+    if (tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
+  }
+  if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
+  m *= globalJobMult(state);
   return m;
 }
 
 interface Flows {
   /** Gross production per resource (jobs + constructs), before upkeep. */
   gross: Record<ResourceId, number>;
-  /** Food consumed per second (job upkeep + base per-settler upkeep). */
+  /** Food consumed per second (base per-settler upkeep only — jobs have no food cost). */
   foodUpkeep: number;
   /** Mana consumed per second by constructs. */
   manaUpkeep: number;
@@ -41,14 +66,15 @@ function flows(state: GameState): Flows {
   for (const id of RESOURCE_IDS) gross[id] = 0;
 
   const run = state.run;
-  let foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total;
+  // Food's ONLY consumer is the base per-settler upkeep — jobs no longer eat food.
+  const foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total;
   let manaUpkeep = 0;
 
   // Curiosity trickle: every settler passively yields a little Research (the tech
   // currency), starting with the first settler — so tech is reachable before Scholars.
   gross.research += POPULATION.researchPerSettler * run.population.total;
 
-  // Jobs: Σ workers × per-worker output × efficiency; each worker eats foodUpkeep.
+  // Jobs: Σ workers × per-worker output × efficiency. No food upkeep per worker.
   for (const job of JOBS) {
     const workers = run.population.jobs[job.id] ?? 0;
     if (workers <= 0) continue;
@@ -56,7 +82,6 @@ function flows(state: GameState): Flows {
     for (const [res, per] of Object.entries(job.produces)) {
       gross[res as ResourceId] += workers * (per as number) * eff;
     }
-    foodUpkeep += workers * job.foodUpkeep;
   }
 
   // Constructs: passive production + mana upkeep, scaled by building count. NO food, NO pop.
@@ -127,14 +152,10 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     }
   }
 
-  // Consumers: food is eaten by settlers (base) + each job; mana by constructs.
+  // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs.
   if (id === 'food') {
     if (run.population.total > 0) {
       consumers.push({ label: `Settler upkeep${times(run.population.total)}`, amount: -(POPULATION.baseFoodUpkeep * run.population.total) });
-    }
-    for (const job of JOBS) {
-      const workers = run.population.jobs[job.id] ?? 0;
-      if (workers > 0 && job.foodUpkeep > 0) consumers.push({ label: `${job.name}${times(workers)}`, amount: -(workers * job.foodUpkeep) });
     }
   }
   if (id === 'mana') {

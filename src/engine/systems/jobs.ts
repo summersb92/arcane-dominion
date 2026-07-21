@@ -83,7 +83,7 @@ export function removeSettler(state: GameState): boolean {
 export function jobsView(state: GameState): {
   total: number;
   idle: number;
-  jobs: { id: JobId; name: string; assigned: number; capacity: number; foodUpkeep: number }[];
+  jobs: { id: JobId; name: string; assigned: number; capacity: number }[];
 } {
   return {
     total: state.run.population.total,
@@ -93,7 +93,6 @@ export function jobsView(state: GameState): {
       name: j.name,
       assigned: state.run.population.jobs[j.id] ?? 0,
       capacity: jobCapacity(state, j.id),
-      foodUpkeep: j.foodUpkeep,
     })),
   };
 }

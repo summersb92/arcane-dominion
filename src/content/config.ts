@@ -11,11 +11,11 @@ export const STARTING = {
   stone: 0,
   mana: 0,
   research: 0,
-  /** BASE storage cap for each mundane material (raised by Storehouses). */
-  woodCap: 50,
-  foodCap: 50,
-  stoneCap: 50,
-  popCap: 0, // no housing yet — build a Hut to admit settlers
+  /** BASE storage cap for each mundane material (raised by Storehouses/Granary). */
+  woodCap: 200,
+  foodCap: 200,
+  stoneCap: 200,
+  popCap: 0, // no housing yet — build a House to admit settlers
 };
 
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
@@ -32,8 +32,15 @@ export const POPULATION = {
   starveIntervalSec: 12,
 };
 
-/** Efficiency multipliers granted by tech (systems/production.ts). */
+/** Efficiency multipliers granted by tech (systems/production.ts).
+ *  The three TOOL TIERS stack multiplicatively on the GATHER jobs
+ *  (Woodcutter / Farmer / Stonecutter): Stone Tools < Bronze Working < Iron Working.
+ *  Agriculture is a crop bonus that applies to the Farmer only. */
 export const TECH_BONUS = {
-  woodworking: 1.5, // Woodcutter output ×
-  agriculture: 1.5, // Forager output ×
+  /** Tool tiers — stack on all three gather jobs. */
+  stoneTools: 1.25, // +25% gather output
+  bronzeWorking: 1.35, // ×, stacks atop Stone Tools
+  ironWorking: 1.5, // ×, the biggest tool-tier bump
+  /** Crop tech — Farmer output only. */
+  agriculture: 1.5, // +50% Farmer food
 };

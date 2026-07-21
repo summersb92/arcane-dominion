@@ -73,7 +73,6 @@ export interface JobRowView {
   blurb: string;
   assigned: number;
   capacity: number;
-  foodUpkeep: number;
   produceText: string; // e.g. "🪵 +0.5/s"
   canAssign: boolean; // an idle settler exists AND a free slot
   canUnassign: boolean; // at least one worker to pull
@@ -246,7 +245,6 @@ export function toView(state: GameState): UiState {
     blurb: JOB_BY_ID[j.id].blurb,
     assigned: j.assigned,
     capacity: j.capacity,
-    foodUpkeep: j.foodUpkeep,
     produceText: jobProduceText(j.id),
     canAssign: idle > 0 && j.assigned < j.capacity,
     canUnassign: j.assigned > 0,
@@ -418,13 +416,12 @@ export function buildingTooltip(b: BuildingRowView): TooltipContent {
   };
 }
 
-/** Job row tooltip: output, food upkeep, capacity. */
+/** Job row tooltip: output + capacity. Jobs no longer consume food (only settlers do). */
 export function jobTooltip(j: JobRowView): TooltipContent {
   return {
     title: j.name,
     sections: [
       { label: 'Each', lines: [{ text: j.produceText, cls: 'ok' }] },
-      { label: 'Eats', lines: [{ text: `${RESOURCE_BY_ID.food.glyph} ${numStr(j.foodUpkeep)}/s`, cls: 'life' }] },
       { label: 'Slots', lines: [{ text: `${j.assigned} / ${j.capacity}` }] },
     ],
     blurb: j.blurb,

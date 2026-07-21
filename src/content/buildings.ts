@@ -22,6 +22,11 @@ export type BuildingId =
   | 'forager-hut'
   | 'quarry'
   | 'scholars-study'
+  | 'granary'
+  | 'library'
+  | 'mine'
+  | 'workshop'
+  | 'forge'
   | 'arcane-font'
   | 'animated-tools';
 
@@ -29,8 +34,10 @@ export type BuildingEffect =
   // IMMEDIATE (applied at build time, permanent):
   | { kind: 'popCap'; amount: number } // +N housing capacity
   | { kind: 'cap'; amount: number } // +N to EACH mundane storage cap
+  | { kind: 'foodCap'; amount: number } // +N to the FOOD storage cap only (Granary)
   // ONGOING (derived per tick from building count):
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
+  | { kind: 'jobOutputMult'; amount: number } // +fraction to EVERY worker's output (Workshop/Forge)
   | { kind: 'produce'; resource: ResourceId; perSec: number } // passive construct output
   | { kind: 'manaUpkeep'; perSec: number }; // mana drained per second
 
@@ -56,8 +63,8 @@ export interface BuildingDef {
 export const BUILDINGS: BuildingDef[] = [
   {
     id: 'hut',
-    name: 'Hut',
-    blurb: 'Simple shelter. Houses settlers (+2 population cap). Cost rises with each hut.',
+    name: 'House',
+    blurb: 'Simple shelter. Houses settlers (+2 population cap). Cost rises with each house.',
     cost: { wood: 15 },
     costGrowth: 1.5,
     effects: [{ kind: 'popCap', amount: 2 }],
@@ -80,8 +87,8 @@ export const BUILDINGS: BuildingDef[] = [
   },
   {
     id: 'forager-hut',
-    name: 'Forager Hut',
-    blurb: 'A gathering post. Opens +2 Forager job slots.',
+    name: 'Farm',
+    blurb: 'Tilled fields and pens. Opens +2 Farmer job slots.',
     cost: { wood: 20 },
     requiresBuilding: 'hut',
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 2 }],
@@ -89,7 +96,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'quarry',
     name: 'Quarry',
-    blurb: 'A worked stone pit. Opens +2 Quarry Worker job slots.',
+    blurb: 'A worked stone pit. Opens +2 Stonecutter job slots.',
     cost: { wood: 20, stone: 5 },
     requiresTech: 'masonry',
     effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 2 }],
@@ -101,6 +108,52 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 30, stone: 15 },
     requiresBuilding: 'forager-hut',
     effects: [{ kind: 'jobCapacity', job: 'scholar', slots: 2 }],
+  },
+  {
+    id: 'granary',
+    name: 'Granary',
+    blurb: 'Dry, sealed storage for grain. Raises the Food cap (+150).',
+    cost: { wood: 30, stone: 10 },
+    requiresTech: 'pottery',
+    effects: [{ kind: 'foodCap', amount: 150 }],
+  },
+  {
+    id: 'library',
+    name: 'Library',
+    blurb: 'Shelves of scrolls. Opens +2 Scholar job slots and yields a little research (+0.1/s).',
+    cost: { wood: 40, stone: 20 },
+    requiresTech: 'writing',
+    effects: [
+      { kind: 'jobCapacity', job: 'scholar', slots: 2 },
+      { kind: 'produce', resource: 'research', perSec: 0.1 },
+    ],
+  },
+  {
+    id: 'mine',
+    name: 'Mine',
+    blurb: 'A deep shaft for ore and rock. Opens +2 Stonecutter slots and yields stone (+0.2/s).',
+    cost: { wood: 40, stone: 20 },
+    requiresTech: 'mining',
+    effects: [
+      { kind: 'jobCapacity', job: 'quarry-worker', slots: 2 },
+      { kind: 'produce', resource: 'stone', perSec: 0.2 },
+    ],
+  },
+  {
+    id: 'workshop',
+    name: 'Workshop',
+    blurb: 'Carts, gears, and better technique. Boosts EVERY worker’s output (+10%).',
+    cost: { wood: 50, stone: 30 },
+    requiresTech: 'the-wheel',
+    effects: [{ kind: 'jobOutputMult', amount: 0.1 }],
+  },
+  {
+    id: 'forge',
+    name: 'Forge',
+    blurb: 'A blacksmith’s hearth. Iron fittings sharpen all labour (+15% worker output).',
+    cost: { wood: 50, stone: 40 },
+    requiresTech: 'iron-working',
+    effects: [{ kind: 'jobOutputMult', amount: 0.15 }],
   },
   {
     id: 'arcane-font',
