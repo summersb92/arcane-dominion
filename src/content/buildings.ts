@@ -28,6 +28,7 @@ export type BuildingId =
   | 'workshop'
   | 'forge'
   | 'amphitheater'
+  | 'sacred-grove'
   | 'arcane-font'
   | 'animated-tools';
 
@@ -55,6 +56,9 @@ export interface BuildingDef {
   effects: BuildingEffect[];
   /** Tech id that must be researched before this can be built. */
   requiresTech?: string;
+  /** Run flag that must be true before this can be built (e.g. 'magicDiscovered'). The magic
+   *  buildings are now discovery-gated by this flag rather than by a tech (see systems/magic.ts). */
+  requiresFlag?: string;
   /** Building id that must exist (count ≥ 1) before this is revealed — keeps the early
    *  board minimal (only the Hut at the very start; the rest unlock as you build). */
   requiresBuilding?: BuildingId;
@@ -149,13 +153,15 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'mine',
     name: 'Mine',
-    blurb: 'A deep shaft for ore and rock. +2 Miner slots, +0.2 stone/s, +20 storage.',
+    blurb: 'A deep shaft for ore and rock. +2 Miner slots, +0.2 stone/s, a trickle of Mana Crystals (+0.05/s), +20 storage.',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'mining',
     effects: [
       { kind: 'jobCapacity', job: 'miner', slots: 2 },
       { kind: 'produce', resource: 'stone', perSec: 0.2 },
+      // Proto-magic material from the deep rock. Reaching 20 held is one path to discovering magic.
+      { kind: 'produce', resource: 'manaCrystals', perSec: 0.05 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -191,11 +197,23 @@ export const BUILDINGS: BuildingDef[] = [
     ],
   },
   {
+    id: 'sacred-grove',
+    name: 'Sacred Grove',
+    blurb: 'A tended grove of ancient trees. +5 happiness, +20 storage. Its deep tending is one path to magic.',
+    cost: { wood: 60 },
+    costGrowth: 1.3,
+    requiresTech: 'naturalism',
+    effects: [
+      { kind: 'happiness', amount: 5 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
     id: 'arcane-font',
     name: 'Arcane Font',
     blurb: 'A wellspring of raw magic. Produces mana passively (+0.5/s).',
     cost: { stone: 40 },
-    requiresTech: 'awakening',
+    requiresFlag: 'magicDiscovered',
     construct: true,
     effects: [{ kind: 'produce', resource: 'mana', perSec: 0.5 }],
   },
@@ -204,7 +222,8 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Animated Tools',
     blurb: 'Enchanted axes that fell timber on their own — wood with NO settlers and NO food, only mana upkeep (0.1/s).',
     cost: { wood: 30, mana: 10 },
-    requiresTech: 'animation',
+    requiresFlag: 'magicDiscovered',
+    requiresBuilding: 'arcane-font',
     construct: true,
     effects: [
       { kind: 'produce', resource: 'wood', perSec: 0.5 },

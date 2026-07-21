@@ -7,15 +7,16 @@ import { RESOURCE_IDS } from '../src/content/resources';
 describe('newGame shape', () => {
   it('bootstraps a fresh settlement with the documented starting values', () => {
     const s = newGame(42);
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(4);
     expect(s.run.resources.food).toBe(20);
     expect(s.run.resources.wood).toBe(0);
     expect(s.run.resources.stone).toBe(0);
     expect(s.run.resources.furs).toBe(0);
+    expect(s.run.resources.manaCrystals).toBe(0);
     expect(s.run.resources.mana).toBe(0);
     expect(s.run.resources.research).toBe(0);
     expect(s.run.resources.culture).toBe(0);
-    expect(s.run.caps).toEqual({ wood: 200, food: 200, stone: 200, furs: 200 });
+    expect(s.run.caps).toEqual({ wood: 200, food: 200, stone: 200, furs: 200, manaCrystals: 200 });
     expect(s.run.population).toEqual({ total: 0, jobs: {} });
     expect(s.run.popCap).toBe(0);
     expect(s.run.buildings).toEqual({});
@@ -26,7 +27,7 @@ describe('newGame shape', () => {
   it('every resource id is present in a fresh ledger', () => {
     const r = freshResources();
     for (const id of RESOURCE_IDS) expect(typeof r[id]).toBe('number');
-    expect(freshCaps()).toEqual({ wood: 200, food: 200, stone: 200, furs: 200 });
+    expect(freshCaps()).toEqual({ wood: 200, food: 200, stone: 200, furs: 200, manaCrystals: 200 });
   });
 });
 
@@ -71,9 +72,11 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v1));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(1);
-    expect(res.state!.version).toBe(3);
+    expect(res.state!.version).toBe(4);
     expect(res.state!.run.resources.culture).toBe(0);
     expect(res.state!.run.resources.furs).toBe(0); // furs backfilled on the way up
+    expect(res.state!.run.resources.manaCrystals).toBe(0); // manaCrystals backfilled too
+    expect(res.state!.run.caps.manaCrystals).toBe(200);
   });
 
   it('migrates a v2 save (no furs) up to v3, backfilling furs → 0 and its cap → 200', () => {
@@ -104,10 +107,44 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v2));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(2);
-    expect(res.state!.version).toBe(3);
+    expect(res.state!.version).toBe(4);
     expect(res.state!.run.resources.furs).toBe(0);
     expect(res.state!.run.resources.culture).toBe(3); // preserved
     expect(res.state!.run.caps.furs).toBe(200);
+  });
+
+  it('migrates a v3 save (no manaCrystals) up to v4, backfilling manaCrystals → 0 and its cap → 200', () => {
+    // A v3 envelope that has furs but predates the mana crystals material.
+    const v3: any = {
+      magic: SAVE_MAGIC,
+      version: 3,
+      state: {
+        version: 3,
+        seed: 1,
+        rngState: 1,
+        run: {
+          resources: { wood: 5, food: 20, stone: 0, furs: 2, mana: 0, research: 0, culture: 3 }, // no `manaCrystals`
+          caps: { wood: 200, food: 200, stone: 200, furs: 200 }, // no `manaCrystals` cap
+          population: { total: 0, jobs: {} },
+          popCap: 0,
+          buildings: {},
+          tech: [],
+          growthProgress: 0,
+          flags: {},
+          chronicle: [],
+        },
+        settings: { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono' },
+        playtime: 0,
+        lastSaved: Date.now(),
+      },
+    };
+    const res = safeLoad(JSON.stringify(v3));
+    expect(res.ok).toBe(true);
+    expect(res.migratedFrom).toBe(3);
+    expect(res.state!.version).toBe(4);
+    expect(res.state!.run.resources.manaCrystals).toBe(0);
+    expect(res.state!.run.resources.furs).toBe(2); // preserved
+    expect(res.state!.run.caps.manaCrystals).toBe(200);
   });
 });
 
@@ -124,7 +161,7 @@ describe('normalize backfill', () => {
     };
     normalize(partial);
     expect(partial.settings).toBeDefined();
-    expect(partial.run.caps).toEqual({ wood: 200, food: 200, stone: 200, furs: 200 });
+    expect(partial.run.caps).toEqual({ wood: 200, food: 200, stone: 200, furs: 200, manaCrystals: 200 });
     expect(partial.run.population).toEqual({
       total: 0,
       jobs: Object.fromEntries(JOB_IDS.map((j) => [j, 0])),

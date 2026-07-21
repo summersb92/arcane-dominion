@@ -5,6 +5,7 @@
 import type { GameState } from './state';
 import { runProduction } from './systems/production';
 import { runPopulation } from './systems/population';
+import { checkMagicDiscovery } from './systems/magic';
 
 export const TICK = 0.1; // seconds per fixed step
 export const MAX_CATCHUP_STEPS = 100_000; // bounds a single advance()
@@ -15,11 +16,13 @@ export const MAX_CATCHUP_STEPS = 100_000; // bounds a single advance()
  *
  * Order matters: production runs first (applies job/construct output, upkeep, cap
  * clamps, and sets the starving flag), THEN population reads that fresh food stock to
- * decide growth vs. starvation.
+ * decide growth vs. starvation. Magic discovery runs last, reading the freshly-updated
+ * resources/buildings to see whether any of its three paths tripped this tick.
  */
 export function step(state: GameState, dt: number): void {
   runProduction(state, dt);
   runPopulation(state, dt);
+  checkMagicDiscovery(state);
   state.playtime += dt;
 }
 

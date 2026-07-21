@@ -3,8 +3,9 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 3. `migrate` brings an older save's shape up to current (v1 → v2 added
-// the `culture` resource; v2 → v3 added the `furs` luxury resource); `normalize` then backfills
+// SAVE_VERSION is 4. `migrate` brings an older save's shape up to current (v1 → v2 added
+// the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
+// `manaCrystals` mined resource); `normalize` then backfills
 // every run.* container the read models touch so a partial/foreign save never dereferences
 // undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
 // out-of-range) rather than loading a broken run.
@@ -99,6 +100,9 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v2 → v3: added the `furs` luxury resource (held → +happiness). It defaults to 0, and its
  *            storage cap defaults to the base 200; normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS
  *            backfills both, so this rung only documents the bump.
+ *   v3 → v4: added the `manaCrystals` mined resource (a path to discovering magic). It defaults
+ *            to 0, and its storage cap defaults to the base 200; normalize's RESOURCE_IDS +
+ *            MUNDANE_RESOURCE_IDS backfills both, so this rung only documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -112,6 +116,11 @@ function migrate(state: GameState, fromVersion: number): void {
     // furs backfilled to 0 (RESOURCE_IDS loop) and its cap to 200 (MUNDANE_RESOURCE_IDS loop)
     // by normalize. Nothing else to rewrite.
     if (hasResources) state.run.resources.furs ??= 0;
+  }
+  if (fromVersion < 4) {
+    // manaCrystals backfilled to 0 (RESOURCE_IDS loop) and its cap to 200 (MUNDANE_RESOURCE_IDS
+    // loop) by normalize. Nothing else to rewrite.
+    if (hasResources) state.run.resources.manaCrystals ??= 0;
   }
 }
 

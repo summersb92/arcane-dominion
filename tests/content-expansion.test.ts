@@ -89,7 +89,7 @@ describe('per-job food upkeep removed', () => {
   });
 });
 
-describe('tech tree — doubled costs and Stone→Bronze→Iron→Magic DAG', () => {
+describe('tech tree — doubled costs and Stone→Bronze→Iron DAG (magic is discovery-driven, not a tech)', () => {
   it('doubles the retained tech costs', () => {
     expect(TECH_BY_ID.agriculture.cost).toBe(20); // was 10
     expect(TECH_BY_ID.masonry.cost).toBe(30); // was 15
@@ -103,18 +103,21 @@ describe('tech tree — doubled costs and Stone→Bronze→Iron→Magic DAG', ()
     expect(available).toContain('stone-hoe');
     expect(available).toContain('stone-pick');
     expect(available).toContain('pottery');
-    // Iron/magic tier is NOT available yet.
-    expect(available).not.toContain('awakening');
+    // Iron tier is NOT available yet.
+    expect(available).not.toContain('iron-working');
   });
 
-  it('forms a clean prereq chain up to the magic tier', () => {
+  it('forms a clean prereq chain up to Iron Working, with Naturalism hanging off Agriculture', () => {
     // Agriculture/Masonry now hang off the per-tool stone techs.
     expect(TECH_BY_ID.agriculture.requires).toContain('stone-hoe');
     expect(TECH_BY_ID.masonry.requires).toContain('stone-pick');
     expect(TECH_BY_ID['bronze-working'].requires).toContain('mining');
     expect(TECH_BY_ID['iron-working'].requires).toContain('bronze-working');
-    expect(TECH_BY_ID.awakening.requires).toContain('iron-working');
-    expect(TECH_BY_ID.animation.requires).toContain('awakening');
+    // Naturalism (the one magic-feeding tech, opening the Sacred Grove) follows Agriculture.
+    expect(TECH_BY_ID.naturalism.requires).toContain('agriculture');
+    // The retired magic-tier techs are gone entirely.
+    expect(TECH_BY_ID['awakening' as never]).toBeUndefined();
+    expect(TECH_BY_ID['animation' as never]).toBeUndefined();
   });
 });
 

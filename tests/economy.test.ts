@@ -273,13 +273,12 @@ describe('tech', () => {
     expect(productionRates(s).wood).toBeCloseTo(0.625, 6); // ×1.25
   });
 
-  it('gates Awakening behind Iron Working (magic arrives at the Iron tier)', () => {
+  it('gates Naturalism behind Agriculture (the one magic-feeding tech)', () => {
     const s = newGame(1);
     s.run.resources.research = 1000;
-    expect(research(s, 'awakening')).toBe(false); // needs iron-working first
-    s.run.tech.push('iron-working'); // stand in the Iron tier
-    expect(research(s, 'awakening')).toBe(true);
-    expect(research(s, 'animation')).toBe(true); // animation follows awakening
+    expect(research(s, 'naturalism')).toBe(false); // needs agriculture first
+    s.run.tech.push('agriculture'); // its prerequisite
+    expect(research(s, 'naturalism')).toBe(true);
   });
 
   it('cannot research without enough research on hand', () => {

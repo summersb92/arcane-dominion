@@ -191,6 +191,7 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.wood += f.gross.wood * dt;
   run.resources.stone += f.gross.stone * dt;
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
+  run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
   run.resources.culture += f.gross.culture * dt; // uncapped, accumulates
 
@@ -210,8 +211,9 @@ export function runProduction(state: GameState, dt: number): void {
   }
 
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
-  // materials + furs, plus RESEARCH (now capped by science buildings). Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'furs', 'research'] as ResourceId[]) {
+  // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
+  // Mana/culture are uncapped.
+  for (const id of ['wood', 'food', 'stone', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

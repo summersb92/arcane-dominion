@@ -4,6 +4,7 @@ import { simulate } from '../src/engine/tick';
 import { build } from '../src/engine/systems/buildings';
 import { assignJob } from '../src/engine/systems/jobs';
 import { doGather } from '../src/engine/systems/actions';
+import { resourceBreakdown } from '../src/engine/systems/production';
 
 describe('population growth', () => {
   it('grows toward popCap under a food surplus', () => {
@@ -45,18 +46,21 @@ describe('population growth', () => {
 });
 
 describe('the magic hook — automating mundane labour', () => {
-  it('animated-tools produce wood with NO population and NO food, only mana upkeep', () => {
+  it('animated-tools produce wood with NO population and NO food, drawing mana upkeep (built atop a Font)', () => {
     const s = newGame(1);
-    // Open the magic tier and stock the construct's cost (leaving mana to burn as upkeep).
-    s.run.tech.push('awakening', 'animation');
+    // Magic is discovered (flag set) and the construct costs are stocked. Animated Tools now
+    // require an Arcane Font to already exist, so build that first (it costs only stone).
+    s.run.flags.magicDiscovered = true;
+    s.run.resources.stone = 40; // for the Arcane Font (prereq construct)
     s.run.resources.wood = 30;
     s.run.resources.mana = 20;
     // No settlers at all — this is pure sorcery.
     expect(s.run.population.total).toBe(0);
 
+    expect(build(s, 'arcane-font')).toBe(true); // the Font must exist before Animated Tools
     expect(build(s, 'animated-tools')).toBe(true);
     expect(s.run.resources.wood).toBe(0); // spent on the build
-    expect(s.run.resources.mana).toBe(10); // spent 10 of 20 on the build
+    expect(s.run.resources.mana).toBe(10); // spent 10 of 20 on the build (the Font costs only stone)
 
     const foodBefore = s.run.resources.food;
     simulate(s, 10);
@@ -64,12 +68,14 @@ describe('the magic hook — automating mundane labour', () => {
     expect(s.run.resources.wood).toBeGreaterThan(0); // wood produced with no woodcutters
     expect(s.run.population.total).toBe(0); // no settlers appeared or were needed
     expect(s.run.resources.food).toBe(foodBefore); // no food consumed at all
-    expect(s.run.resources.mana).toBeLessThan(10); // only mana was spent as upkeep
+    // Animated Tools draw a mana upkeep (the Font's +0.5/s nets the pool positive overall).
+    const manaBd = resourceBreakdown(s, 'mana');
+    expect(manaBd.consumers.some((c) => c.label.startsWith('Animated Tools'))).toBe(true);
   });
 
-  it('an arcane font produces mana passively', () => {
+  it('an arcane font produces mana passively (once magic is discovered)', () => {
     const s = newGame(1);
-    s.run.tech.push('awakening');
+    s.run.flags.magicDiscovered = true;
     s.run.resources.stone = 40;
     expect(build(s, 'arcane-font')).toBe(true);
     const before = s.run.resources.mana;

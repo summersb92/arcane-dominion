@@ -29,6 +29,8 @@ export function buildingCost(state: GameState, id: BuildingId): Partial<Record<R
  *  start; Storehouse/workplaces reveal once a Hut exists, the Study once foraging is up. */
 export function isUnlocked(state: GameState, def: BuildingDef): boolean {
   if (def.requiresTech && !state.run.tech.includes(def.requiresTech as never)) return false;
+  // Discovery-gated buildings (the magic constructs) require a run flag rather than a tech.
+  if (def.requiresFlag && state.run.flags[def.requiresFlag] !== true) return false;
   if (def.requiresBuilding && (state.run.buildings[def.requiresBuilding] ?? 0) < 1) return false;
   return true;
 }

@@ -48,12 +48,6 @@ export function research(state: GameState, id: TechId): boolean {
   }
   state.run.tech.push(id);
   logEvent(state, `Researched ${def.name}.`);
-
-  // Awakening opens the magic tier — a headline beat.
-  if (id === 'awakening' && state.run.flags.awakened !== true) {
-    state.run.flags.awakened = true;
-    logEvent(state, 'The settlement awakens to magic. Mana begins to flow.', 'ev');
-  }
   return true;
 }
 

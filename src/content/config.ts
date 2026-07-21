@@ -10,14 +10,16 @@ export const STARTING = {
   food: 20,
   stone: 0,
   furs: 0,
+  manaCrystals: 0,
   mana: 0,
   research: 0,
   culture: 0,
-  /** BASE storage cap for each mundane material + furs (raised by Storehouses/Granary). */
+  /** BASE storage cap for each mundane material + furs + mana crystals (raised by Storehouses/Granary). */
   woodCap: 200,
   foodCap: 200,
   stoneCap: 200,
   fursCap: 200,
+  manaCrystalsCap: 200,
   /** BASE research cap. Research is no longer uncapped — this small base holds the early
    *  Stone-Age techs; pricier techs require science buildings (Scholar's Study / Library,
    *  which add `researchCap` effects). See systems/caps.ts effectiveCap. */

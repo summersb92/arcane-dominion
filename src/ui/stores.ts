@@ -181,6 +181,7 @@ function resToken(id: ResourceId): string {
     case 'stone':
       return 'dim';
     case 'mana':
+    case 'manaCrystals':
       return 'mana';
     case 'research':
       return 'insight';
@@ -225,7 +226,11 @@ export function toView(state: GameState): UiState {
     const rate = atCap ? 0 : rates[def.id];
     let show = true;
     if (def.id === 'mana') {
-      show = run.tech.includes('awakening') || amount > EPS || Math.abs(rate) > EPS;
+      show = run.flags.magicDiscovered === true || amount > EPS || Math.abs(rate) > EPS;
+    } else if (def.id === 'manaCrystals') {
+      // Mined proto-magic material — revealed only once discovered (held or being produced).
+      // A Mine is what first yields it.
+      show = amount > EPS || rates.manaCrystals > EPS;
     } else if (def.id === 'research') {
       show =
         amount > EPS || rates.research > EPS || jobCapacity(state, 'scholar') > 0 || run.tech.length > 0;

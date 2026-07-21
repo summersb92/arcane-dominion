@@ -3,9 +3,11 @@
 // human-readable `unlocks` list; the ACTUAL gating lives on the things gated
 // (BuildingDef.requiresTech, and the efficiency techs read in systems/production.ts).
 //
-// The tree is a Civilization-inspired DAG progressing Stone → Bronze → Iron, with the
-// MAGIC tier gated at the Iron tier: Awakening (opens Mana + the Arcane Font) now sits
-// AFTER Iron Working, and Animation (the Animated Tools construct) follows Awakening.
+// The tree is a Civilization-inspired DAG progressing Stone → Bronze → Iron. Iron Working is
+// the TOP of the tools tree; MAGIC is no longer a tech. Magic is DISCOVERY-driven (see
+// systems/magic.ts): any of three independent paths — Mana Crystals from the mines, a Sacred
+// Grove (unlocked by the Naturalism tech), or enough Culture — sets the `magicDiscovered` flag
+// that opens the Arcane Font + Animated Tools. Naturalism is the one tech that feeds a path.
 // The STONE tools are split into three PER-TOOL techs (Stone Axe / Hoe / Pick), each
 // boosting only its own gather job; the global tool tiers — Bronze Working < Iron Working
 // — stack on all three gather jobs atop them (TECH_BONUS + jobEfficiency, systems/production.ts).
@@ -24,6 +26,7 @@ export type TechId =
   | 'stone-pick'
   | 'pottery'
   | 'agriculture'
+  | 'naturalism'
   | 'masonry'
   | 'writing'
   | 'calendar'
@@ -33,10 +36,7 @@ export type TechId =
   | 'the-wheel'
   | 'bronze-working'
   // Iron Age
-  | 'iron-working'
-  // Magic tier (gated at Iron)
-  | 'awakening'
-  | 'animation';
+  | 'iron-working';
 
 export interface TechDef {
   id: TechId;
@@ -95,6 +95,14 @@ export const TECHS: TechDef[] = [
     cost: 20,
     requires: ['stone-hoe'],
     unlocks: ['+50% Farmer output'],
+  },
+  {
+    id: 'naturalism',
+    name: 'Naturalism',
+    blurb: 'Read the living land and tend it as one. Unlocks the Sacred Grove — a haven whose deep tending is one path to magic.',
+    cost: 30,
+    requires: ['agriculture'],
+    unlocks: ['Sacred Grove (building)'],
   },
   {
     id: 'masonry',
@@ -163,24 +171,6 @@ export const TECHS: TechDef[] = [
     cost: 100,
     requires: ['bronze-working'],
     unlocks: ['+50% Woodcutter / Farmer / Stonecutter output', 'Forge (building)'],
-  },
-
-  // ---- MAGIC TIER (gated at Iron) ----
-  {
-    id: 'awakening',
-    name: 'Awakening',
-    blurb: 'With iron mastered, the settlement first touches magic. Unlocks Mana and the Arcane Font.',
-    cost: 130,
-    requires: ['iron-working'],
-    unlocks: ['Mana (resource)', 'Arcane Font (building)'],
-  },
-  {
-    id: 'animation',
-    name: 'Animation',
-    blurb: 'Bind spirits into tools. Unlocks Animated Tools — labour without settlers.',
-    cost: 160,
-    requires: ['awakening'],
-    unlocks: ['Animated Tools (construct)'],
   },
 ];
 

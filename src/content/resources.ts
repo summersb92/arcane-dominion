@@ -5,13 +5,13 @@
 //
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
-export type ResourceId = 'wood' | 'food' | 'stone' | 'furs' | 'mana' | 'research' | 'culture';
+export type ResourceId = 'wood' | 'food' | 'stone' | 'furs' | 'manaCrystals' | 'mana' | 'research' | 'culture';
 
-/** The storage-capped materials held in RunState.caps: the three mundane materials plus
- *  the FURS luxury good (all capped like one another, base 200, raised by the same `cap`
- *  building effect). Mana/culture are uncapped; research is capped by science buildings
- *  (a derived cap, NOT stored in RunState.caps). */
-export type MundaneResourceId = 'wood' | 'food' | 'stone' | 'furs';
+/** The storage-capped materials held in RunState.caps: the three mundane materials, the FURS
+ *  luxury good, and MANA CRYSTALS (the mined proto-magic material) — all capped like one another,
+ *  base 200, raised by the same `cap` building effect. Mana/culture are uncapped; research is
+ *  capped by science buildings (a derived cap, NOT stored in RunState.caps). */
+export type MundaneResourceId = 'wood' | 'food' | 'stone' | 'furs' | 'manaCrystals';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -27,6 +27,10 @@ export const RESOURCES: ResourceDef[] = [
   // Furs — a luxury good hunters bring in. Capped like the mundane materials and listed
   // with the main resources (tier 'mundane' groups it there, not under Magic).
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane' },
+  // Mana Crystals — a proto-magic material the Mines yield as a slow trickle. Capped like the
+  // mundane materials (base 200, raised by Storehouses) so it rides the existing cap machinery.
+  // Reaching a threshold is one of the three paths that discovers magic (systems/magic.ts).
+  { id: 'manaCrystals', label: 'Mana Crystals', glyph: '💎', tier: 'mundane' },
   { id: 'research', label: 'Research', glyph: '📜', tier: 'knowledge' },
   { id: 'culture', label: 'Culture', glyph: '🎭', tier: 'knowledge' },
   { id: 'mana', label: 'Mana', glyph: '✦', tier: 'magic' },
@@ -36,7 +40,7 @@ export const RESOURCES: ResourceDef[] = [
 export const RESOURCE_IDS: ResourceId[] = RESOURCES.map((r) => r.id);
 
 /** The capped subset — the only ids present in RunState.caps (mundane materials + furs). */
-export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = ['wood', 'food', 'stone', 'furs'];
+export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = ['wood', 'food', 'stone', 'furs', 'manaCrystals'];
 
 export const RESOURCE_BY_ID: Record<ResourceId, ResourceDef> = Object.fromEntries(
   RESOURCES.map((r) => [r.id, r]),
