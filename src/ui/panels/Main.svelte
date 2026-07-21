@@ -51,9 +51,12 @@
   // Jobs open only once a workplace grants capacity.
   $: openJobs = $game.jobs.filter((j) => j.capacity > 0);
 
-  // Research: show the reachable frontier (researched or prerequisites met); far-locked
-  // nodes stay hidden until their prerequisite lands (keeps the early tree clean).
-  $: visibleTech = $game.tech.filter((t) => t.researched || t.available);
+  // Research: by default show only what you can research NOW (prereqs met, unresearched);
+  // far-locked nodes stay hidden until their prerequisite lands, and researched ones are
+  // hidden behind a toggle (default off).
+  let showResearched = false;
+  $: researchedCount = $game.tech.filter((t) => t.researched).length;
+  $: visibleTech = $game.tech.filter((t) => t.available || (showResearched && t.researched));
 
   $: pop = $game.population;
 </script>
@@ -125,7 +128,7 @@
     </section>
   {:else if $activeTab === 'jobs'}
     <section>
-      <h2>Jobs</h2>
+      <h2>{$game.population.name}</h2>
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade and eats food.</div>
       <div class="jobscols">
         <div class="jobscol">
@@ -184,10 +187,24 @@
     </section>
   {:else if $activeTab === 'research'}
     <section>
-      <h2>Research</h2>
-      <div class="sub">Spend research (produced by Scholars) to unlock efficiency, new work, and magic.</div>
+      <div class="rhead">
+        <h2>Research</h2>
+        {#if researchedCount > 0}
+          <button
+            class="toggle"
+            class:on={showResearched}
+            aria-pressed={showResearched}
+            on:click={() => (showResearched = !showResearched)}
+          >{showResearched ? 'Hide' : 'Show'} researched ({researchedCount})</button>
+        {/if}
+      </div>
+      <div class="sub">Spend research to unlock efficiency, new work, and magic. Only what you can research now is shown.</div>
       {#if visibleTech.length === 0}
-        <div class="empty">No research available yet.</div>
+        <div class="empty">
+          {researchedCount > 0 && !showResearched
+            ? 'Nothing new to research right now.'
+            : 'No research available yet.'}
+        </div>
       {:else}
         <div class="tgrid">
           {#each visibleTech as t (t.id)}
@@ -224,6 +241,34 @@
     color: var(--faint);
     font-size: 12.5px;
     padding: 8px 0;
+  }
+  .rhead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .toggle {
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--dim);
+    background: var(--hover);
+    border: 1px solid var(--edge);
+    border-radius: 5px;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  .toggle:hover {
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+  .toggle.on {
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+  .toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
   .bcard {
     cursor: help;

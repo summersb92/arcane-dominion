@@ -53,6 +53,19 @@ export interface PopulationView {
   cap: number;
   foodBalance: number; // net food /s
   starving: boolean;
+  name: string; // the settlement's name for its size — grows Camp → Small Village → … → City
+}
+
+/** The settlement's evolving name by population size — labels the settlement tab and its
+ *  heading, and grows as the population does. */
+function settlementName(pop: number): string {
+  if (pop <= 0) return 'Camp';
+  if (pop < 5) return 'Small Village';
+  if (pop < 10) return 'Village';
+  if (pop < 20) return 'Town';
+  if (pop < 40) return 'Large Town';
+  if (pop < 80) return 'City';
+  return 'Metropolis';
 }
 export interface JobRowView {
   id: JobId;
@@ -304,6 +317,7 @@ export function toView(state: GameState): UiState {
       cap: run.popCap,
       foodBalance: foodBalance(state),
       starving: run.flags.starving === true,
+      name: settlementName(run.population.total),
     },
     jobs,
     buildings,
@@ -312,7 +326,8 @@ export function toView(state: GameState): UiState {
     tabs: [
       // Gather moved to the right rail (3 buttons); Build is the main view.
       { id: 'build', label: 'Build', visible: true, locked: false },
-      { id: 'jobs', label: 'Jobs', visible: true, locked: false },
+      // The settlement tab is named for its size and grows with the population.
+      { id: 'jobs', label: settlementName(run.population.total), visible: true, locked: false },
       { id: 'research', label: 'Research', visible: true, locked: false },
     ],
     chronicle: run.chronicle
