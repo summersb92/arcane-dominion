@@ -5,6 +5,7 @@ import { doGather, actionsView } from '../src/engine/systems/actions';
 import { growthStatus } from '../src/engine/systems/population';
 import { calendar } from '../src/engine/systems/calendar';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
+import { BUILDING_BY_ID } from '../src/content/buildings';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
 import { productionRates, resourceBreakdown } from '../src/engine/systems/production';
@@ -118,6 +119,25 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
     expect(unassignJob(s, 'woodcutter', 1)).toBe(1);
     expect(s.run.population.jobs.woodcutter).toBe(1);
+  });
+});
+
+describe('buildings: storage bump + escalating cost', () => {
+  it('a workplace adds a little storage cap AND costs more each copy', () => {
+    const s = newGame(1);
+    s.run.buildings.hut = 1; // prereq for the workplace
+    s.run.resources.wood = 200;
+    const capBefore = s.run.caps.wood;
+    const costBefore = buildingCost(s, 'woodcutters-lodge').wood as number;
+    expect(build(s, 'woodcutters-lodge')).toBe(true);
+    expect(s.run.caps.wood).toBe(capBefore + 20); // +20 storage on top of the job slots
+    const costAfter = buildingCost(s, 'woodcutters-lodge').wood as number;
+    expect(costAfter).toBeGreaterThan(costBefore); // costGrowth escalates per copy
+  });
+
+  it('magic constructs are special — flat cost, no escalation', () => {
+    expect(BUILDING_BY_ID['arcane-font'].costGrowth).toBeUndefined();
+    expect(BUILDING_BY_ID['animated-tools'].costGrowth).toBeUndefined();
   });
 });
 

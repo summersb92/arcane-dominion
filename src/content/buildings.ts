@@ -46,7 +46,8 @@ export interface BuildingDef {
   name: string;
   blurb: string;
   cost: Partial<Record<ResourceId, number>>;
-  /** Per-existing-count cost multiplier (default 1 = flat). Only Hut escalates. */
+  /** Per-existing-count cost multiplier (default 1 = flat). Every normal building
+   *  escalates (costs more per copy); only the "special" magic constructs stay flat. */
   costGrowth?: number;
   effects: BuildingEffect[];
   /** Tech id that must be researched before this can be built. */
@@ -60,100 +61,117 @@ export interface BuildingDef {
   construct?: boolean;
 }
 
+// Small storage-cap bump most structures add on TOP of their main effect (a settlement
+// stores a little more with every building it raises). Dedicated storage (Storehouse/
+// Granary) and the magic constructs are excluded.
+const STRUCT_CAP = 20;
+
 export const BUILDINGS: BuildingDef[] = [
   {
     id: 'hut',
     name: 'House',
-    blurb: 'Simple shelter. Houses settlers (+2 population cap). Cost rises with each house.',
+    blurb: 'Simple shelter. +2 population cap, +20 storage. Cost rises with each house.',
     cost: { wood: 15 },
     costGrowth: 1.5,
-    effects: [{ kind: 'popCap', amount: 2 }],
+    effects: [{ kind: 'popCap', amount: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'storehouse',
     name: 'Storehouse',
-    blurb: 'Raises storage for every mundane material (+50 to each cap).',
+    blurb: 'Raises storage for every mundane material (+50 to each cap). Cost rises with each.',
     cost: { wood: 20, stone: 10 },
+    costGrowth: 1.5,
     requiresBuilding: 'hut',
     effects: [{ kind: 'cap', amount: 50 }],
   },
   {
     id: 'woodcutters-lodge',
     name: "Woodcutter's Lodge",
-    blurb: 'A base for fellers. Opens +2 Woodcutter job slots.',
+    blurb: 'A base for fellers. +2 Woodcutter job slots, +20 storage.',
     cost: { wood: 25 },
+    costGrowth: 1.3,
     requiresBuilding: 'hut',
-    effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 2 }],
+    effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'forager-hut',
     name: 'Farm',
-    blurb: 'Tilled fields and pens. Opens +2 Farmer job slots.',
+    blurb: 'Tilled fields and pens. +2 Farmer job slots, +20 storage.',
     cost: { wood: 20 },
+    costGrowth: 1.3,
     requiresBuilding: 'hut',
-    effects: [{ kind: 'jobCapacity', job: 'forager', slots: 2 }],
+    effects: [{ kind: 'jobCapacity', job: 'forager', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'quarry',
     name: 'Quarry',
-    blurb: 'A worked stone pit. Opens +2 Stonecutter job slots.',
+    blurb: 'A worked stone pit. +2 Stonecutter job slots, +20 storage.',
     cost: { wood: 20, stone: 5 },
+    costGrowth: 1.3,
     requiresTech: 'masonry',
-    effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 2 }],
+    effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'scholars-study',
     name: "Scholar's Study",
-    blurb: 'A place of learning. Opens +2 Scholar job slots (produce research).',
+    blurb: 'A place of learning. +2 Scholar job slots (research), +20 storage.',
     cost: { wood: 30, stone: 15 },
+    costGrowth: 1.3,
     requiresBuilding: 'forager-hut',
-    effects: [{ kind: 'jobCapacity', job: 'scholar', slots: 2 }],
+    effects: [{ kind: 'jobCapacity', job: 'scholar', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'granary',
     name: 'Granary',
-    blurb: 'Dry, sealed storage for grain. Raises the Food cap (+150).',
+    blurb: 'Dry, sealed storage for grain. Raises the Food cap (+150). Cost rises with each.',
     cost: { wood: 30, stone: 10 },
+    costGrowth: 1.5,
     requiresTech: 'pottery',
     effects: [{ kind: 'foodCap', amount: 150 }],
   },
   {
     id: 'library',
     name: 'Library',
-    blurb: 'Shelves of scrolls. Opens +2 Scholar job slots and yields a little research (+0.1/s).',
+    blurb: 'Shelves of scrolls. +2 Scholar slots, +0.1 research/s, +20 storage.',
     cost: { wood: 40, stone: 20 },
+    costGrowth: 1.3,
     requiresTech: 'writing',
     effects: [
       { kind: 'jobCapacity', job: 'scholar', slots: 2 },
       { kind: 'produce', resource: 'research', perSec: 0.1 },
+      { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
   {
     id: 'mine',
     name: 'Mine',
-    blurb: 'A deep shaft for ore and rock. Opens +2 Stonecutter slots and yields stone (+0.2/s).',
+    blurb: 'A deep shaft for ore and rock. +2 Stonecutter slots, +0.2 stone/s, +20 storage.',
     cost: { wood: 40, stone: 20 },
+    costGrowth: 1.3,
     requiresTech: 'mining',
     effects: [
       { kind: 'jobCapacity', job: 'quarry-worker', slots: 2 },
       { kind: 'produce', resource: 'stone', perSec: 0.2 },
+      { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
   {
     id: 'workshop',
     name: 'Workshop',
-    blurb: 'Carts, gears, and better technique. Boosts EVERY worker’s output (+10%).',
+    blurb: 'Carts, gears, and better technique. +10% to EVERY worker’s output, +20 storage.',
     cost: { wood: 50, stone: 30 },
+    costGrowth: 1.3,
     requiresTech: 'the-wheel',
-    effects: [{ kind: 'jobOutputMult', amount: 0.1 }],
+    effects: [{ kind: 'jobOutputMult', amount: 0.1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'forge',
     name: 'Forge',
-    blurb: 'A blacksmith’s hearth. Iron fittings sharpen all labour (+15% worker output).',
+    blurb: 'A blacksmith’s hearth. +15% worker output, +20 storage.',
     cost: { wood: 50, stone: 40 },
+    costGrowth: 1.3,
     requiresTech: 'iron-working',
-    effects: [{ kind: 'jobOutputMult', amount: 0.15 }],
+    effects: [{ kind: 'jobOutputMult', amount: 0.15 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'arcane-font',
