@@ -138,7 +138,7 @@
             >
               <div class="jinfo">
                 <span class="nm">{j.name}</span>
-                <span class="jmeta">{j.produceText} · eats 🍞 Food {j.foodUpkeep}/s</span>
+                <span class="jmeta">{j.produceText} · eats Food {j.foodUpkeep}/s</span>
               </div>
               <div class="jctl">
                 <button

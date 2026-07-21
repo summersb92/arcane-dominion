@@ -15,7 +15,7 @@
   <div class="gbtns">
     {#each buttons as a (a.id)}
       <button class="gbtn" disabled={!a.available} on:click={() => doGather(a.id)}>
-        <span class="g">{a.glyph}</span><span class="l">{a.resLabel}</span>
+        <span class="l">{a.resLabel}</span>
       </button>
     {/each}
   </div>
@@ -59,9 +59,6 @@
   .gbtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-  .gbtn .g {
-    font-size: 16px;
   }
   .gbtn .l {
     font-weight: 600;

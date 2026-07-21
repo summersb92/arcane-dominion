@@ -9,7 +9,6 @@ import { newGame, type GameState } from '../engine/state';
 import {
   RESOURCES,
   RESOURCE_BY_ID,
-  isMagicResource,
   type ResourceId,
 } from '../content/resources';
 import { JOB_BY_ID, type JobId } from '../content/jobs';
@@ -170,18 +169,17 @@ function resToken(id: ResourceId): string {
       return 'gold'; // wood
   }
 }
-/** Format a cost map into "🪵 Wood 15 · 🪨 Stone 10" — always name the resource (never
- *  rely on the glyph alone). */
+/** Format a cost map into "Wood 15 · Stone 10" — named, no icons. */
 function costText(cost: Partial<Record<ResourceId, number>>): string {
   return (Object.entries(cost) as [ResourceId, number][])
-    .map(([id, amt]) => `${RESOURCE_BY_ID[id].glyph} ${RESOURCE_BY_ID[id].label} ${numStr(amt)}`)
+    .map(([id, amt]) => `${RESOURCE_BY_ID[id].label} ${numStr(amt)}`)
     .join(' · ');
 }
-/** A job's per-worker gross output as "🪵 Wood +0.5/s" (name it, don't rely on the glyph). */
+/** A job's per-worker gross output as "Wood +0.5/s" — named, no icons. */
 function jobProduceText(id: JobId): string {
   const def = JOB_BY_ID[id];
   return (Object.entries(def.produces) as [ResourceId, number][])
-    .map(([res, per]) => `${RESOURCE_BY_ID[res].glyph} ${RESOURCE_BY_ID[res].label} +${numStr(per)}/s`)
+    .map(([res, per]) => `${RESOURCE_BY_ID[res].label} +${numStr(per)}/s`)
     .join(' · ');
 }
 function mmss(seconds: number): string {
@@ -199,7 +197,9 @@ export function toView(state: GameState): UiState {
   // research once a Scholar's Study exists (or held / producing).
   const resources: ResourceView[] = RESOURCES.map((def) => {
     const amount = run.resources[def.id];
-    const magic = isMagicResource(def.id);
+    // "magic" here is a DISPLAY group (only Mana). Research is uncapped like magic but
+    // shows with the main resources, since it trickles from the very first settler.
+    const magic = def.tier === 'magic';
     const cap = effectiveCap(state, def.id);
     const capped = Number.isFinite(cap);
     const atCap = capped && amount >= cap - EPS;
@@ -271,7 +271,7 @@ export function toView(state: GameState): UiState {
       name: t.name,
       blurb: t.blurb,
       cost: t.cost,
-      costText: `${RESOURCE_BY_ID.research.glyph} ${RESOURCE_BY_ID.research.label} ${numStr(t.cost)}`,
+      costText: `${RESOURCE_BY_ID.research.label} ${numStr(t.cost)}`,
       unlocks: t.unlocks,
       researched: t.researched,
       available: t.available,
@@ -375,7 +375,7 @@ export function resourceTooltip(r: ResourceView): TooltipContent {
     sections.push({ label: 'Stored', lines: [{ text: `${numStr(r.amount)} / ${numStr(r.cap)}` }] });
   }
   const note = r.atCap ? 'At cap — further gains are wasted. Build a Storehouse.' : undefined;
-  return { title: `${r.glyph} ${r.label}`, titleCls: resToken(r.id), sections, note };
+  return { title: r.label, titleCls: resToken(r.id), sections, note };
 }
 
 /** Gather action tooltip. */

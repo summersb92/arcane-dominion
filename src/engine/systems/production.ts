@@ -44,6 +44,10 @@ function flows(state: GameState): Flows {
   let foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total;
   let manaUpkeep = 0;
 
+  // Curiosity trickle: every settler passively yields a little Research (the tech
+  // currency), starting with the first settler — so tech is reachable before Scholars.
+  gross.research += POPULATION.researchPerSettler * run.population.total;
+
   // Jobs: Σ workers × per-worker output × efficiency; each worker eats foodUpkeep.
   for (const job of JOBS) {
     const workers = run.population.jobs[job.id] ?? 0;
@@ -103,6 +107,10 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   const consumers: BreakdownLine[] = [];
   const times = (n: number): string => (n > 1 ? ` ×${n}` : '');
 
+  // The per-settler curiosity trickle (Research only), from the first settler onward.
+  if (id === 'research' && run.population.total > 0) {
+    producers.push({ label: `Settlers${times(run.population.total)}`, amount: POPULATION.researchPerSettler * run.population.total });
+  }
   // Jobs that produce this resource (workers × per-worker × tech efficiency).
   for (const job of JOBS) {
     const workers = run.population.jobs[job.id] ?? 0;

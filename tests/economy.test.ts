@@ -119,6 +119,18 @@ describe('jobs', () => {
   });
 });
 
+describe('research trickle (tech currency from the first settler)', () => {
+  it('yields no research with no settlers, and a trickle once a settler arrives', () => {
+    const s = newGame(1);
+    expect(productionRates(s).research).toBe(0);
+    s.run.population.total = 1;
+    expect(productionRates(s).research).toBeGreaterThan(0);
+    // and the breakdown attributes it to the settlers
+    const bd = resourceBreakdown(s, 'research');
+    expect(bd.producers.some((p) => p.label.startsWith('Settlers'))).toBe(true);
+  });
+});
+
 describe('resource breakdown (hover math)', () => {
   it('decomposes a resource into producers, consumers, and net', () => {
     const s = newGame(1);

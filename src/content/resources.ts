@@ -12,16 +12,16 @@ export type MundaneResourceId = 'wood' | 'food' | 'stone';
 export interface ResourceDef {
   id: ResourceId;
   label: string;
-  glyph: string;
-  tier: 'mundane' | 'magic';
+  glyph: string; // retained in data; the UI no longer renders resource icons
+  tier: 'mundane' | 'knowledge' | 'magic';
 }
 
 export const RESOURCES: ResourceDef[] = [
   { id: 'wood', label: 'Wood', glyph: '🪵', tier: 'mundane' },
   { id: 'food', label: 'Food', glyph: '🍞', tier: 'mundane' },
   { id: 'stone', label: 'Stone', glyph: '🪨', tier: 'mundane' },
+  { id: 'research', label: 'Research', glyph: '📜', tier: 'knowledge' },
   { id: 'mana', label: 'Mana', glyph: '✦', tier: 'magic' },
-  { id: 'research', label: 'Research', glyph: '📜', tier: 'magic' },
 ];
 
 /** Every resource id, in display order. */

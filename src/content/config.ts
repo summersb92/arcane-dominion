@@ -22,6 +22,10 @@ export const STARTING = {
 export const POPULATION = {
   /** Food each settler consumes per second, regardless of job. */
   baseFoodUpkeep: 0.05,
+  /** Research each settler passively generates per second — a curiosity trickle that
+   *  begins with your very first settler, so Research (the tech currency) accrues from
+   *  the start, before any Scholars. Scholars add more on top. */
+  researchPerSettler: 0.02,
   /** Seconds of sustained food surplus (and free housing) to gain one settler. */
   growthIntervalSec: 8,
   /** Seconds of sustained starvation before one settler is lost. */

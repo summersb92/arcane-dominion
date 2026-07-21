@@ -103,7 +103,7 @@
         <ul class="glist">
           {#each gains as gn (gn.id)}
             <li>
-              <span class="nm {gn.cls}">{gn.glyph} {gn.label}</span>
+              <span class="nm {gn.cls}">{gn.label}</span>
               <span class="amt {gn.amount < 0 ? 'neg' : 'pos'}"
                 >{gn.amount < 0 ? '-' : '+'}{fmt(Math.abs(gn.amount) * $factor)}</span
               >
