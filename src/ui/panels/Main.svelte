@@ -12,7 +12,7 @@
     jobTooltip,
     techTooltip,
   } from '../stores';
-  import type { BuildingRowView } from '../stores';
+  import type { BuildingRowView, TechRowView } from '../stores';
   import { fmtRate } from '../format';
 
   // The whole build card IS the build button: click to raise it (no-op if unbuildable).
@@ -26,6 +26,20 @@
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onBuild(b);
+    }
+  }
+
+  // Research cards mirror the build cards: the whole card is the action. Cost, blurb,
+  // unlocks and any reason live in the hover tooltip; a red name means "can't afford".
+  function onResearch(t: TechRowView): void {
+    if (t.disabled) return;
+    hideTooltip();
+    research(t.id);
+  }
+  function onResearchKey(e: KeyboardEvent, t: TechRowView): void {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onResearch(t);
     }
   }
 
@@ -113,52 +127,60 @@
     <section>
       <h2>Jobs</h2>
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade and eats food.</div>
-      <div class="popbar">
-        <span>Settlers <strong>{pop.total}</strong> / {pop.cap}</span>
-        <span>Idle <strong>{pop.idle}</strong></span>
-        <span>
-          Food
-          <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
-            {fmtRate(pop.foodBalance) || '0/s'}
-          </strong>
-        </span>
-        {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
-      </div>
+      <div class="jobscols">
+        <div class="jobscol">
+          <div class="popbar">
+            <span>Settlers <strong>{pop.total}</strong> / {pop.cap}</span>
+            <span>Idle <strong>{pop.idle}</strong></span>
+            <span>
+              Food
+              <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
+                {fmtRate(pop.foodBalance) || '0/s'}
+              </strong>
+            </span>
+            {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
+          </div>
 
-      {#if openJobs.length === 0}
-        <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
-      {:else}
-        <div class="jobs">
-          {#each openJobs as j (j.id)}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div
-              class="jrow"
-              on:mouseenter={(e) => openTip(e, jobTooltip(j))}
-              on:mouseleave={hideTooltip}
-            >
-              <div class="jinfo">
-                <span class="nm">{j.name}</span>
-                <span class="jmeta">{j.produceText} · eats Food {j.foodUpkeep}/s</span>
-              </div>
-              <div class="jctl">
-                <button
-                  class="btn step"
-                  disabled={!j.canUnassign}
-                  aria-label="Unassign a {j.name}"
-                  on:click={() => { hideTooltip(); unassignJob(j.id); }}
-                >−</button>
-                <span class="count">{j.assigned} / {j.capacity}</span>
-                <button
-                  class="btn step"
-                  disabled={!j.canAssign}
-                  aria-label="Assign a {j.name}"
-                  on:click={() => { hideTooltip(); assignJob(j.id); }}
-                >+</button>
-              </div>
+          {#if openJobs.length === 0}
+            <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
+          {:else}
+            <div class="jobs">
+              {#each openJobs as j (j.id)}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                  class="jrow"
+                  on:mouseenter={(e) => openTip(e, jobTooltip(j))}
+                  on:mouseleave={hideTooltip}
+                >
+                  <span class="nm">{j.name}</span>
+                  <div class="jctl">
+                    <button
+                      class="btn step"
+                      disabled={!j.canUnassign}
+                      aria-label="Unassign a {j.name}"
+                      on:click={() => { hideTooltip(); unassignJob(j.id); }}
+                    >−</button>
+                    <span class="count">{j.assigned} / {j.capacity}</span>
+                    <button
+                      class="btn step"
+                      disabled={!j.canAssign}
+                      aria-label="Assign a {j.name}"
+                      on:click={() => { hideTooltip(); assignJob(j.id); }}
+                    >+</button>
+                  </div>
+                </div>
+              {/each}
             </div>
-          {/each}
+          {/if}
         </div>
-      {/if}
+
+        <div class="jobscol">
+          <div class="card govcard">
+            <h2>Government</h2>
+            <div class="govnote">Policies &amp; decrees — coming soon.</div>
+          </div>
+        </div>
+      </div>
     </section>
   {:else if $activeTab === 'research'}
     <section>
@@ -172,27 +194,23 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
               class="tcard bcard"
+              class:cant={!t.affordable && !t.researched}
               class:done={t.researched}
+              role="button"
+              tabindex={t.disabled ? -1 : 0}
+              aria-disabled={t.disabled}
               style="border-left-color:var(--insight)"
+              on:click={() => onResearch(t)}
+              on:keydown={(e) => onResearchKey(e, t)}
               on:mouseenter={(e) => openTip(e, techTooltip(t))}
+              on:focus={(e) => openTip(e, techTooltip(t))}
               on:mouseleave={hideTooltip}
+              on:blur={hideTooltip}
             >
               <div class="tt">
                 <span class="nm">{t.name}</span>
-                <span class="chip">{t.researched ? '✓ done' : t.costText}</span>
+                {#if t.researched}<span class="chip">✓</span>{/if}
               </div>
-              <div class="io">{t.blurb}</div>
-              {#if t.unlocks.length}
-                <div class="io unlocks">Unlocks: {t.unlocks.join(', ')}</div>
-              {/if}
-              {#if !t.researched}
-                <button
-                  class="btn build"
-                  disabled={t.disabled}
-                  on:click={() => { hideTooltip(); research(t.id); }}
-                >Research</button>
-                {#if t.reason && t.reason !== 'researched'}<div class="io warn">{t.reason}</div>{/if}
-              {/if}
             </div>
           {/each}
         </div>
@@ -206,10 +224,6 @@
     color: var(--faint);
     font-size: 12.5px;
     padding: 8px 0;
-  }
-  .warn {
-    color: var(--life);
-    font-size: 11px;
   }
   .bcard {
     cursor: help;
@@ -252,17 +266,31 @@
     color: var(--mana);
     border-color: var(--mana);
   }
-  .unlocks {
-    color: var(--dim);
-    font-size: 11.5px;
+  /* Jobs tab: assignment list on the left, Government scaffold on the right.
+     Stacks to one column on narrow widths (matches the app's 860px feel). */
+  .jobscols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
   }
-  .build {
-    align-self: flex-start;
-    margin-top: 4px;
+  @media (max-width: 720px) {
+    .jobscols {
+      grid-template-columns: 1fr;
+    }
   }
-  .build:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .jobscol {
+    min-width: 0;
+  }
+  .govcard {
+    margin-top: 0;
+  }
+  .govcard h2 {
+    margin-bottom: 6px;
+  }
+  .govnote {
+    color: var(--faint);
+    font-size: 12.5px;
   }
   /* Population summary bar */
   .popbar {
@@ -308,20 +336,11 @@
     background: var(--card);
     cursor: help;
   }
-  .jinfo {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .jinfo .nm {
+  .jrow .nm {
     color: var(--ink);
     font-weight: 600;
-    font-size: 12.5px;
-  }
-  .jmeta {
-    color: var(--dim);
-    font-size: 11.5px;
+    font-size: 13px;
+    min-width: 0;
   }
   .jctl {
     display: flex;

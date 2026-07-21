@@ -3,7 +3,7 @@
 // attribute so the prefers-color-scheme media query decides (Candlelight/Manuscript).
 // Framework-agnostic data — safe to import from anywhere.
 
-export type ThemeId = 'system' | 'candlelight' | 'manuscript' | 'contrast';
+export type ThemeId = 'system' | 'kittens' | 'candlelight' | 'manuscript' | 'contrast';
 
 export interface ThemeOption {
   id: ThemeId;
@@ -11,13 +11,14 @@ export interface ThemeOption {
 }
 
 export const THEMES: ThemeOption[] = [
-  { id: 'system', label: 'System' },
+  { id: 'kittens', label: 'Sleek (light)' },
   { id: 'candlelight', label: 'Candlelight (dark)' },
   { id: 'manuscript', label: 'Manuscript (light)' },
   { id: 'contrast', label: 'High Contrast' },
+  { id: 'system', label: 'System' },
 ];
 
-export const DEFAULT_THEME: ThemeId = 'system';
+export const DEFAULT_THEME: ThemeId = 'kittens';
 
 export function isThemeId(v: unknown): v is ThemeId {
   return typeof v === 'string' && THEMES.some((t) => t.id === v);

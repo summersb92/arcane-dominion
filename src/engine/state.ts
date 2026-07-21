@@ -93,7 +93,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       flags: {},
       chronicle: [{ at: 0, text: "A handful of settlers make camp at the forest's edge." }],
     },
-    settings: { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono' },
+    settings: { notation: 'suffix', theme: 'kittens', chronicleLines: 8, font: 'mono' },
     playtime: 0,
     lastSaved: now,
   };
