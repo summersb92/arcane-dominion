@@ -18,6 +18,7 @@ import type { ResourceId } from './resources';
 export type BuildingId =
   | 'hut'
   | 'storehouse'
+  | 'warehouse'
   | 'woodcutters-lodge'
   | 'forager-hut'
   | 'hunters-lodge'
@@ -35,7 +36,8 @@ export type BuildingId =
 export type BuildingEffect =
   // IMMEDIATE (applied at build time, permanent):
   | { kind: 'popCap'; amount: number } // +N housing capacity
-  | { kind: 'cap'; amount: number } // +N to EACH mundane storage cap
+  | { kind: 'cap'; amount: number } // +N to EACH mundane storage cap (Storehouse; includes food)
+  | { kind: 'capExceptFood'; amount: number } // +N to every mundane cap EXCEPT food (Warehouse)
   | { kind: 'foodCap'; amount: number } // +N to the FOOD storage cap only (Granary)
   // ONGOING (derived per tick / per read from building count):
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
@@ -92,6 +94,15 @@ export const BUILDINGS: BuildingDef[] = [
     costGrowth: 1.5,
     requiresBuilding: 'hut',
     effects: [{ kind: 'cap', amount: 50 }],
+  },
+  {
+    id: 'warehouse',
+    name: 'Warehouse',
+    blurb: 'Bulk stores for goods and ore. Raises every material cap EXCEPT food (+100 each). Cost rises with each.',
+    cost: { wood: 60, stone: 40 },
+    costGrowth: 1.5,
+    requiresTech: 'masonry',
+    effects: [{ kind: 'capExceptFood', amount: 100 }],
   },
   {
     id: 'woodcutters-lodge',

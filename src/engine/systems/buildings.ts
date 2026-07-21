@@ -71,6 +71,12 @@ export function build(state: GameState, id: BuildingId): boolean {
       for (const capId of MUNDANE_RESOURCE_IDS) {
         state.run.caps[capId] += eff.amount;
       }
+    } else if (eff.kind === 'capExceptFood') {
+      // Raise every capped material EXCEPT food (the Warehouse; food has its own Granary).
+      for (const capId of MUNDANE_RESOURCE_IDS) {
+        if (capId === 'food') continue;
+        state.run.caps[capId] += eff.amount;
+      }
     } else if (eff.kind === 'foodCap') {
       state.run.caps.food += eff.amount;
     }

@@ -185,8 +185,9 @@ export const TECHS: TechDef[] = [
   {
     id: 'iron-working',
     name: 'Iron Working',
-    blurb: 'Forge iron — the finest tools yet. The biggest +50% to the gather jobs; unlocks the Forge.',
+    blurb: 'Forge iron tools — the finest yet. Consumes iron ore. The biggest +50% to the gather jobs; unlocks the Forge.',
     cost: 100,
+    resourceCost: { iron: 25 }, // iron ore is smelted into the new tools
     requires: ['bronze-working'],
     unlocks: ['+50% Woodcutter / Farmer / Stonecutter output', 'Forge (building)'],
   },

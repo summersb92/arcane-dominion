@@ -5,7 +5,7 @@ import { BUILDING_BY_ID } from '../src/content/buildings';
 import { TECH_BY_ID } from '../src/content/tech';
 import { build } from '../src/engine/systems/buildings';
 import { assignJob, jobCapacity } from '../src/engine/systems/jobs';
-import { techView } from '../src/engine/systems/tech';
+import { techView, research } from '../src/engine/systems/tech';
 import { productionRates } from '../src/engine/systems/production';
 import { effectiveCap } from '../src/engine/systems/caps';
 import { THEMES, isThemeId } from '../src/content/themes';
@@ -77,6 +77,20 @@ describe('iron resource + Crystallurgy tech', () => {
     const s = newGame(1);
     expect(s.run.resources.iron).toBe(0);
     expect(effectiveCap(s, 'iron')).toBe(200);
+  });
+
+  it('Iron Working consumes iron ore (resourceCost) as well as research', () => {
+    expect(TECH_BY_ID['iron-working'].resourceCost?.iron).toBe(25);
+    const s = newGame(1);
+    s.run.tech.push('bronze-working'); // the prereq
+    s.run.resources.research = 200;
+    s.run.resources.iron = 10; // not enough ore
+    expect(research(s, 'iron-working')).toBe(false);
+    expect(s.run.tech).not.toContain('iron-working');
+    s.run.resources.iron = 25; // exactly enough
+    expect(research(s, 'iron-working')).toBe(true);
+    expect(s.run.resources.iron).toBe(0);
+    expect(s.run.tech).toContain('iron-working');
   });
 
   it('Crystallurgy requires Mining and gates the Mine mana-crystal output', () => {
@@ -200,6 +214,22 @@ describe('tool-tier efficiency stacks on a gather job', () => {
 });
 
 describe('new building effects', () => {
+  it('the Warehouse raises every material cap EXCEPT food (+100), gated by Masonry', () => {
+    const s = newGame(1);
+    expect(build(s, 'warehouse')).toBe(false); // needs Masonry first
+    s.run.tech.push('masonry');
+    s.run.resources.wood = 100;
+    s.run.resources.stone = 100;
+    const before = { ...s.run.caps };
+    expect(build(s, 'warehouse')).toBe(true);
+    expect(s.run.caps.wood).toBe(before.wood + 100);
+    expect(s.run.caps.stone).toBe(before.stone + 100);
+    expect(s.run.caps.iron).toBe(before.iron + 100);
+    expect(s.run.caps.furs).toBe(before.furs + 100);
+    expect(s.run.caps.manaCrystals).toBe(before.manaCrystals + 100);
+    expect(s.run.caps.food).toBe(before.food); // food is the ONE exception (use a Granary)
+  });
+
   it('the Granary raises the Food cap only (+150)', () => {
     const s = newGame(1);
     s.run.tech.push('pottery');
