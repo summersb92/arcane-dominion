@@ -5,13 +5,24 @@
 //
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
-export type ResourceId = 'wood' | 'food' | 'stone' | 'iron' | 'furs' | 'manaCrystals' | 'mana' | 'research' | 'culture';
+export type ResourceId =
+  | 'wood'
+  | 'food'
+  | 'stone'
+  | 'iron'
+  | 'coal'
+  | 'steel'
+  | 'furs'
+  | 'manaCrystals'
+  | 'mana'
+  | 'research'
+  | 'culture';
 
 /** The storage-capped materials held in RunState.caps: the three mundane materials, the FURS
  *  luxury good, and MANA CRYSTALS (the mined proto-magic material) — all capped like one another,
  *  base 200, raised by the same `cap` building effect. Mana/culture are uncapped; research is
  *  capped by science buildings (a derived cap, NOT stored in RunState.caps). */
-export type MundaneResourceId = 'wood' | 'food' | 'stone' | 'iron' | 'furs' | 'manaCrystals';
+export type MundaneResourceId = 'wood' | 'food' | 'stone' | 'iron' | 'coal' | 'steel' | 'furs' | 'manaCrystals';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -28,6 +39,12 @@ export const RESOURCES: ResourceDef[] = [
   // mundane materials (base 200, raised by the same `cap` effect). Stone comes from the
   // Quarry; the Mine is the iron source. Hidden in the UI until the first ore is mined.
   { id: 'iron', label: 'Iron', glyph: '🔩', tier: 'mundane' },
+  // Coal — fuel dug at the Coal Mine (Coal Miner + passive) or burned from wood at a Charcoal
+  // Ground. Capped like the other mundane materials; hidden until the first is produced.
+  { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane' },
+  // Steel — refined at the Steelworks, which converts wood + iron into it (needs Smelters).
+  // Capped like the other mundane materials; hidden until the first is produced.
+  { id: 'steel', label: 'Steel', glyph: '⚙️', tier: 'mundane' },
   // Furs — a luxury good hunters bring in. Capped like the mundane materials and listed
   // with the main resources (tier 'mundane' groups it there, not under Magic).
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane' },
@@ -44,7 +61,7 @@ export const RESOURCES: ResourceDef[] = [
 export const RESOURCE_IDS: ResourceId[] = RESOURCES.map((r) => r.id);
 
 /** The capped subset — the only ids present in RunState.caps (mundane materials + furs). */
-export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = ['wood', 'food', 'stone', 'iron', 'furs', 'manaCrystals'];
+export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'furs', 'manaCrystals'];
 
 export const RESOURCE_BY_ID: Record<ResourceId, ResourceDef> = Object.fromEntries(
   RESOURCES.map((r) => [r.id, r]),

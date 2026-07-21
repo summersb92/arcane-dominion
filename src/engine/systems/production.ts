@@ -15,8 +15,37 @@ import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
+import { activeCount } from './buildings';
 
 const EPS = 1e-9;
+
+/** One converter building's live run: how many copies are ON and what each copy trades per sec. */
+interface ConverterRun {
+  name: string;
+  copies: number; // ACTIVE copies actually running (activation ∩ worker backing)
+  consume: Partial<Record<ResourceId, number>>; // per copy, per sec
+  produce: Partial<Record<ResourceId, number>>; // per copy, per sec
+}
+
+/** Every converter building that is currently running, with its effective (running) copy count.
+ *  A copy runs only if it is switched ON (run.active) and — for worker-backed converters like the
+ *  Steelworks — backed by an assigned worker of the required job. Input STARVATION is handled by
+ *  the caller (runProduction scales by available stock); this reports intended throughput. */
+function converterRuns(state: GameState): ConverterRun[] {
+  const run = state.run;
+  const out: ConverterRun[] = [];
+  for (const b of BUILDINGS) {
+    const count = run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    const conv = b.effects.find((e) => e.kind === 'convert');
+    if (!conv || conv.kind !== 'convert') continue;
+    let copies = activeCount(state, b.id);
+    if (conv.requiresWorker) copies = Math.min(copies, run.population.jobs[conv.requiresWorker] ?? 0);
+    if (copies <= 0) continue;
+    out.push({ name: b.name, copies, consume: conv.consume, produce: conv.produce });
+  }
+  return out;
+}
 
 /** The GATHER jobs the GLOBAL tool-tier bonuses (Bronze/Iron Working) apply to. Includes the
  *  Miner alongside the Stonecutter; the per-tool STONE techs stay job-specific (e.g. Stone Pick
@@ -125,6 +154,12 @@ export function productionRates(state: GameState): Record<ResourceId, number> {
   const rates = { ...f.gross };
   rates.food -= f.foodUpkeep;
   rates.mana -= f.manaUpkeep;
+  // Converters: add each running copy's net trade (best-effort — assumes inputs are available;
+  // actual per-tick output is input-limited in runProduction).
+  for (const c of converterRuns(state)) {
+    for (const [res, per] of Object.entries(c.produce)) rates[res as ResourceId] += c.copies * (per as number);
+    for (const [res, per] of Object.entries(c.consume)) rates[res as ResourceId] -= c.copies * (per as number);
+  }
   return rates;
 }
 
@@ -182,6 +217,14 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (idle > 0) producers.push({ label: `Idle settlers${times(idle)}`, amount: POPULATION.idleFoodPerSettler * idle });
   }
 
+  // Converters both produce (outputs) and consume (inputs) this resource.
+  for (const c of converterRuns(state)) {
+    const outPer = c.produce[id];
+    if (outPer) producers.push({ label: `${c.name} (converts)`, amount: c.copies * outPer });
+    const inPer = c.consume[id];
+    if (inPer) consumers.push({ label: `${c.name} (converts)`, amount: -(c.copies * inPer) });
+  }
+
   // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs.
   if (id === 'food') {
     if (run.population.total > 0) {
@@ -213,6 +256,8 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.wood += f.gross.wood * dt;
   run.resources.stone += f.gross.stone * dt;
   run.resources.iron += f.gross.iron * dt; // mined ore; clamped below like the other capped materials
+  run.resources.coal += f.gross.coal * dt; // mined/charred fuel; clamped below
+  run.resources.steel += f.gross.steel * dt; // (no passive producer yet; converter adds it below)
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
@@ -233,10 +278,28 @@ export function runProduction(state: GameState, dt: number): void {
     run.flags.starving = false;
   }
 
+  // Converter pass: each running copy consumes inputs → yields outputs. Runs AFTER base production
+  // (so this tick's fresh ore/wood is available) and is INPUT-LIMITED — a converter only runs as
+  // many copy-seconds as its scarcest input can supply, so it never drives a resource negative.
+  // Converters are processed in BUILDINGS order (deterministic) when they compete for an input.
+  for (const c of converterRuns(state)) {
+    let units = c.copies * dt; // desired copy-seconds
+    for (const [res, per] of Object.entries(c.consume)) {
+      if ((per as number) > 0) units = Math.min(units, run.resources[res as ResourceId] / (per as number));
+    }
+    if (units <= EPS) continue;
+    for (const [res, per] of Object.entries(c.consume)) {
+      run.resources[res as ResourceId] = Math.max(0, run.resources[res as ResourceId] - (per as number) * units);
+    }
+    for (const [res, per] of Object.entries(c.produce)) {
+      run.resources[res as ResourceId] += (per as number) * units;
+    }
+  }
+
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
   // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
   // Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

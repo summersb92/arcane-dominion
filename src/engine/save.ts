@@ -3,9 +3,10 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 5. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 6. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
-// `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource); `normalize` then backfills
+// `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
+// `coal`/`steel` materials + the converter `active` toggle map); `normalize` then backfills
 // every run.* container the read models touch so a partial/foreign save never dereferences
 // undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
 // out-of-range) rather than loading a broken run.
@@ -106,6 +107,9 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v4 → v5: added the `iron` mined resource (the Miner + Mine now yield iron, not stone). It
  *            defaults to 0, and its storage cap defaults to the base 200; normalize's RESOURCE_IDS +
  *            MUNDANE_RESOURCE_IDS backfills both, so this rung only documents the bump.
+ *   v5 → v6: added the `coal` + `steel` materials and the converter `active` toggle map. Resources
+ *            default to 0 and caps to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS); the
+ *            `active` map backfills to {} (absent entries read as all-on). Documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -130,6 +134,15 @@ function migrate(state: GameState, fromVersion: number): void {
     // by normalize. The Miner/Mine now yield iron instead of stone; old saves keep whatever
     // stone they had and simply start iron at 0. Nothing else to rewrite.
     if (hasResources) state.run.resources.iron ??= 0;
+  }
+  if (fromVersion < 6) {
+    // coal/steel backfilled to 0 (RESOURCE_IDS loop) and their caps to 200 (MUNDANE_RESOURCE_IDS
+    // loop) by normalize; the converter `active` map is backfilled to {} by normalize (absent
+    // entries read as all-on). Nothing else to rewrite.
+    if (hasResources) {
+      state.run.resources.coal ??= 0;
+      state.run.resources.steel ??= 0;
+    }
   }
 }
 
@@ -207,6 +220,10 @@ export function normalize(state: GameState): void {
 
   // Buildings map — backfill the container (individual counts stay sparse/optional).
   if (!run.buildings || typeof run.buildings !== 'object') run.buildings = {};
+
+  // Converter activation map — backfill the container. Absent per-building entries mean "all on"
+  // (activeCount defaults missing → count), so old saves keep their converters running.
+  if (!run.active || typeof run.active !== 'object') run.active = {};
 }
 
 /** Structural + finiteness check — guards against NaN/garbage silently loading. */

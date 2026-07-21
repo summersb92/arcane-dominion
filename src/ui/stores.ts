@@ -26,7 +26,7 @@ import {
   assignJob as engineAssignJob,
   unassignJob as engineUnassignJob,
 } from '../engine/systems/jobs';
-import { buildingsView, build as engineBuild } from '../engine/systems/buildings';
+import { buildingsView, build as engineBuild, setActive as engineSetActive } from '../engine/systems/buildings';
 import { techView, research as engineResearch } from '../engine/systems/tech';
 import { actionsView, doGather as engineDoGather } from '../engine/systems/actions';
 import type { OfflineSummary } from '../engine/offline';
@@ -92,6 +92,8 @@ export interface BuildingRowView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
+  converter: boolean; // toggled N-of-M (has a convert effect)
+  active: number; // active copies (converters); else = count
   disabled: boolean; // build button disabled
   reason: string; // why disabled ("maxed" / "can't afford"), else ''
 }
@@ -180,6 +182,8 @@ function resToken(id: ResourceId): string {
       return 'ok';
     case 'stone':
     case 'iron':
+    case 'coal':
+    case 'steel':
       return 'dim';
     case 'mana':
     case 'manaCrystals':
@@ -232,6 +236,12 @@ export function toView(state: GameState): UiState {
       // Ore — revealed only once the first is mined (held or being produced). A Mine (Miner
       // or its passive) is what first yields it.
       show = amount > EPS || rates.iron > EPS;
+    } else if (def.id === 'coal') {
+      // Fuel — revealed once the first is dug/charred (Coal Mine or Charcoal Ground).
+      show = amount > EPS || rates.coal > EPS;
+    } else if (def.id === 'steel') {
+      // Refined at the Steelworks — revealed once the first is produced.
+      show = amount > EPS || rates.steel > EPS;
     } else if (def.id === 'manaCrystals') {
       // Mined proto-magic material — revealed only once discovered (held or being produced).
       // A Mine yields it once Crystallurgy is researched.
@@ -288,6 +298,8 @@ export function toView(state: GameState): UiState {
       affordable: b.affordable,
       maxed: b.maxed,
       construct: b.construct,
+      converter: b.converter,
+      active: b.active,
       disabled,
       reason,
     };
@@ -549,6 +561,11 @@ export function doGather(id: string): void {
 }
 export function build(id: BuildingId): void {
   engineBuild(state, id);
+  publish();
+}
+/** Toggle a converter building: switch `n` of its copies ON (clamped to [0, count]). */
+export function setActive(id: BuildingId, n: number): void {
+  engineSetActive(state, id, n);
   publish();
 }
 export function assignJob(id: JobId, n = 1): void {

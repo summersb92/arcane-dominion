@@ -11,6 +11,27 @@ import { logEvent } from './chronicle';
 
 const EPS = 1e-9;
 
+/** True if a building is a CONVERTER (has a `convert` effect) — toggled N-of-M via run.active. */
+export function isConverter(def: BuildingDef): boolean {
+  return def.effects.some((e) => e.kind === 'convert');
+}
+
+/** How many copies of `id` are switched ON. Absent from run.active → all copies (backwards-compat
+ *  for old saves and buildings never toggled). Always clamped to [0, count]. */
+export function activeCount(state: GameState, id: BuildingId): number {
+  const count = state.run.buildings[id] ?? 0;
+  const a = state.run.active?.[id];
+  if (a === undefined) return count;
+  return Math.max(0, Math.min(count, Math.floor(a)));
+}
+
+/** Switch `n` copies of a converter ON (clamped to [0, count]). Used by the UI toggle. */
+export function setActive(state: GameState, id: BuildingId, n: number): void {
+  const count = state.run.buildings[id] ?? 0;
+  state.run.active ??= {};
+  state.run.active[id] = Math.max(0, Math.min(count, Math.floor(n)));
+}
+
 /** Current cost of the NEXT copy of a building (escalates by costGrowth^count). */
 export function buildingCost(state: GameState, id: BuildingId): Partial<Record<ResourceId, number>> {
   const def = BUILDING_BY_ID[id];
@@ -63,6 +84,13 @@ export function build(state: GameState, id: BuildingId): boolean {
   }
   state.run.buildings[id] = count + 1;
 
+  // Converter buildings track how many copies are switched ON. A freshly raised copy starts
+  // active (absent → treat as all-on, so `?? count` covers old/never-toggled state).
+  if (isConverter(def)) {
+    state.run.active ??= {};
+    state.run.active[id] = (state.run.active[id] ?? count) + 1;
+  }
+
   // Immediate, permanent stat bumps.
   for (const eff of def.effects) {
     if (eff.kind === 'popCap') state.run.popCap += eff.amount;
@@ -101,6 +129,8 @@ export interface BuildingView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
+  converter: boolean; // has a convert effect → toggled N-of-M
+  active: number; // how many copies are switched ON (converters only; else = count)
 }
 
 /** Read model: every building's count, current cost, and buildability. */
@@ -108,6 +138,7 @@ export function buildingsView(state: GameState): BuildingView[] {
   return BUILDINGS.map((def) => {
     const count = state.run.buildings[def.id] ?? 0;
     const maxed = def.max !== undefined && count >= def.max;
+    const converter = isConverter(def);
     return {
       id: def.id,
       name: def.name,
@@ -118,6 +149,8 @@ export function buildingsView(state: GameState): BuildingView[] {
       affordable: canAfford(state, def.id),
       maxed,
       construct: def.construct === true,
+      converter,
+      active: converter ? activeCount(state, def.id) : count,
     };
   });
 }

@@ -9,7 +9,16 @@
 import type { BuildingId } from './buildings';
 import type { ResourceId } from './resources';
 
-export type JobId = 'woodcutter' | 'forager' | 'hunter' | 'quarry-worker' | 'miner' | 'scholar' | 'bard';
+export type JobId =
+  | 'woodcutter'
+  | 'forager'
+  | 'hunter'
+  | 'quarry-worker'
+  | 'miner'
+  | 'coal-miner'
+  | 'smelter'
+  | 'scholar'
+  | 'bard';
 
 export interface JobDef {
   id: JobId;
@@ -56,6 +65,20 @@ export const JOBS: JobDef[] = [
     blurb: 'Digs ore from the mine shaft. Produces iron.',
     produces: { iron: 0.4 },
     requiresBuildingCapacity: 'mine',
+  },
+  {
+    id: 'coal-miner',
+    name: 'Coal Miner',
+    blurb: 'Works the coal seams. Produces coal.',
+    produces: { coal: 0.4 },
+    requiresBuildingCapacity: 'coal-mine',
+  },
+  {
+    id: 'smelter',
+    name: 'Smelter',
+    blurb: 'Tends the Steelworks furnace — each Smelter lets one Steelworks convert wood + iron into steel.',
+    produces: {}, // no direct output; a Smelter POWERS the Steelworks converter (see systems/production.ts)
+    requiresBuildingCapacity: 'steelworks',
   },
   {
     id: 'scholar',

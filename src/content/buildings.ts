@@ -26,6 +26,9 @@ export type BuildingId =
   | 'granary'
   | 'library'
   | 'mine'
+  | 'coal-mine'
+  | 'charcoal-ground'
+  | 'steelworks'
   | 'workshop'
   | 'forge'
   | 'amphitheater'
@@ -45,6 +48,16 @@ export type BuildingEffect =
   // Passive construct output. An optional `requiresTech` gates the output: production only
   // flows once that tech is researched (e.g. the Mine's mana-crystal trickle behind Crystallurgy).
   | { kind: 'produce'; resource: ResourceId; perSec: number; requiresTech?: string }
+  // CONVERTER: each ACTIVE copy consumes `consume` and yields `produce` per second (a toggled,
+  // N-of-M building — see run.active + systems/production.ts). If `requiresWorker` is set, a copy
+  // only runs when backed by an assigned worker of that job (the Steelworks needs a Smelter);
+  // converters with no `requiresWorker` run on activation alone (the Charcoal Ground).
+  | {
+      kind: 'convert';
+      consume: Partial<Record<ResourceId, number>>;
+      produce: Partial<Record<ResourceId, number>>;
+      requiresWorker?: JobId;
+    }
   | { kind: 'manaUpkeep'; perSec: number } // mana drained per second
   | { kind: 'researchCap'; amount: number } // +N to the RESEARCH cap (science buildings; caps.ts)
   | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
@@ -177,6 +190,40 @@ export const BUILDINGS: BuildingDef[] = [
       // Reaching 20 held is one path to discovering magic (systems/magic.ts).
       { kind: 'produce', resource: 'manaCrystals', perSec: 0.05, requiresTech: 'crystallurgy' },
       { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'coal-mine',
+    name: 'Coal Mine',
+    blurb: 'A colliery working the coal seams. +1 Coal Miner slot, +0.2 coal/s, +20 storage.',
+    cost: { wood: 45, stone: 25 },
+    costGrowth: 1.3,
+    requiresTech: 'coal-mining',
+    effects: [
+      { kind: 'jobCapacity', job: 'coal-miner', slots: 1 },
+      { kind: 'produce', resource: 'coal', perSec: 0.2 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'charcoal-ground',
+    name: 'Charcoal Ground',
+    blurb: 'A charring pit — each ACTIVE ground burns wood into coal (−0.5 wood → +0.4 coal /s). Toggle how many run. No settlers needed.',
+    cost: { wood: 30, stone: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'coal-mining',
+    effects: [{ kind: 'convert', consume: { wood: 0.5 }, produce: { coal: 0.4 } }],
+  },
+  {
+    id: 'steelworks',
+    name: 'Steelworks',
+    blurb: 'A furnace that refines steel — each ACTIVE works, staffed by one Smelter, converts wood + iron into steel (−0.3 wood, −0.3 iron → +0.2 steel /s). +1 Smelter slot.',
+    cost: { wood: 60, stone: 40, iron: 20 },
+    costGrowth: 1.3,
+    requiresTech: 'steelmaking',
+    effects: [
+      { kind: 'jobCapacity', job: 'smelter', slots: 1 },
+      { kind: 'convert', consume: { wood: 0.3, iron: 0.3 }, produce: { steel: 0.2 }, requiresWorker: 'smelter' },
     ],
   },
   {

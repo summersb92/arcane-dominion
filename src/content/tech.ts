@@ -36,10 +36,12 @@ export type TechId =
   // Bronze Age
   | 'mining'
   | 'crystallurgy'
+  | 'coal-mining'
   | 'the-wheel'
   | 'bronze-working'
   // Iron Age
-  | 'iron-working';
+  | 'iron-working'
+  | 'steelmaking';
 
 export interface TechDef {
   id: TechId;
@@ -165,6 +167,14 @@ export const TECHS: TechDef[] = [
     unlocks: ['Mana Crystals from Mines', 'A path toward magic'],
   },
   {
+    id: 'coal-mining',
+    name: 'Coal Mining',
+    blurb: 'Dig coal seams and char wood for fuel. Unlocks the Coal Mine (Coal Miner job) and the Charcoal Ground (burns wood into coal).',
+    cost: 60,
+    requires: ['mining'],
+    unlocks: ['Coal Mine (building)', 'Charcoal Ground (building)', 'Coal (resource)'],
+  },
+  {
     id: 'the-wheel',
     name: 'The Wheel',
     blurb: 'Carts, gears, and leverage. Unlocks the Workshop (boosts all worker output).',
@@ -190,6 +200,14 @@ export const TECHS: TechDef[] = [
     resourceCost: { iron: 25 }, // iron ore is smelted into the new tools
     requires: ['bronze-working'],
     unlocks: ['+50% Woodcutter / Farmer / Stonecutter output', 'Forge (building)'],
+  },
+  {
+    id: 'steelmaking',
+    name: 'Steelmaking',
+    blurb: 'Refine iron and timber into steel. Unlocks the Steelworks (Smelter job) — a converter that turns wood + iron into steel.',
+    cost: 130,
+    requires: ['iron-working'],
+    unlocks: ['Steelworks (building)', 'Steel (resource)'],
   },
 ];
 

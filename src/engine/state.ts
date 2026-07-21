@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 5; // v5: added the `iron` mined resource (Miner + Mine now yield iron; migrate rung backfills → 0, cap → 200)
+export const SAVE_VERSION = 6; // v6: added `coal`/`steel` materials + converter buildings' `active` toggle map (migrate/normalize backfill)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -36,6 +36,9 @@ export interface RunState {
   population: Population;
   popCap: number; // housing capacity
   buildings: Partial<Record<BuildingId, number>>; // count built per building
+  /** How many copies of a CONVERTER building are switched ON (N of M). Absent → treat all as on
+   *  (see systems/buildings.ts activeCount). Only converter buildings appear here. */
+  active: Partial<Record<BuildingId, number>>;
   tech: TechId[]; // unlocked tech ids
   /** Signed accumulator (seconds) driving deterministic pop growth (+) / starvation (−). */
   growthProgress: number;
@@ -68,6 +71,8 @@ export function freshResources(): Record<ResourceId, number> {
   r.food = STARTING.food;
   r.stone = STARTING.stone;
   r.iron = STARTING.iron;
+  r.coal = STARTING.coal;
+  r.steel = STARTING.steel;
   r.furs = STARTING.furs;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
@@ -83,6 +88,8 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     food: STARTING.foodCap,
     stone: STARTING.stoneCap,
     iron: STARTING.ironCap,
+    coal: STARTING.coalCap,
+    steel: STARTING.steelCap,
     furs: STARTING.fursCap,
     manaCrystals: STARTING.manaCrystalsCap,
   };
@@ -101,6 +108,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       population: { total: 0, jobs: {} as Record<JobId, number> },
       popCap: STARTING.popCap,
       buildings: {},
+      active: {},
       tech: [],
       growthProgress: 0,
       flags: {},

@@ -3,6 +3,7 @@
     game,
     activeTab,
     build,
+    setActive,
     assignJob,
     unassignJob,
     research,
@@ -27,6 +28,12 @@
       e.preventDefault();
       onBuild(b);
     }
+  }
+
+  // Converter toggle: switch active copies up/down without triggering the card's build click.
+  function toggleActive(b: BuildingRowView, delta: number): void {
+    hideTooltip();
+    setActive(b.id, b.active + delta);
   }
 
   // Research cards mirror the build cards: the whole card is the action. Cost, blurb,
@@ -107,6 +114,24 @@
               <div class="tt">
                 <span class="nm">{b.name}</span><span class="chip">×{b.count}</span>
               </div>
+              {#if b.converter && b.count > 0}
+                <!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
+                <div class="conv" on:click|stopPropagation>
+                  <button
+                    class="btn step"
+                    disabled={b.active <= 0}
+                    aria-label="Switch off one {b.name}"
+                    on:click|stopPropagation={() => toggleActive(b, -1)}
+                  >−</button>
+                  <span class="convn">on {b.active}/{b.count}</span>
+                  <button
+                    class="btn step"
+                    disabled={b.active >= b.count}
+                    aria-label="Switch on one {b.name}"
+                    on:click|stopPropagation={() => toggleActive(b, 1)}
+                  >+</button>
+                </div>
+              {/if}
             </div>
           {/each}
         </div>
@@ -357,6 +382,22 @@
   .chip.construct {
     color: var(--mana);
     border-color: var(--mana);
+  }
+  /* Converter toggle inside a build card — its own controls, not the build click. */
+  .conv {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+    cursor: default;
+  }
+  .convn {
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    min-width: 56px;
+    text-align: center;
   }
   /* Jobs tab: assignment list on the left, Government scaffold on the right.
      Stacks to one column on narrow widths (matches the app's 860px feel). */
