@@ -72,7 +72,7 @@
   function doReset(): void {
     resetGame();
     confirmReset = false;
-    setMsg('ok', 'Save cleared — a fresh start from the Origin.');
+    setMsg('ok', 'Save cleared — a fresh settlement.');
   }
   function onKey(e: KeyboardEvent): void {
     if (e.key === 'Escape') {
@@ -240,7 +240,7 @@
       <h3>Save</h3>
       <div class="btnrow">
         <button class="btn" on:click={copyString}>Copy save string</button>
-        <button class="btn" on:click={download}>Export to file (.aasave)</button>
+        <button class="btn" on:click={download}>Export to file (.adsave)</button>
       </div>
       {#if stringOut}
         <textarea class="ta out" readonly rows="3" aria-label="Save string">{stringOut}</textarea>
@@ -256,8 +256,8 @@
         on:dragleave={onDragLeave}
       >
         <label class="filelbl btn">
-          Choose a .aasave file…
-          <input type="file" accept=".aasave,.json,application/json" on:change={onFilePick} />
+          Choose a .adsave file…
+          <input type="file" accept=".adsave,.json,application/json" on:change={onFilePick} />
         </label>
         <span class="hint">…or drag &amp; drop it here</span>
       </div>

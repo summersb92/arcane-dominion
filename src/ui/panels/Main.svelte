@@ -1,294 +1,349 @@
 <script lang="ts">
-  import { game, activeTab, dispatchTask, toggleTaskRepeat, openTip, hideTooltip, taskTooltip } from '../stores';
-  import type { TaskView } from '../stores';
-  import Skills from './Skills.svelte';
-  import Home from './Home.svelte';
-  import Player from './Player.svelte';
+  import {
+    game,
+    activeTab,
+    doGather,
+    build,
+    assignJob,
+    unassignJob,
+    research,
+    openTip,
+    hideTooltip,
+    actionTooltip,
+    buildingTooltip,
+    jobTooltip,
+    techTooltip,
+  } from '../stores';
+  import type { ActionRowView } from '../stores';
+  import { fmtRate } from '../format';
 
-  // Whole-card click hook (foundation left this for T-004). Defaults to the store dispatcher.
-  export let onTask: (t: TaskView) => void = dispatchTask;
-
-  function onKey(e: KeyboardEvent, t: TaskView): void {
+  function onActionKey(e: KeyboardEvent, a: ActionRowView): void {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onTask(t);
+      hideTooltip();
+      doGather(a.id);
     }
   }
 
-  // Home-panel tasks (the Founding) render on the Home tab, not here.
-  $: active = $game.tasks.filter((t) => t.active && t.panel !== 'home');
-  // Revealed, non-active Main-tab cards (v0.1.6: revealed now means requirements are met).
-  $: available = $game.tasks.filter((t) => !t.active && t.panel !== 'home' && t.revealed);
-  // Split available into the doable Activities (instant/running/perpetual) and the one-off
-  // purchase Upgrades (Limited — Coin Pouch, Notebook, Tools, Find Lodging). The Upgrades
-  // grid lives in its own collapsible section below the Activities (v0.1.6).
-  $: activities = available.filter((t) => t.type !== 'limited');
-  $: upgrades = available.filter((t) => t.type === 'limited');
+  // Only render buildings the player has unlocked (respect the engine's tech gate).
+  $: visibleBuildings = $game.buildings.filter((b) => b.unlocked);
+  $: workshops = visibleBuildings.filter((b) => !b.construct);
+  $: constructs = visibleBuildings.filter((b) => b.construct);
+
+  // Jobs open only once a workplace grants capacity.
+  $: openJobs = $game.jobs.filter((j) => j.capacity > 0);
+
+  // Research: show the reachable frontier (researched or prerequisites met); far-locked
+  // nodes stay hidden until their prerequisite lands (keeps the early tree clean).
+  $: visibleTech = $game.tech.filter((t) => t.researched || t.available);
+
+  $: pop = $game.population;
 </script>
 
 <main>
-  {#if $activeTab === 'main'}
+  {#if $activeTab === 'gather'}
     <section>
-      <h2>Main · Activity</h2>
+      <h2>Gather</h2>
       <div class="sub">
-        Tasks are what your mage does. Continuous tasks fill Activity slots; instant tasks fire once. A cost you
-        can't pay auto-pauses the task until you can.
+        Gather materials by hand to bootstrap the settlement. Build a Hut to admit settlers, then a
+        workplace so they can work these tasks for you.
       </div>
-
-      {#if active.length > 0}
-        <h2 class="mt">
-          Active — slots {$game.slots.used} / {$game.slots.total}
-          <span class="tag" style="font-weight:400">(click a card to stop it)</span>
-        </h2>
+      <div class="tgrid">
+        {#each $game.actions as a (a.id)}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div
+            class="tcard"
+            role="button"
+            tabindex="0"
+            title="Click to gather"
+            style="border-left-color:var(--gold)"
+            on:click={() => { hideTooltip(); doGather(a.id); }}
+            on:keydown={(e) => onActionKey(e, a)}
+            on:mouseenter={(e) => openTip(e, actionTooltip(a))}
+            on:focus={(e) => openTip(e, actionTooltip(a))}
+            on:mouseleave={hideTooltip}
+            on:blur={hideTooltip}
+          >
+            <div class="tt"><span class="nm">{a.name}</span><span class="chip">Instant</span></div>
+            <div class="io">{a.blurb}</div>
+            <div class="io payoff">{a.gainText}</div>
+          </div>
+        {/each}
+      </div>
+    </section>
+  {:else if $activeTab === 'build'}
+    <section>
+      <h2>Build</h2>
+      <div class="sub">
+        Raise structures to house settlers, expand storage, and open workplaces. Costs rise as you build.
+      </div>
+      {#if workshops.length === 0}
+        <div class="empty">Nothing to build yet — gather some wood first.</div>
+      {:else}
         <div class="tgrid">
-          {#each active as t (t.id)}
+          {#each workshops as b (b.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
-              class="tcard active"
-              class:paused={t.paused}
-              role="button"
-              tabindex="0"
-              title="Click to stop"
-              style="border-left-color:var(--{t.cls})"
-              on:click={() => { hideTooltip(); onTask(t); }}
-              on:keydown={(e) => onKey(e, t)}
-              on:mouseenter={(e) => openTip(e, taskTooltip(t))}
-              on:focus={(e) => openTip(e, taskTooltip(t))}
+              class="tcard bcard"
+              style="border-left-color:var(--edge)"
+              on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
               on:mouseleave={hideTooltip}
-              on:blur={hideTooltip}
             >
-              <div class="tt"><span class="nm">{t.name}</span><span class="chip">{t.kind}</span></div>
-              {#if t.timed}
-                <div class="mtr"><i style="width:{Math.round(t.progress * 100)}%;background:var(--{t.cls})"></i></div>
-              {/if}
-              <div class="io tag">{t.tag}</div>
-              <div class="io">{t.io}</div>
-              <div class="io payoff">{t.payoff}</div>
-              {#if t.paused && t.pausedReason}
-                <div class="io warn">paused — {t.pausedReason}</div>
-              {/if}
-              {#if t.canRepeat}
-                <button
-                  class="repeat"
-                  class:on={t.repeat}
-                  title="Repeat on completion"
-                  on:click|stopPropagation={() => toggleTaskRepeat(t.id)}
-                  on:keydown={(e) => e.stopPropagation()}
-                >↻ {t.repeat ? 'repeat on' : 'repeat off'}</button>
-              {/if}
+              <div class="tt">
+                <span class="nm">{b.name}</span><span class="chip">×{b.count}</span>
+              </div>
+              <div class="io">{b.blurb}</div>
+              <div class="io cost" class:cantpay={!b.affordable && !b.maxed}>Cost: {b.costText}</div>
+              <button class="btn build" disabled={b.disabled} on:click={() => { hideTooltip(); build(b.id); }}>
+                Build
+              </button>
+              {#if b.reason}<div class="io warn">{b.reason}</div>{/if}
             </div>
           {/each}
         </div>
       {/if}
 
-      <h2 class="mt">
-        Activities <span class="tag" style="font-weight:400">· click a card to {'start / do it'}</span>
-      </h2>
-      <div class="tgrid">
-        {#each activities as t (t.id)}
-          <div
-            class="tcard"
-            class:locked={t.locked}
-            class:cant={!t.locked && !t.startable}
-            role="button"
-            tabindex={t.locked ? -1 : 0}
-            aria-disabled={t.locked}
-            title={t.locked ? 'Requirements unmet' : t.type === 'instant' ? 'Click to do' : 'Click to start'}
-            style="border-left-color:var(--{t.cls})"
-            on:click={() => { hideTooltip(); onTask(t); }}
-            on:keydown={(e) => onKey(e, t)}
-            on:mouseenter={(e) => openTip(e, taskTooltip(t))}
-            on:focus={(e) => openTip(e, taskTooltip(t))}
-            on:mouseleave={hideTooltip}
-            on:blur={hideTooltip}
-          >
-            <div class="tt">
-              <span class="nm">{#if t.locked}🔒 {/if}{t.name}</span><span class="chip">{t.kind}</span>
-            </div>
-            <div class="io tag">{t.tag}{#if t.atText} · {t.atText}{/if}</div>
-            {#if t.locked}
-              <div class="io lockt">{t.lockText ?? ''}</div>
-            {:else}
-              <div class="io">{t.io}{#if t.capMark}<span class="cap" title={t.capNote}>{t.capMark}</span>{/if}</div>
-              <div class="io payoff" class:cantpay={!t.affordable}>
-                {t.payoff}{#if !t.affordable} · can't afford{/if}
+      {#if constructs.length}
+        <h2 class="mt">Arcane Constructs</h2>
+        <div class="sub">Magic labour — production with no settlers and no food, only mana upkeep.</div>
+        <div class="tgrid">
+          {#each constructs as b (b.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="tcard bcard"
+              style="border-left-color:var(--mana)"
+              on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
+              on:mouseleave={hideTooltip}
+            >
+              <div class="tt">
+                <span class="nm">{b.name}</span><span class="chip construct">×{b.count} · construct</span>
               </div>
-              {#if t.slotNote}<div class="io warn">{t.slotNote}</div>{/if}
-            {/if}
-          </div>
-        {/each}
+              <div class="io">{b.blurb}</div>
+              <div class="io cost" class:cantpay={!b.affordable && !b.maxed}>Cost: {b.costText}</div>
+              <button class="btn build" disabled={b.disabled} on:click={() => { hideTooltip(); build(b.id); }}>
+                Build
+              </button>
+              {#if b.reason}<div class="io warn">{b.reason}</div>{/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </section>
+  {:else if $activeTab === 'jobs'}
+    <section>
+      <h2>Jobs</h2>
+      <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade and eats food.</div>
+      <div class="popbar">
+        <span>Settlers <strong>{pop.total}</strong> / {pop.cap}</span>
+        <span>Idle <strong>{pop.idle}</strong></span>
+        <span>
+          Food
+          <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
+            {fmtRate(pop.foodBalance) || '0/s'}
+          </strong>
+        </span>
+        {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
       </div>
 
-      {#if upgrades.length > 0}
-        <details class="upgrades" open>
-          <summary><span class="uptitle">Upgrades</span></summary>
-          <div class="tgrid">
-            {#each upgrades as t (t.id)}
-              <div
-                class="tcard"
-                class:locked={t.locked}
-                class:cant={!t.locked && !t.startable}
-                role="button"
-                tabindex={t.locked ? -1 : 0}
-                aria-disabled={t.locked}
-                title={t.locked ? 'Requirements unmet' : 'Click to start'}
-                style="border-left-color:var(--{t.cls})"
-                on:click={() => { hideTooltip(); onTask(t); }}
-                on:keydown={(e) => onKey(e, t)}
-                on:mouseenter={(e) => openTip(e, taskTooltip(t))}
-                on:focus={(e) => openTip(e, taskTooltip(t))}
-                on:mouseleave={hideTooltip}
-                on:blur={hideTooltip}
-              >
-                <div class="tt">
-                  <span class="nm">{#if t.locked}🔒 {/if}{t.name}</span><span class="chip">{t.kind}</span>
-                </div>
-                <div class="io tag">{t.tag}{#if t.atText} · {t.atText}{/if}</div>
-                {#if t.locked}
-                  <div class="io lockt">{t.lockText ?? ''}</div>
-                {:else}
-                  <div class="io">{t.io}{#if t.capMark}<span class="cap" title={t.capNote}>{t.capMark}</span>{/if}</div>
-                  <div class="io payoff" class:cantpay={!t.affordable}>
-                    {t.payoff}{#if !t.affordable} · can't afford{/if}
-                  </div>
-                  {#if t.slotNote}<div class="io warn">{t.slotNote}</div>{/if}
-                {/if}
-              </div>
-            {/each}
-          </div>
-        </details>
-      {/if}
-    </section>
-  {:else if $activeTab === 'player'}
-    <Player />
-  {:else if $activeTab === 'skills'}
-    <Skills />
-  {:else if $activeTab === 'home'}
-    <Home />
-  {:else if $activeTab === 'academy'}
-    <section>
-      {#if $game.founding.founded}
-        <h2>Academy · Founded ★</h2>
-        <div class="finale">
-          <p class="lede">You founded the Academy.</p>
-          <p>
-            The lair becomes its first room; your cantrips become the Headmaster's kit; your Gold, Renown,
-            Insight and mana carry over. Word travels the valley — students are already on the road.
-          </p>
-          <p class="tbc">
-            <strong>Act II — the Academy</strong> (rooms, students, faculty, the Research web, contracts at
-            scale) arrives in <strong>v0.2</strong>. This is where Act I ends. Thank you for playing the slice.
-          </p>
-        </div>
+      {#if openJobs.length === 0}
+        <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
       {:else}
-        <h2>Academy</h2>
-        <div class="sub">Locked until the Founding — your beacon. Found your Academy (on Home) to begin Act II.</div>
+        <div class="jobs">
+          {#each openJobs as j (j.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="jrow"
+              on:mouseenter={(e) => openTip(e, jobTooltip(j))}
+              on:mouseleave={hideTooltip}
+            >
+              <div class="jinfo">
+                <span class="nm">{j.name}</span>
+                <span class="jmeta">{j.produceText} · eats 🍞 {j.foodUpkeep}/s</span>
+              </div>
+              <div class="jctl">
+                <button
+                  class="btn step"
+                  disabled={!j.canUnassign}
+                  aria-label="Unassign a {j.name}"
+                  on:click={() => { hideTooltip(); unassignJob(j.id); }}
+                >−</button>
+                <span class="count">{j.assigned} / {j.capacity}</span>
+                <button
+                  class="btn step"
+                  disabled={!j.canAssign}
+                  aria-label="Assign a {j.name}"
+                  on:click={() => { hideTooltip(); assignJob(j.id); }}
+                >+</button>
+              </div>
+            </div>
+          {/each}
+        </div>
       {/if}
     </section>
-  {:else}
+  {:else if $activeTab === 'research'}
     <section>
-      <h2>{$activeTab}</h2>
-      <div class="sub">Coming soon.</div>
+      <h2>Research</h2>
+      <div class="sub">Spend research (produced by Scholars) to unlock efficiency, new work, and magic.</div>
+      {#if visibleTech.length === 0}
+        <div class="empty">No research available yet.</div>
+      {:else}
+        <div class="tgrid">
+          {#each visibleTech as t (t.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="tcard bcard"
+              class:done={t.researched}
+              style="border-left-color:var(--insight)"
+              on:mouseenter={(e) => openTip(e, techTooltip(t))}
+              on:mouseleave={hideTooltip}
+            >
+              <div class="tt">
+                <span class="nm">{t.name}</span>
+                <span class="chip">{t.researched ? '✓ done' : t.costText}</span>
+              </div>
+              <div class="io">{t.blurb}</div>
+              {#if t.unlocks.length}
+                <div class="io unlocks">Unlocks: {t.unlocks.join(', ')}</div>
+              {/if}
+              {#if !t.researched}
+                <button
+                  class="btn build"
+                  disabled={t.disabled}
+                  on:click={() => { hideTooltip(); research(t.id); }}
+                >Research</button>
+                {#if t.reason && t.reason !== 'researched'}<div class="io warn">{t.reason}</div>{/if}
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
     </section>
   {/if}
 </main>
 
 <style>
-  /* Upgrades sub-section — a collapsible <details> below the Activities grid, styled
-     with existing tokens to match the Chronicle disclosure (keyboard-accessible, themed,
-     reduced-motion friendly). */
-  .upgrades {
-    margin-top: 16px;
-  }
-  .upgrades > summary {
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-  }
-  .upgrades > summary::-webkit-details-marker {
-    display: none;
-  }
-  .upgrades > summary::before {
-    content: '▸';
+  .empty {
     color: var(--faint);
-    font-size: 10px;
-    transition: transform 0.12s;
-  }
-  .upgrades[open] > summary::before {
-    transform: rotate(90deg);
-  }
-  .uptitle {
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    color: var(--label);
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-  .upgrades > summary:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .upgrades > summary::before {
-      transition: none;
-    }
+    font-size: 12.5px;
+    padding: 8px 0;
   }
   .payoff {
     color: var(--ok);
-    font-size: 11px;
+    font-size: 11.5px;
   }
-  .payoff.cantpay {
-    color: var(--faint);
+  .cost {
+    font-variant-numeric: tabular-nums;
+  }
+  .cost.cantpay {
+    color: var(--life);
   }
   .warn {
     color: var(--life);
     font-size: 11px;
   }
-  .cap {
-    color: var(--gold);
-    font-weight: 700;
+  .bcard {
     cursor: help;
   }
-  .tcard.cant {
-    opacity: 0.85;
+  .bcard.done {
+    opacity: 0.7;
   }
-  .finale {
+  .chip.construct {
+    color: var(--mana);
+    border-color: var(--mana);
+  }
+  .unlocks {
     color: var(--dim);
-    font-size: 13px;
-    line-height: 1.6;
-    max-width: 52ch;
+    font-size: 11.5px;
   }
-  .finale .lede {
-    color: var(--renown);
-    font-size: 16px;
-    font-weight: 600;
-    margin: 4px 0 8px;
-  }
-  .finale .tbc {
-    margin-top: 12px;
-    color: var(--ink);
-  }
-  .repeat {
+  .build {
     align-self: flex-start;
-    margin-top: 2px;
-    font-family: inherit;
-    font-size: 10.5px;
-    color: var(--dim);
-    background: var(--hover);
+    margin-top: 4px;
+  }
+  .build:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Population summary bar */
+  .popbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
     border: 1px solid var(--edge);
-    border-radius: 10px;
-    padding: 1px 8px;
-    cursor: pointer;
+    border-radius: 8px;
+    background: var(--card);
+    font-size: 12.5px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
   }
-  .repeat.on {
+  .popbar strong {
     color: var(--ink);
-    border-color: var(--accent);
   }
-  .repeat:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  .popbar strong.good {
+    color: var(--ok);
+  }
+  .popbar strong.bad {
+    color: var(--life);
+  }
+  .starve {
+    color: var(--life);
+    font-weight: 600;
+  }
+  /* Job rows */
+  .jobs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .jrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    background: var(--card);
+    cursor: help;
+  }
+  .jinfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .jinfo .nm {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  .jmeta {
+    color: var(--dim);
+    font-size: 11.5px;
+  }
+  .jctl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+  .count {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    min-width: 46px;
+    text-align: center;
+    font-size: 12.5px;
+  }
+  .step {
+    width: 28px;
+    text-align: center;
+    padding: 2px 0;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .step:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 </style>

@@ -4,17 +4,16 @@
   import Tabs from './panels/Tabs.svelte';
   import Resources from './panels/Resources.svelte';
   import Chronicle from './panels/Chronicle.svelte';
-  import Character from './panels/Character.svelte';
+  import Settlement from './panels/Settlement.svelte';
   import Main from './panels/Main.svelte';
   import System from './panels/System.svelte';
   import OfflinePanel from './components/OfflinePanel.svelte';
-  import CharacterCreation from './components/CharacterCreation.svelte';
   import Tooltip from './components/Tooltip.svelte';
 
   // Resizable side columns. Widths live in CSS vars on .body (with the app.css
   // defaults as fallback) and persist to localStorage so a reload keeps them.
-  const LKEY = 'aa-left-w';
-  const RKEY = 'aa-right-w';
+  const LKEY = 'ad-left-w';
+  const RKEY = 'ad-right-w';
   const LMIN = 150, LMAX = 460, RMIN = 160, RMAX = 560;
   let leftW = 240;
   let rightW = 320;
@@ -95,29 +94,25 @@
       class="gutter"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize the character panel"
+      aria-label="Resize the settlement panel"
       tabindex="0"
       on:pointerdown={(e) => drag('right', e)}
       on:keydown={(e) => key('right', e)}
     ></div>
     <aside class="right">
+      <Settlement />
       <Chronicle />
-      <Character />
     </aside>
   </div>
   <div class="foot">
-    <span>Left = resources · top = tabs · right = the Chronicle &amp; your character. Theme &amp; Settings in the header. Drag the edges to resize.</span>
-    <span>Arcanum-style solo mage · idle-first · no server</span>
+    <span>Left = resources · top = tabs · right = the settlement &amp; Chronicle. Theme &amp; Settings in the header. Drag the edges to resize.</span>
+    <span>Magic base-builder · idle-first · no server</span>
   </div>
 </div>
 
 <!-- Overlays: shown on load after an idle gap / opened from the header. -->
 <OfflinePanel />
 <System />
-
-<!-- Character creation: a blocking modal shown whenever the mage has no name yet
-     (fresh game / hard reset / old save). Renders above the other overlays. -->
-<CharacterCreation />
 
 <!-- The single global hover tooltip — rendered outside the scrolling columns so it is
      never clipped (v0.1.1). Driven by the `tooltip` store; cards/rows set its content. -->

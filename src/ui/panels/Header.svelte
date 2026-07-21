@@ -2,16 +2,14 @@
   import ThemePicker from '../components/ThemePicker.svelte';
   import { game, systemOpen } from '../stores';
 
-  // Live identity from the game store: "<name> · the <title>" once named; the creation
-  // modal prevents an unnamed mage during play, but fall back gracefully just in case.
-  $: player = $game.player;
-  $: identity = player.name ? `${player.name} · the ${player.title}` : `the ${player.title}`;
+  // Live settlement identity from the game store: settler count + housing cap.
+  $: pop = $game.population;
 </script>
 
 <header>
-  <div class="title">ARCANE ACADEMY <span class="tag">· v0.1 · Act I</span></div>
+  <div class="title">ARCANE DOMINION <span class="tag">· v0.1</span></div>
   <div class="who">
-    <span>{identity}</span>
+    <span>{pop.total} settler{pop.total === 1 ? '' : 's'} · cap {pop.cap}</span>
     <ThemePicker />
     <button
       type="button"

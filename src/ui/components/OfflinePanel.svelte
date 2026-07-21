@@ -11,14 +11,13 @@
   import type { ResourceId } from '../../engine/state';
   import { fmt } from '../format';
 
-  // id → glyph · label · colour class (materials share the dim body colour).
+  // id → glyph · label · colour class.
   const RES: { id: ResourceId; glyph: string; label: string; cls: string }[] = [
-    { id: 'gold', glyph: '⦿', label: 'Gold', cls: 'g' },
-    { id: 'insight', glyph: '◈', label: 'Insight', cls: 'ins' },
-    { id: 'renown', glyph: '★', label: 'Renown', cls: 'ren' },
-    { id: 'moonpetal', glyph: '⚘', label: 'Moonpetal', cls: 'mat' },
-    { id: 'ironOre', glyph: '⛏', label: 'Iron Ore', cls: 'mat' },
-    { id: 'spiritDust', glyph: '✧', label: 'Spirit Dust', cls: 'mat' },
+    { id: 'wood', glyph: '🪵', label: 'Wood', cls: 'g' },
+    { id: 'food', glyph: '🍞', label: 'Food', cls: 'ok' },
+    { id: 'stone', glyph: '🪨', label: 'Stone', cls: 'mat' },
+    { id: 'mana', glyph: '✦', label: 'Mana', cls: 'mana' },
+    { id: 'research', glyph: '📜', label: 'Research', cls: 'ins' },
   ];
 
   let summary: OfflineSummary | null = null;
@@ -100,7 +99,7 @@
       </div>
 
       {#if gains.length > 0}
-        <div class="glabel">The lair kept working:</div>
+        <div class="glabel">The settlement kept working:</div>
         <ul class="glist">
           {#each gains as gn (gn.id)}
             <li>
@@ -189,8 +188,11 @@
   .glist .nm.ins {
     color: var(--insight);
   }
-  .glist .nm.ren {
-    color: var(--renown);
+  .glist .nm.ok {
+    color: var(--ok);
+  }
+  .glist .nm.mana {
+    color: var(--mana);
   }
   .glist .nm.mat {
     color: var(--dim);

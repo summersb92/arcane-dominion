@@ -12,10 +12,10 @@ function fileStamp(): string {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
-/** Download the current save as `arcane-academy-<n>.aasave` via a Blob + object URL.
+/** Download the current save as `arcane-dominion-<n>.adsave` via a Blob + object URL.
  *  Returns the filename used (for a UI confirmation). */
 export function downloadSave(state: GameState): string {
-  const name = `arcane-academy-${fileStamp()}${SAVE_FILE_EXT}`;
+  const name = `arcane-dominion-${fileStamp()}${SAVE_FILE_EXT}`;
   const blob = new Blob([toFileString(state)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
