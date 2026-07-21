@@ -5,9 +5,10 @@
 //
 // The tree is a Civilization-inspired DAG progressing Stone → Bronze → Iron. Iron Working is
 // the TOP of the tools tree; MAGIC is no longer a tech. Magic is DISCOVERY-driven (see
-// systems/magic.ts): any of three independent paths — Mana Crystals from the mines, a Sacred
-// Grove (unlocked by the Naturalism tech), or enough Culture — sets the `magicDiscovered` flag
-// that opens the Arcane Font + Animated Tools. Naturalism is the one tech that feeds a path.
+// systems/magic.ts): any of three independent paths — Mana Crystals from the mines (which the
+// Crystallurgy tech first unlocks), a Sacred Grove (unlocked by the Naturalism tech), or enough
+// Culture — sets the `magicDiscovered` flag that opens the Arcane Font + Animated Tools.
+// Naturalism and Crystallurgy are the techs that feed the earth/crystal paths.
 // The STONE tools are split into three PER-TOOL techs (Stone Axe / Hoe / Pick), each
 // boosting only its own gather job; the global tool tiers — Bronze Working < Iron Working
 // — stack on all three gather jobs atop them (TECH_BONUS + jobEfficiency, systems/production.ts).
@@ -34,6 +35,7 @@ export type TechId =
   | 'the-arts'
   // Bronze Age
   | 'mining'
+  | 'crystallurgy'
   | 'the-wheel'
   | 'bronze-working'
   // Iron Age
@@ -149,10 +151,18 @@ export const TECHS: TechDef[] = [
   {
     id: 'mining',
     name: 'Mining',
-    blurb: 'Sink shafts for ore and rock. Unlocks the Mine (more stone slots + output).',
+    blurb: 'Sink shafts for ore. Unlocks the Mine (Miner job + passive iron).',
     cost: 50,
     requires: ['masonry'],
-    unlocks: ['Mine (building)'],
+    unlocks: ['Mine (building)', 'Iron (resource)'],
+  },
+  {
+    id: 'crystallurgy',
+    name: 'Crystallurgy',
+    blurb: 'Learn to read the glimmer in the deep rock. Mines also trickle Mana Crystals (+0.05/s) — one of the paths to discovering magic.',
+    cost: 60,
+    requires: ['mining'],
+    unlocks: ['Mana Crystals from Mines', 'A path toward magic'],
   },
   {
     id: 'the-wheel',

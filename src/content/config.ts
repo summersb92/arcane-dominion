@@ -9,6 +9,7 @@ export const STARTING = {
   wood: 0,
   food: 20,
   stone: 0,
+  iron: 0,
   furs: 0,
   manaCrystals: 0,
   mana: 0,
@@ -18,6 +19,7 @@ export const STARTING = {
   woodCap: 200,
   foodCap: 200,
   stoneCap: 200,
+  ironCap: 200,
   fursCap: 200,
   manaCrystalsCap: 200,
   /** BASE research cap. Research is no longer uncapped — this small base holds the early

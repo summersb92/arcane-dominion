@@ -7,6 +7,7 @@ import { build } from '../src/engine/systems/buildings';
 import { assignJob, jobCapacity } from '../src/engine/systems/jobs';
 import { techView } from '../src/engine/systems/tech';
 import { productionRates } from '../src/engine/systems/production';
+import { effectiveCap } from '../src/engine/systems/caps';
 import { THEMES, isThemeId } from '../src/content/themes';
 
 describe('renames (display names change, ids preserved)', () => {
@@ -42,8 +43,8 @@ describe('Sleek Dark theme registration', () => {
   });
 });
 
-describe('Miner job (Mine opens Miner, not Stonecutter)', () => {
-  it('the Mine grants Miner capacity and the Miner produces stone with the global tool tiers', () => {
+describe('Miner job (Mine opens Miner, yields iron not stone)', () => {
+  it('the Mine grants Miner capacity and the Miner produces iron with the global tool tiers', () => {
     const s = newGame(1);
     s.run.tech.push('mining');
     s.run.resources.wood = 100;
@@ -55,18 +56,36 @@ describe('Miner job (Mine opens Miner, not Stonecutter)', () => {
 
     s.run.population.total = 1;
     expect(assignJob(s, 'miner', 1)).toBe(1);
-    // 1 Miner × 0.4/s + the Mine's passive 0.2/s = 0.6/s stone.
-    expect(productionRates(s).stone).toBeCloseTo(0.6, 6);
+    // 1 Miner × 0.4/s + the Mine's passive 0.2/s = 0.6/s IRON (the Mine yields no stone).
+    expect(productionRates(s).iron).toBeCloseTo(0.6, 6);
+    expect(productionRates(s).stone).toBeCloseTo(0, 6);
 
     // Stone Pick is Stonecutter-only → does NOT touch the Miner.
     s.run.tech.push('stone-pick');
-    expect(productionRates(s).stone).toBeCloseTo(0.6, 6);
+    expect(productionRates(s).iron).toBeCloseTo(0.6, 6);
 
     // Global tool tiers (Bronze/Iron Working) DO apply to the Miner's 0.4 base.
     s.run.tech.push('bronze-working');
-    expect(productionRates(s).stone).toBeCloseTo(0.4 * 1.35 + 0.2, 6);
+    expect(productionRates(s).iron).toBeCloseTo(0.4 * 1.35 + 0.2, 6);
     s.run.tech.push('iron-working');
-    expect(productionRates(s).stone).toBeCloseTo(0.4 * 1.35 * 1.5 + 0.2, 6);
+    expect(productionRates(s).iron).toBeCloseTo(0.4 * 1.35 * 1.5 + 0.2, 6);
+  });
+});
+
+describe('iron resource + Crystallurgy tech', () => {
+  it('iron is a capped mundane material (base cap 200) starting at 0', () => {
+    const s = newGame(1);
+    expect(s.run.resources.iron).toBe(0);
+    expect(effectiveCap(s, 'iron')).toBe(200);
+  });
+
+  it('Crystallurgy requires Mining and gates the Mine mana-crystal output', () => {
+    expect(TECH_BY_ID.crystallurgy.requires).toContain('mining');
+    const mineCrystalEffect = BUILDING_BY_ID.mine.effects.find(
+      (e) => e.kind === 'produce' && e.resource === 'manaCrystals',
+    );
+    expect(mineCrystalEffect).toBeDefined();
+    expect((mineCrystalEffect as { requiresTech?: string }).requiresTech).toBe('crystallurgy');
   });
 });
 

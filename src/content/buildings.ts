@@ -40,7 +40,9 @@ export type BuildingEffect =
   // ONGOING (derived per tick / per read from building count):
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
   | { kind: 'jobOutputMult'; amount: number } // +fraction to EVERY worker's output (Workshop/Forge)
-  | { kind: 'produce'; resource: ResourceId; perSec: number } // passive construct output
+  // Passive construct output. An optional `requiresTech` gates the output: production only
+  // flows once that tech is researched (e.g. the Mine's mana-crystal trickle behind Crystallurgy).
+  | { kind: 'produce'; resource: ResourceId; perSec: number; requiresTech?: string }
   | { kind: 'manaUpkeep'; perSec: number } // mana drained per second
   | { kind: 'researchCap'; amount: number } // +N to the RESEARCH cap (science buildings; caps.ts)
   | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
@@ -153,15 +155,16 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'mine',
     name: 'Mine',
-    blurb: 'A deep shaft for ore and rock. +1 Miner slot, +0.2 stone/s, a trickle of Mana Crystals (+0.05/s), +20 storage.',
+    blurb: 'A deep shaft for iron ore. +1 Miner slot, +0.2 iron/s, +20 storage. With Crystallurgy, also trickles Mana Crystals (+0.05/s).',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'mining',
     effects: [
       { kind: 'jobCapacity', job: 'miner', slots: 1 },
-      { kind: 'produce', resource: 'stone', perSec: 0.2 },
-      // Proto-magic material from the deep rock. Reaching 20 held is one path to discovering magic.
-      { kind: 'produce', resource: 'manaCrystals', perSec: 0.05 },
+      { kind: 'produce', resource: 'iron', perSec: 0.2 },
+      // Proto-magic material from the deep rock — but only once Crystallurgy is understood.
+      // Reaching 20 held is one path to discovering magic (systems/magic.ts).
+      { kind: 'produce', resource: 'manaCrystals', perSec: 0.05, requiresTech: 'crystallurgy' },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },

@@ -53,8 +53,8 @@ export const JOBS: JobDef[] = [
   {
     id: 'miner',
     name: 'Miner',
-    blurb: 'Digs stone from the mine shaft. Produces stone.',
-    produces: { stone: 0.4 },
+    blurb: 'Digs ore from the mine shaft. Produces iron.',
+    produces: { iron: 0.4 },
     requiresBuildingCapacity: 'mine',
   },
   {

@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 4; // v4: added the `manaCrystals` mined resource (migrate rung backfills → 0, cap → 200)
+export const SAVE_VERSION = 5; // v5: added the `iron` mined resource (Miner + Mine now yield iron; migrate rung backfills → 0, cap → 200)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -67,6 +67,7 @@ export function freshResources(): Record<ResourceId, number> {
   r.wood = STARTING.wood;
   r.food = STARTING.food;
   r.stone = STARTING.stone;
+  r.iron = STARTING.iron;
   r.furs = STARTING.furs;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
@@ -81,6 +82,7 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     wood: STARTING.woodCap,
     food: STARTING.foodCap,
     stone: STARTING.stoneCap,
+    iron: STARTING.ironCap,
     furs: STARTING.fursCap,
     manaCrystals: STARTING.manaCrystalsCap,
   };

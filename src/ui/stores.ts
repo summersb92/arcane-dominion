@@ -179,6 +179,7 @@ function resToken(id: ResourceId): string {
     case 'food':
       return 'ok';
     case 'stone':
+    case 'iron':
       return 'dim';
     case 'mana':
     case 'manaCrystals':
@@ -227,9 +228,13 @@ export function toView(state: GameState): UiState {
     let show = true;
     if (def.id === 'mana') {
       show = run.flags.magicDiscovered === true || amount > EPS || Math.abs(rate) > EPS;
+    } else if (def.id === 'iron') {
+      // Ore — revealed only once the first is mined (held or being produced). A Mine (Miner
+      // or its passive) is what first yields it.
+      show = amount > EPS || rates.iron > EPS;
     } else if (def.id === 'manaCrystals') {
       // Mined proto-magic material — revealed only once discovered (held or being produced).
-      // A Mine is what first yields it.
+      // A Mine yields it once Crystallurgy is researched.
       show = amount > EPS || rates.manaCrystals > EPS;
     } else if (def.id === 'research') {
       show =

@@ -97,22 +97,31 @@ describe('the retired tech-gated magic path', () => {
   });
 });
 
-describe('the Mine yields Mana Crystals (the earth path)', () => {
-  it('a Mine trickles mana crystals (+0.05/s)', () => {
+describe('the Mine yields Mana Crystals (the earth path, gated by Crystallurgy)', () => {
+  it('a Mine yields NO crystals until Crystallurgy is researched, then trickles +0.05/s', () => {
     const s = newGame(1);
     s.run.tech.push('mining');
     s.run.resources.wood = 100;
     s.run.resources.stone = 100;
     expect(build(s, 'mine')).toBe(true);
+
+    // Without Crystallurgy the shaft yields iron but no crystals.
+    simulate(s, 10);
+    expect(s.run.resources.manaCrystals).toBe(0);
+    expect(s.run.resources.iron).toBeGreaterThan(0);
+
+    // Crystallurgy unlocks the crystal trickle.
+    s.run.tech.push('crystallurgy');
     const before = s.run.resources.manaCrystals;
     simulate(s, 10);
     // 1 Mine × 0.05/s × 10s = 0.5 crystals.
     expect(s.run.resources.manaCrystals).toBeCloseTo(before + 0.5, 6);
   });
 
-  it('a Mine left running long enough discovers magic from the earth', () => {
+  it('a Mine with Crystallurgy, left running long enough, discovers magic from the earth', () => {
     const s = newGame(1);
     s.run.tech.push('mining');
+    s.run.tech.push('crystallurgy');
     s.run.resources.wood = 100;
     s.run.resources.stone = 100;
     expect(build(s, 'mine')).toBe(true);
