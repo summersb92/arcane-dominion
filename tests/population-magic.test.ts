@@ -11,6 +11,7 @@ describe('population growth', () => {
     // Housing for several settlers + a forager workplace, and a food surplus.
     s.run.popCap = 10;
     s.run.resources.wood = 20;
+    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
     build(s, 'forager-hut');
     s.run.resources.food = 40;
     // Seed one settler and set them foraging (net-positive food).
@@ -82,6 +83,7 @@ describe('determinism', () => {
     const play = () => {
       const s = newGame(123);
       for (let i = 0; i < 20; i++) doGather(s, 'gather-wood');
+      s.run.buildings.hut = 1; // Hut prereq unlocks the workplace
       build(s, 'woodcutters-lodge');
       s.run.popCap = 10;
       simulate(s, 120);

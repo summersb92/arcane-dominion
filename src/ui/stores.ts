@@ -97,6 +97,7 @@ export interface ActionRowView {
   name: string;
   blurb: string;
   resource: ResourceId;
+  resLabel: string; // the resource's plain label ("Wood") for the simple gather buttons
   amount: number;
   glyph: string;
   gainText: string; // "+1 🪵"
@@ -280,15 +281,16 @@ export function toView(state: GameState): UiState {
   });
 
   const actions: ActionRowView[] = actionsView(state).map((a) => {
-    const glyph = RESOURCE_BY_ID[a.resource as ResourceId].glyph;
+    const meta = RESOURCE_BY_ID[a.resource as ResourceId];
     return {
       id: a.id,
       name: a.name,
       blurb: a.blurb,
       resource: a.resource as ResourceId,
+      resLabel: meta.label,
       amount: a.amount,
-      glyph,
-      gainText: `+${numStr(a.amount)} ${glyph}`,
+      glyph: meta.glyph,
+      gainText: `+${numStr(a.amount)} ${meta.glyph}`,
       available: a.available,
     };
   });
@@ -307,7 +309,7 @@ export function toView(state: GameState): UiState {
     tech,
     actions,
     tabs: [
-      { id: 'gather', label: 'Gather', visible: true, locked: false },
+      // Gather moved to the right rail (3 buttons); Build is the main view.
       { id: 'build', label: 'Build', visible: true, locked: false },
       { id: 'jobs', label: 'Jobs', visible: true, locked: false },
       { id: 'research', label: 'Research', visible: true, locked: false },
@@ -416,7 +418,7 @@ export function techTooltip(t: TechRowView): TooltipContent {
 let state: GameState = newGame();
 
 export const game = writable<UiState>(toView(state));
-export const activeTab = writable<string>('gather');
+export const activeTab = writable<string>('build');
 export const offlineSummary = writable<OfflineSummary | null>(null);
 export const systemOpen = writable<boolean>(false);
 
@@ -445,7 +447,7 @@ export function resetGame(): void {
   state = newGame();
   setNotation(state.settings.notation);
   applyFont(state.settings.font);
-  activeTab.set('gather');
+  activeTab.set('build');
   persist();
   publish();
 }

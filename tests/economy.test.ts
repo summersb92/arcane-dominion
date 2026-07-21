@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { doGather } from '../src/engine/systems/actions';
-import { build, buildingCost } from '../src/engine/systems/buildings';
+import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
 import { productionRates } from '../src/engine/systems/production';
@@ -51,6 +51,20 @@ describe('buildings', () => {
     expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(15 * 1.5)); // 23
   });
 
+  it('only the Hut is unlocked at the start; workplaces reveal after a Hut', () => {
+    const s = newGame(1);
+    const unlocked = () => buildingsView(s).filter((b) => b.unlocked).map((b) => b.id);
+    expect(unlocked()).toEqual(['hut']); // v0.1: nothing else at the very start
+
+    s.run.resources.wood = 15;
+    expect(build(s, 'hut')).toBe(true);
+    const after = unlocked();
+    expect(after).toContain('storehouse');
+    expect(after).toContain('woodcutters-lodge');
+    expect(after).toContain('forager-hut');
+    expect(after).not.toContain('scholars-study'); // still gated behind a Forager Hut
+  });
+
   it('a locked (tech-gated) building refuses to build', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
@@ -66,6 +80,7 @@ describe('jobs', () => {
   it('assigning a woodcutter produces wood and applies food upkeep', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
+    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
     build(s, 'woodcutters-lodge'); // opens 2 woodcutter slots
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 1)).toBe(1);
@@ -84,6 +99,7 @@ describe('jobs', () => {
   it('cannot assign beyond idle settlers', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
+    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // only 1 idle
@@ -94,6 +110,7 @@ describe('jobs', () => {
   it('cannot assign beyond building capacity', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
+    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
     build(s, 'woodcutters-lodge'); // capacity 2
     s.run.population.total = 5;
     expect(assignJob(s, 'woodcutter', 5)).toBe(2); // capped at capacity
@@ -114,6 +131,7 @@ describe('tech', () => {
   it('woodworking boosts woodcutter output', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
+    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);

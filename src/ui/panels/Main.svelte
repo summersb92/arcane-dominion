@@ -2,28 +2,17 @@
   import {
     game,
     activeTab,
-    doGather,
     build,
     assignJob,
     unassignJob,
     research,
     openTip,
     hideTooltip,
-    actionTooltip,
     buildingTooltip,
     jobTooltip,
     techTooltip,
   } from '../stores';
-  import type { ActionRowView } from '../stores';
   import { fmtRate } from '../format';
-
-  function onActionKey(e: KeyboardEvent, a: ActionRowView): void {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      hideTooltip();
-      doGather(a.id);
-    }
-  }
 
   // Only render buildings the player has unlocked (respect the engine's tech gate).
   $: visibleBuildings = $game.buildings.filter((b) => b.unlocked);
@@ -41,37 +30,7 @@
 </script>
 
 <main>
-  {#if $activeTab === 'gather'}
-    <section>
-      <h2>Gather</h2>
-      <div class="sub">
-        Gather materials by hand to bootstrap the settlement. Build a Hut to admit settlers, then a
-        workplace so they can work these tasks for you.
-      </div>
-      <div class="tgrid">
-        {#each $game.actions as a (a.id)}
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div
-            class="tcard"
-            role="button"
-            tabindex="0"
-            title="Click to gather"
-            style="border-left-color:var(--gold)"
-            on:click={() => { hideTooltip(); doGather(a.id); }}
-            on:keydown={(e) => onActionKey(e, a)}
-            on:mouseenter={(e) => openTip(e, actionTooltip(a))}
-            on:focus={(e) => openTip(e, actionTooltip(a))}
-            on:mouseleave={hideTooltip}
-            on:blur={hideTooltip}
-          >
-            <div class="tt"><span class="nm">{a.name}</span><span class="chip">Instant</span></div>
-            <div class="io">{a.blurb}</div>
-            <div class="io payoff">{a.gainText}</div>
-          </div>
-        {/each}
-      </div>
-    </section>
-  {:else if $activeTab === 'build'}
+  {#if $activeTab === 'build'}
     <section>
       <h2>Build</h2>
       <div class="sub">
@@ -226,10 +185,6 @@
     color: var(--faint);
     font-size: 12.5px;
     padding: 8px 0;
-  }
-  .payoff {
-    color: var(--ok);
-    font-size: 11.5px;
   }
   .cost {
     font-variant-numeric: tabular-nums;

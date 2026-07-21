@@ -44,6 +44,9 @@ export interface BuildingDef {
   effects: BuildingEffect[];
   /** Tech id that must be researched before this can be built. */
   requiresTech?: string;
+  /** Building id that must exist (count ≥ 1) before this is revealed — keeps the early
+   *  board minimal (only the Hut at the very start; the rest unlock as you build). */
+  requiresBuilding?: BuildingId;
   /** Optional hard cap on how many can be built (undefined = unlimited). */
   max?: number;
   /** True for arcane constructs (magic tier) — surfaced separately in the UI. */
@@ -64,6 +67,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Storehouse',
     blurb: 'Raises storage for every mundane material (+50 to each cap).',
     cost: { wood: 20, stone: 10 },
+    requiresBuilding: 'hut',
     effects: [{ kind: 'cap', amount: 50 }],
   },
   {
@@ -71,6 +75,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: "Woodcutter's Lodge",
     blurb: 'A base for fellers. Opens +2 Woodcutter job slots.',
     cost: { wood: 25 },
+    requiresBuilding: 'hut',
     effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 2 }],
   },
   {
@@ -78,6 +83,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Forager Hut',
     blurb: 'A gathering post. Opens +2 Forager job slots.',
     cost: { wood: 20 },
+    requiresBuilding: 'hut',
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 2 }],
   },
   {
@@ -93,6 +99,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: "Scholar's Study",
     blurb: 'A place of learning. Opens +2 Scholar job slots (produce research).',
     cost: { wood: 30, stone: 15 },
+    requiresBuilding: 'forager-hut',
     effects: [{ kind: 'jobCapacity', job: 'scholar', slots: 2 }],
   },
   {

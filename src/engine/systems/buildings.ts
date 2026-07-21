@@ -24,9 +24,12 @@ export function buildingCost(state: GameState, id: BuildingId): Partial<Record<R
   return out;
 }
 
-/** True once the building's tech prerequisite (if any) is satisfied. */
+/** True once the building's prerequisites (tech + prerequisite building) are satisfied.
+ *  The building-prereq keeps the opening board minimal: only the Hut shows at the very
+ *  start; Storehouse/workplaces reveal once a Hut exists, the Study once foraging is up. */
 export function isUnlocked(state: GameState, def: BuildingDef): boolean {
   if (def.requiresTech && !state.run.tech.includes(def.requiresTech as never)) return false;
+  if (def.requiresBuilding && (state.run.buildings[def.requiresBuilding] ?? 0) < 1) return false;
   return true;
 }
 
