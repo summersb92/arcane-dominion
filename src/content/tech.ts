@@ -6,21 +6,28 @@
 // The tree is a Civilization-inspired DAG progressing Stone → Bronze → Iron, with the
 // MAGIC tier gated at the Iron tier: Awakening (opens Mana + the Arcane Font) now sits
 // AFTER Iron Working, and Animation (the Animated Tools construct) follows Awakening.
-// The three TOOL TIERS — Stone Tools < Bronze Working < Iron Working — stack on the
-// gather jobs via TECH_BONUS + jobEfficiency (systems/production.ts).
+// The STONE tools are split into three PER-TOOL techs (Stone Axe / Hoe / Pick), each
+// boosting only its own gather job; the global tool tiers — Bronze Working < Iron Working
+// — stack on all three gather jobs atop them (TECH_BONUS + jobEfficiency, systems/production.ts).
+// Techs may also cost MATERIALS (TechDef.resourceCost) — the stone tools consume stone.
 //
 // All research costs are on the doubled scale (2× the historical v0.1 values).
 //
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
+import type { ResourceId } from './resources';
+
 export type TechId =
   // Stone Age
-  | 'stone-tools'
+  | 'stone-axe'
+  | 'stone-hoe'
+  | 'stone-pick'
   | 'pottery'
   | 'agriculture'
   | 'masonry'
   | 'writing'
   | 'calendar'
+  | 'the-arts'
   // Bronze Age
   | 'mining'
   | 'the-wheel'
@@ -37,6 +44,9 @@ export interface TechDef {
   blurb: string;
   /** Research cost (doubled scale). */
   cost: number;
+  /** Optional MATERIAL cost, spent alongside the research cost. `research(techId)` requires
+   *  AND spends both; refuses (no mutation) if either the research or any material is short. */
+  resourceCost?: Partial<Record<ResourceId, number>>;
   /** Prerequisite tech ids that must already be unlocked. */
   requires?: TechId[];
   /** Human-readable list of what this node opens (for the UI). */
@@ -45,12 +55,31 @@ export interface TechDef {
 
 export const TECHS: TechDef[] = [
   // ---- STONE AGE ----
+  // The old single "Stone Tools" is split into three per-tool techs, each boosting ONLY
+  // its own gather job. Each consumes STONE as well as research (resourceCost).
   {
-    id: 'stone-tools',
-    name: 'Stone Tools',
-    blurb: 'Knapped flint and bone — better tools, more yield. Gather jobs produce +25%.',
+    id: 'stone-axe',
+    name: 'Stone Axe',
+    blurb: 'A knapped hand-axe for felling. Woodcutters produce +25%.',
     cost: 10,
-    unlocks: ['+25% Woodcutter / Farmer / Stonecutter output'],
+    resourceCost: { stone: 10 },
+    unlocks: ['+25% Woodcutter output'],
+  },
+  {
+    id: 'stone-hoe',
+    name: 'Stone Hoe',
+    blurb: 'A stone-bladed hoe to work the soil. Farmers produce +25%.',
+    cost: 10,
+    resourceCost: { stone: 10 },
+    unlocks: ['+25% Farmer output'],
+  },
+  {
+    id: 'stone-pick',
+    name: 'Stone Pick',
+    blurb: 'A hafted stone pick for breaking rock. Stonecutters produce +25%.',
+    cost: 10,
+    resourceCost: { stone: 10 },
+    unlocks: ['+25% Stonecutter output'],
   },
   {
     id: 'pottery',
@@ -64,7 +93,7 @@ export const TECHS: TechDef[] = [
     name: 'Agriculture',
     blurb: 'Tend the land instead of scavenging it. Farmers produce +50% food.',
     cost: 20,
-    requires: ['stone-tools'],
+    requires: ['stone-hoe'],
     unlocks: ['+50% Farmer output'],
   },
   {
@@ -72,13 +101,13 @@ export const TECHS: TechDef[] = [
     name: 'Masonry',
     blurb: 'Shape stone at scale. Unlocks the Quarry and the Stonecutter job.',
     cost: 30,
-    requires: ['stone-tools'],
+    requires: ['stone-pick'],
     unlocks: ['Quarry (building)', 'Stonecutter (job)'],
   },
   {
     id: 'writing',
     name: 'Writing',
-    blurb: 'Set knowledge down in ink. Unlocks the Library (Scholar slots + passive research).',
+    blurb: 'Set knowledge down in ink. Unlocks the Library (Scholar slots + passive research + research cap).',
     cost: 30,
     requires: ['pottery'],
     unlocks: ['Library (building)'],
@@ -90,6 +119,14 @@ export const TECHS: TechDef[] = [
     cost: 20,
     requires: ['pottery'],
     unlocks: ['The date (day · season · year)'],
+  },
+  {
+    id: 'the-arts',
+    name: 'The Arts',
+    blurb: 'Song, story, and spectacle. Unlocks the Amphitheater — Culture (Bards) and happiness.',
+    cost: 30,
+    requires: ['pottery'],
+    unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Bard (job)'],
   },
 
   // ---- BRONZE AGE ----

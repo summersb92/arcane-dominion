@@ -5,10 +5,11 @@
 // toward −starveInterval while starving (→ lose a settler). When neither condition
 // holds it decays back toward zero so a brief blip never banks progress. Pure engine.
 
-import { POPULATION } from '../../content/config';
+import { POPULATION, HAPPINESS } from '../../content/config';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 import { foodBalance } from './production';
+import { happiness } from './happiness';
 import { idleSettlers, removeSettler } from './jobs';
 
 const EPS = 1e-9;
@@ -32,7 +33,8 @@ export function runPopulation(state: GameState, dt: number): void {
   const hasRoom = run.population.total < run.popCap;
   const netFood = foodBalance(state);
   const foodInStock = run.resources.food > EPS;
-  const canGrow = hasRoom && foodInStock && netFood >= -EPS;
+  const happy = happiness(state).value >= HAPPINESS.growthThreshold;
+  const canGrow = hasRoom && foodInStock && netFood >= -EPS && happy;
 
   if (starving && run.population.total > 0) {
     run.growthProgress -= dt;
@@ -61,8 +63,9 @@ export function runPopulation(state: GameState, dt: number): void {
  *   growing  → filling toward the next arrival
  *   starving → filling toward the next loss (you're losing settlers)
  *   full     → housing is full; build more to grow
+ *   unhappy  → has room + food, but happiness is below the growth threshold — growth paused
  *   stalled  → has room but no food surplus (or no housing yet) — growth paused */
-export type GrowthStatus = 'growing' | 'starving' | 'full' | 'stalled';
+export type GrowthStatus = 'growing' | 'starving' | 'full' | 'unhappy' | 'stalled';
 export interface GrowthInfo {
   status: GrowthStatus;
   progress: number; // 0..1
@@ -82,10 +85,13 @@ export function growthStatus(state: GameState): GrowthInfo {
   }
   if (run.popCap > 0 && total >= run.popCap) return { status: 'full', progress: 0 };
   const netFood = foodBalance(state);
-  const canGrow = hasRoom && run.resources.food > EPS && netFood >= -EPS;
-  if (canGrow) {
+  const foodOk = run.resources.food > EPS && netFood >= -EPS;
+  const happy = happiness(state).value >= HAPPINESS.growthThreshold;
+  if (hasRoom && foodOk && happy) {
     return { status: 'growing', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };
   }
+  // Room + food are fine but the settlement is unhappy — happiness is the sole blocker.
+  if (hasRoom && foodOk && !happy) return { status: 'unhappy', progress: 0 };
   return { status: 'stalled', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };
 }
 

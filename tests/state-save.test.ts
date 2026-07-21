@@ -7,12 +7,13 @@ import { RESOURCE_IDS } from '../src/content/resources';
 describe('newGame shape', () => {
   it('bootstraps a fresh settlement with the documented starting values', () => {
     const s = newGame(42);
-    expect(s.version).toBe(1);
+    expect(s.version).toBe(2);
     expect(s.run.resources.food).toBe(20);
     expect(s.run.resources.wood).toBe(0);
     expect(s.run.resources.stone).toBe(0);
     expect(s.run.resources.mana).toBe(0);
     expect(s.run.resources.research).toBe(0);
+    expect(s.run.resources.culture).toBe(0);
     expect(s.run.caps).toEqual({ wood: 200, food: 200, stone: 200 });
     expect(s.run.population).toEqual({ total: 0, jobs: {} });
     expect(s.run.popCap).toBe(0);
@@ -39,6 +40,38 @@ describe('save round-trip', () => {
     const env = JSON.parse(serialize(newGame(1)));
     expect(env.magic).toBe(SAVE_MAGIC);
     expect(SAVE_MAGIC).toBe('arcane-dominion-save');
+  });
+
+  it('migrates a v1 save (no culture) up to v2, backfilling culture → 0', () => {
+    // A v1 envelope whose resources predate the culture currency.
+    const v1: any = {
+      magic: SAVE_MAGIC,
+      version: 1,
+      state: {
+        version: 1,
+        seed: 1,
+        rngState: 1,
+        run: {
+          resources: { wood: 5, food: 20, stone: 0, mana: 0, research: 0 }, // no `culture`
+          caps: { wood: 200, food: 200, stone: 200 },
+          population: { total: 0, jobs: {} },
+          popCap: 0,
+          buildings: {},
+          tech: [],
+          growthProgress: 0,
+          flags: {},
+          chronicle: [],
+        },
+        settings: { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono' },
+        playtime: 0,
+        lastSaved: Date.now(),
+      },
+    };
+    const res = safeLoad(JSON.stringify(v1));
+    expect(res.ok).toBe(true);
+    expect(res.migratedFrom).toBe(1);
+    expect(res.state!.version).toBe(2);
+    expect(res.state!.run.resources.culture).toBe(0);
   });
 });
 

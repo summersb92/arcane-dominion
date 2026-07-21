@@ -27,6 +27,7 @@ export type BuildingId =
   | 'mine'
   | 'workshop'
   | 'forge'
+  | 'amphitheater'
   | 'arcane-font'
   | 'animated-tools';
 
@@ -35,11 +36,13 @@ export type BuildingEffect =
   | { kind: 'popCap'; amount: number } // +N housing capacity
   | { kind: 'cap'; amount: number } // +N to EACH mundane storage cap
   | { kind: 'foodCap'; amount: number } // +N to the FOOD storage cap only (Granary)
-  // ONGOING (derived per tick from building count):
+  // ONGOING (derived per tick / per read from building count):
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
   | { kind: 'jobOutputMult'; amount: number } // +fraction to EVERY worker's output (Workshop/Forge)
   | { kind: 'produce'; resource: ResourceId; perSec: number } // passive construct output
-  | { kind: 'manaUpkeep'; perSec: number }; // mana drained per second
+  | { kind: 'manaUpkeep'; perSec: number } // mana drained per second
+  | { kind: 'researchCap'; amount: number } // +N to the RESEARCH cap (science buildings; caps.ts)
+  | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
 
 export interface BuildingDef {
   id: BuildingId;
@@ -114,11 +117,15 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'scholars-study',
     name: "Scholar's Study",
-    blurb: 'A place of learning. +2 Scholar job slots (research), +20 storage.',
+    blurb: 'A place of learning. +2 Scholar job slots (research), +50 research cap, +20 storage.',
     cost: { wood: 30, stone: 15 },
     costGrowth: 1.3,
     requiresBuilding: 'forager-hut',
-    effects: [{ kind: 'jobCapacity', job: 'scholar', slots: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'jobCapacity', job: 'scholar', slots: 2 },
+      { kind: 'researchCap', amount: 50 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
   },
   {
     id: 'granary',
@@ -132,13 +139,14 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'library',
     name: 'Library',
-    blurb: 'Shelves of scrolls. +2 Scholar slots, +0.1 research/s, +20 storage.',
+    blurb: 'Shelves of scrolls. +2 Scholar slots, +0.1 research/s, +100 research cap, +20 storage.',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'writing',
     effects: [
       { kind: 'jobCapacity', job: 'scholar', slots: 2 },
       { kind: 'produce', resource: 'research', perSec: 0.1 },
+      { kind: 'researchCap', amount: 100 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -172,6 +180,19 @@ export const BUILDINGS: BuildingDef[] = [
     costGrowth: 1.3,
     requiresTech: 'iron-working',
     effects: [{ kind: 'jobOutputMult', amount: 0.15 }, { kind: 'cap', amount: STRUCT_CAP }],
+  },
+  {
+    id: 'amphitheater',
+    name: 'Amphitheater',
+    blurb: 'A stage for song and spectacle. +2 Bard slots (Culture), +10 happiness, +20 storage. Cost rises with each.',
+    cost: { wood: 40, stone: 30 },
+    costGrowth: 1.3,
+    requiresTech: 'the-arts',
+    effects: [
+      { kind: 'jobCapacity', job: 'bard', slots: 2 },
+      { kind: 'happiness', amount: 10 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
   },
   {
     id: 'arcane-font',

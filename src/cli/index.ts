@@ -25,6 +25,7 @@ import { build } from '../engine/systems/buildings';
 import { assignJob, unassignJob, jobsView } from '../engine/systems/jobs';
 import { research } from '../engine/systems/tech';
 import { productionRates } from '../engine/systems/production';
+import { effectiveCap } from '../engine/systems/caps';
 import { buildingsView } from '../engine/systems/buildings';
 import { techView } from '../engine/systems/tech';
 import { actionsView } from '../engine/systems/actions';
@@ -42,10 +43,10 @@ function freshState(seed?: number): GameState {
 function renderResources(state: GameState): string {
   const r = state.run.resources;
   const rates = productionRates(state);
-  const caps = state.run.caps;
   return RESOURCE_IDS.map((id) => {
     const def = RESOURCE_BY_ID[id];
-    const capStr = id === 'mana' || id === 'research' ? '' : `/${formatNumber(caps[id as 'wood' | 'food' | 'stone'])}`;
+    const cap = effectiveCap(state, id);
+    const capStr = Number.isFinite(cap) ? `/${formatNumber(cap)}` : ''; // research is now capped; mana/culture uncapped
     const rate = Math.abs(rates[id]) > EPS ? ` ${formatRate(rates[id])}` : '';
     return `  ${def.glyph} ${def.label.padEnd(8)} ${formatNumber(r[id])}${capStr}${rate}`;
   }).join('\n');
@@ -237,7 +238,10 @@ function runPipeline(commands: PipeCommand[], json: boolean, seed?: number): num
         const s = ensure();
         for (const t of techView(s)) {
           const status = t.researched ? 'done' : !t.available ? 'locked' : t.affordable ? 'ready' : 'need-research';
-          console.log(`  ${t.id.padEnd(14)} ${status.padEnd(14)} 📜${t.cost}  ${t.name}`);
+          const matCost = Object.entries(t.resourceCost)
+            .map(([res, amt]) => ` +${RESOURCE_BY_ID[res as ResourceId].glyph}${amt}`)
+            .join('');
+          console.log(`  ${t.id.padEnd(14)} ${status.padEnd(14)} 📜${t.cost}${matCost}  ${t.name}`);
         }
         break;
       }

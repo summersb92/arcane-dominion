@@ -35,14 +35,20 @@ function globalJobMult(state: GameState): number {
   return m;
 }
 
-/** Tech-driven output multiplier for a job. The three TOOL TIERS (Stone Tools <
- *  Bronze Working < Iron Working) stack on the gather jobs; Agriculture is a Farmer-only
- *  crop bonus. The global Workshop/Forge output boost applies to every job. */
+/** Tech-driven output multiplier for a job. The STONE tools are PER-JOB (Stone Axe →
+ *  Woodcutter, Stone Hoe → Farmer, Stone Pick → Stonecutter, each +25% to only that job);
+ *  the GLOBAL tool tiers (Bronze Working < Iron Working) stack on all three gather jobs
+ *  atop whichever stone tools are owned. Agriculture is a Farmer-only crop bonus. The
+ *  global Workshop/Forge output boost applies to every job. */
 function jobEfficiency(state: GameState, jobId: string): number {
   const tech = state.run.tech;
   let m = 1;
+  // Per-tool stone techs — each boosts only its own gather job.
+  if (jobId === 'woodcutter' && tech.includes('stone-axe')) m *= TECH_BONUS.stoneAxe;
+  if (jobId === 'forager' && tech.includes('stone-hoe')) m *= TECH_BONUS.stoneHoe;
+  if (jobId === 'quarry-worker' && tech.includes('stone-pick')) m *= TECH_BONUS.stonePick;
+  // Global tool tiers — stack on ALL three gather jobs.
   if (GATHER_JOBS.has(jobId)) {
-    if (tech.includes('stone-tools')) m *= TECH_BONUS.stoneTools;
     if (tech.includes('bronze-working')) m *= TECH_BONUS.bronzeWorking;
     if (tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
   }
@@ -183,6 +189,7 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.wood += f.gross.wood * dt;
   run.resources.stone += f.gross.stone * dt;
   run.resources.research += f.gross.research * dt;
+  run.resources.culture += f.gross.culture * dt; // uncapped, accumulates
 
   // Mana: production − construct upkeep, clamped at 0 (constructs still run gently when dry).
   run.resources.mana += (f.gross.mana - f.manaUpkeep) * dt;
@@ -199,8 +206,9 @@ export function runProduction(state: GameState, dt: number): void {
     run.flags.starving = false;
   }
 
-  // Clamp mundane materials to their effective caps (excess is lost); magic is uncapped.
-  for (const id of ['wood', 'food', 'stone'] as ResourceId[]) {
+  // Clamp the capped resources to their effective caps (excess is lost): the three mundane
+  // materials plus RESEARCH (now capped by science buildings). Mana/culture are uncapped.
+  for (const id of ['wood', 'food', 'stone', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

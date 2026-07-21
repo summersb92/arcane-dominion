@@ -9,7 +9,7 @@
 import type { BuildingId } from './buildings';
 import type { ResourceId } from './resources';
 
-export type JobId = 'woodcutter' | 'forager' | 'quarry-worker' | 'scholar';
+export type JobId = 'woodcutter' | 'forager' | 'quarry-worker' | 'scholar' | 'bard';
 
 export interface JobDef {
   id: JobId;
@@ -49,6 +49,13 @@ export const JOBS: JobDef[] = [
     blurb: 'Studies at the study. Produces research.',
     produces: { research: 0.2 },
     requiresBuildingCapacity: 'scholars-study',
+  },
+  {
+    id: 'bard',
+    name: 'Bard',
+    blurb: 'Performs at the amphitheater. Produces culture — and each Bard raises happiness.',
+    produces: { culture: 0.2 },
+    requiresBuildingCapacity: 'amphitheater',
   },
 ];
 

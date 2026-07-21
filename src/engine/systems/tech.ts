@@ -4,6 +4,7 @@
 // bonuses read. Pure engine, no DOM.
 
 import { TECHS, TECH_BY_ID, type TechDef, type TechId } from '../../content/tech';
+import type { ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
@@ -17,16 +18,22 @@ export function prereqsMet(state: GameState, def: TechDef): boolean {
   return true;
 }
 
-/** True if the node's research cost is affordable right now. */
+/** True if the node's FULL cost — research AND every material in resourceCost — is
+ *  affordable right now. */
 export function canAffordTech(state: GameState, id: TechId): boolean {
   const def = TECH_BY_ID[id];
-  return !!def && state.run.resources.research >= def.cost - EPS;
+  if (!def) return false;
+  if (state.run.resources.research < def.cost - EPS) return false;
+  for (const [res, amt] of Object.entries(def.resourceCost ?? {})) {
+    if ((state.run.resources[res as ResourceId] ?? 0) < (amt as number) - EPS) return false;
+  }
+  return true;
 }
 
 /**
- * Research one tech node. Enforces "not already known", prerequisites, and cost; on
- * success spends the research and records the unlock (plus its story beats). Returns
- * true if unlocked. No mutation on refusal.
+ * Research one tech node. Enforces "not already known", prerequisites, and the full cost
+ * (research + every material in resourceCost); on success spends them all and records the
+ * unlock (plus its story beats). Returns true if unlocked. No mutation on refusal.
  */
 export function research(state: GameState, id: TechId): boolean {
   const def = TECH_BY_ID[id];
@@ -36,6 +43,9 @@ export function research(state: GameState, id: TechId): boolean {
   if (!canAffordTech(state, id)) return false;
 
   state.run.resources.research -= def.cost;
+  for (const [res, amt] of Object.entries(def.resourceCost ?? {})) {
+    state.run.resources[res as ResourceId] -= amt as number;
+  }
   state.run.tech.push(id);
   logEvent(state, `Researched ${def.name}.`);
 
@@ -52,6 +62,7 @@ export interface TechView {
   name: string;
   blurb: string;
   cost: number;
+  resourceCost: Partial<Record<ResourceId, number>>; // extra MATERIAL cost beyond research
   unlocks: string[];
   researched: boolean;
   available: boolean; // prereqs met and not yet researched
@@ -67,6 +78,7 @@ export function techView(state: GameState): TechView[] {
       name: def.name,
       blurb: def.blurb,
       cost: def.cost,
+      resourceCost: def.resourceCost ?? {},
       unlocks: def.unlocks,
       researched,
       available: !researched && prereqsMet(state, def),

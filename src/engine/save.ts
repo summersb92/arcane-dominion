@@ -3,10 +3,10 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 1 (fresh game): there is no legacy migration ladder yet. `normalize`
-// backfills every run.* container the read models touch so a partial/foreign save never
-// dereferences undefined; `validate` then rejects anything structurally garbage (NaN,
-// wrong type, out-of-range) rather than loading a broken run.
+// SAVE_VERSION is 2. `migrate` brings an older save's shape up to current (v1 → v2 added
+// the `culture` resource); `normalize` then backfills every run.* container the read models
+// touch so a partial/foreign save never dereferences undefined; `validate` finally rejects
+// anything structurally garbage (NaN, wrong type, out-of-range) rather than loading a broken run.
 
 import { JOB_IDS } from '../content/jobs';
 import { MUNDANE_RESOURCE_IDS, RESOURCE_IDS, type MundaneResourceId } from '../content/resources';
@@ -57,7 +57,7 @@ export function deserialize(text: string): GameState {
   if (parsed.version > SAVE_VERSION) {
     throw new Error(`Save is from a newer version (${parsed.version} > ${SAVE_VERSION}).`);
   }
-  // (No migration ladder yet — SAVE_VERSION is 1. normalize handles older/partial shapes.)
+  migrate(state, typeof parsed.version === 'number' ? parsed.version : SAVE_VERSION);
 
   normalize(state);
   validate(state);
@@ -88,6 +88,23 @@ export const importString = (text: string): GameState => deserialize(text);
 // --- file helpers the UI download/upload and the CLI both reuse (pretty JSON) ---
 export const toFileString = (state: GameState): string => serialize(state, true);
 export const fromFileString = (text: string): GameState => deserialize(text);
+
+/**
+ * Migration ladder — bring an older save's SHAPE up to the current SAVE_VERSION before
+ * normalize/validate run. Each rung is idempotent and only touches what changed.
+ *   v1 → v2: added the `culture` resource. It defaults to 0; normalize's per-id backfill
+ *            (over RESOURCE_IDS) fills it, so this rung only documents the bump. Research
+ *            and happiness became DERIVED (a cap and a read model) — no persistent fields.
+ */
+function migrate(state: GameState, fromVersion: number): void {
+  if (!state || typeof state !== 'object') return;
+  if (fromVersion < 2) {
+    // culture backfilled to 0 by normalize (RESOURCE_IDS loop). Nothing else to rewrite.
+    if (state.run && typeof state.run === 'object' && state.run.resources && typeof state.run.resources === 'object') {
+      state.run.resources.culture ??= 0;
+    }
+  }
+}
 
 // --- internals ---
 function isEnvelope(v: unknown): v is SaveEnvelope {

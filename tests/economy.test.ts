@@ -250,15 +250,17 @@ describe('resource breakdown (hover math)', () => {
 });
 
 describe('tech', () => {
-  it('researching a tech spends research and unlocks it', () => {
+  it('researching a tech spends research (and any material cost) and unlocks it', () => {
     const s = newGame(1);
     s.run.resources.research = 20;
-    expect(research(s, 'stone-tools')).toBe(true); // cost 10 (doubled scale)
-    expect(s.run.tech).toContain('stone-tools');
+    s.run.resources.stone = 15; // stone-axe also consumes 10 stone
+    expect(research(s, 'stone-axe')).toBe(true); // cost 10 research + 10 stone
+    expect(s.run.tech).toContain('stone-axe');
     expect(s.run.resources.research).toBe(10);
+    expect(s.run.resources.stone).toBe(5);
   });
 
-  it('stone-tools boosts gather output (+25%)', () => {
+  it('stone-axe boosts Woodcutter output (+25%)', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
@@ -266,7 +268,7 @@ describe('tech', () => {
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
     expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
-    s.run.tech.push('stone-tools');
+    s.run.tech.push('stone-axe');
     expect(productionRates(s).wood).toBeCloseTo(0.625, 6); // ×1.25
   });
 
@@ -282,6 +284,7 @@ describe('tech', () => {
   it('cannot research without enough research on hand', () => {
     const s = newGame(1);
     s.run.resources.research = 2;
-    expect(research(s, 'stone-tools')).toBe(false); // costs 10
+    s.run.resources.stone = 100; // plenty of the material — research is the shortfall
+    expect(research(s, 'stone-axe')).toBe(false); // costs 10 research
   });
 });

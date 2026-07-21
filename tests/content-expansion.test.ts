@@ -47,14 +47,19 @@ describe('tech tree — doubled costs and Stone→Bronze→Iron→Magic DAG', ()
   it('a Stone-Age tech is available at the very start', () => {
     const s = newGame(1);
     const available = techView(s).filter((t) => t.available).map((t) => t.id);
-    expect(available).toContain('stone-tools');
+    // The three per-tool stone techs and pottery are all available from turn one.
+    expect(available).toContain('stone-axe');
+    expect(available).toContain('stone-hoe');
+    expect(available).toContain('stone-pick');
     expect(available).toContain('pottery');
     // Iron/magic tier is NOT available yet.
     expect(available).not.toContain('awakening');
   });
 
   it('forms a clean prereq chain up to the magic tier', () => {
-    expect(TECH_BY_ID.agriculture.requires).toContain('stone-tools');
+    // Agriculture/Masonry now hang off the per-tool stone techs.
+    expect(TECH_BY_ID.agriculture.requires).toContain('stone-hoe');
+    expect(TECH_BY_ID.masonry.requires).toContain('stone-pick');
     expect(TECH_BY_ID['bronze-working'].requires).toContain('mining');
     expect(TECH_BY_ID['iron-working'].requires).toContain('bronze-working');
     expect(TECH_BY_ID.awakening.requires).toContain('iron-working');
@@ -62,8 +67,35 @@ describe('tech tree — doubled costs and Stone→Bronze→Iron→Magic DAG', ()
   });
 });
 
+describe('per-tool stone techs boost ONLY their own gather job', () => {
+  it('Stone Axe boosts the Woodcutter only, not the Farmer or Stonecutter', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 200;
+    s.run.resources.stone = 200;
+    s.run.buildings.hut = 1;
+    s.run.tech.push('masonry'); // opens the Quarry/Stonecutter
+    build(s, 'woodcutters-lodge');
+    build(s, 'forager-hut');
+    build(s, 'quarry');
+    s.run.population.total = 3;
+    assignJob(s, 'woodcutter', 1);
+    assignJob(s, 'forager', 1);
+    assignJob(s, 'quarry-worker', 1);
+
+    const wood0 = productionRates(s).wood;
+    const food0 = productionRates(s).food;
+    const stone0 = productionRates(s).stone;
+
+    s.run.tech.push('stone-axe');
+    const r = productionRates(s);
+    expect(r.wood).toBeCloseTo(wood0 * 1.25, 6); // Woodcutter +25%
+    expect(r.food).toBeCloseTo(food0, 6); // Farmer unaffected
+    expect(r.stone).toBeCloseTo(stone0, 6); // Stonecutter unaffected
+  });
+});
+
 describe('tool-tier efficiency stacks on a gather job', () => {
-  it('Stone Tools < Bronze Working < Iron Working each raise output multiplicatively', () => {
+  it('Stone Axe < Bronze Working < Iron Working each raise Woodcutter output multiplicatively', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1;
@@ -74,7 +106,7 @@ describe('tool-tier efficiency stacks on a gather job', () => {
     const base = productionRates(s).wood;
     expect(base).toBeCloseTo(0.5, 6);
 
-    s.run.tech.push('stone-tools');
+    s.run.tech.push('stone-axe');
     const withStone = productionRates(s).wood;
     expect(withStone).toBeCloseTo(0.5 * 1.25, 6);
 

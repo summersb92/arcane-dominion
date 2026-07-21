@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 1; // fresh game — no legacy migration ladder yet
+export const SAVE_VERSION = 2; // v2: added the `culture` resource (migrate rung backfills → 0)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -27,9 +27,11 @@ export interface ChronicleEntry {
 }
 
 export interface RunState {
-  /** All five currencies. mana/research start 0 and are uncapped. */
+  /** All currencies. mana/research/culture start 0. mana/culture are uncapped; research is
+   *  capped by a derived cap (systems/caps.ts). */
   resources: Record<ResourceId, number>;
-  /** Storage caps for the three MUNDANE materials only (mana/research uncapped). */
+  /** Storage caps for the three MUNDANE materials only (research uses a derived cap; mana/
+   *  culture are uncapped). */
   caps: Record<MundaneResourceId, number>;
   population: Population;
   popCap: number; // housing capacity
@@ -67,6 +69,7 @@ export function freshResources(): Record<ResourceId, number> {
   r.stone = STARTING.stone;
   r.mana = STARTING.mana;
   r.research = STARTING.research;
+  r.culture = STARTING.culture;
   return r;
 }
 

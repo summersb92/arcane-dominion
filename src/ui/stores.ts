@@ -16,6 +16,7 @@ import type { BuildingId } from '../content/buildings';
 import type { TechId } from '../content/tech';
 import { productionRates, foodBalance, resourceBreakdown } from '../engine/systems/production';
 import { growthStatus, type GrowthInfo } from '../engine/systems/population';
+import { happiness, type HappinessInfo } from '../engine/systems/happiness';
 import { calendar, type CalendarInfo } from '../engine/systems/calendar';
 import { effectiveCap } from '../engine/systems/caps';
 import {
@@ -57,6 +58,7 @@ export interface PopulationView {
   starving: boolean;
   name: string; // the settlement's name for its size — grows Camp → Small Village → … → City
   growth: GrowthInfo; // next-settler status + 0..1 progress toward it
+  happiness: HappinessInfo; // 0..100 value + content/unhappy status + breakdown
 }
 
 /** The settlement's evolving name by population size — labels the settlement tab and its
@@ -227,6 +229,10 @@ export function toView(state: GameState): UiState {
     } else if (def.id === 'research') {
       show =
         amount > EPS || rates.research > EPS || jobCapacity(state, 'scholar') > 0 || run.tech.length > 0;
+    } else if (def.id === 'culture') {
+      // A future currency, revealed only once discovered (produced/held) — same progressive
+      // reveal as research/mana. A Bard at the Amphitheater is what first yields it.
+      show = amount > EPS || rates.culture > EPS;
     }
     return {
       id: def.id,
@@ -282,12 +288,14 @@ export function toView(state: GameState): UiState {
         : !t.affordable
           ? 'need more research'
           : '';
+    // Full cost = research plus any material cost, e.g. "Research 10 · Stone 10".
+    const fullCost: Partial<Record<ResourceId, number>> = { research: t.cost, ...t.resourceCost };
     return {
       id: t.id,
       name: t.name,
       blurb: t.blurb,
       cost: t.cost,
-      costText: `${RESOURCE_BY_ID.research.label} ${numStr(t.cost)}`,
+      costText: costText(fullCost),
       unlocks: t.unlocks,
       researched: t.researched,
       available: t.available,
@@ -323,6 +331,7 @@ export function toView(state: GameState): UiState {
       starving: run.flags.starving === true,
       name: settlementName(run.population.total),
       growth: growthStatus(state),
+      happiness: happiness(state),
     },
     jobs,
     buildings,

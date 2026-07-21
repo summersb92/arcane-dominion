@@ -68,6 +68,8 @@
         return 'Losing settlers to hunger';
       case 'full':
         return 'Housing full — build a House';
+      case 'unhappy':
+        return 'Growth paused — settlement is unhappy';
       default:
         return 'Growth paused — needs a food surplus';
     }
@@ -152,6 +154,12 @@
               Food
               <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
                 {fmtRate(pop.foodBalance) || '0/s'}
+              </strong>
+            </span>
+            <span title={pop.happiness.breakdown.map((b) => `${b.label}: ${b.amount >= 0 ? '+' : ''}${b.amount}`).join('\n')}>
+              Happiness
+              <strong class:good={pop.happiness.status === 'content'} class:bad={pop.happiness.status === 'unhappy'}>
+                {Math.round(pop.happiness.value)} · {pop.happiness.status}
               </strong>
             </span>
             {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
