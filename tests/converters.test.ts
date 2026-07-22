@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
-import { build, setActive } from '../src/engine/systems/buildings';
+import { build, setActive, setRecipeActive } from '../src/engine/systems/buildings';
 import { assignJob, jobCapacity } from '../src/engine/systems/jobs';
 import { productionRates, resourceBreakdown } from '../src/engine/systems/production';
+import { research } from '../src/engine/systems/tech';
 import { TECH_BY_ID } from '../src/content/tech';
 
 describe('Coal Mine + Coal Miner (Coal Mining tech)', () => {
@@ -112,5 +113,94 @@ describe('Steelworks — a worker-backed converter (wood + iron → steel)', () 
 
   it('Steelmaking requires Iron Working', () => {
     expect(TECH_BY_ID.steelmaking.requires).toContain('iron-working');
+  });
+});
+
+describe('Steelworks fuel toggle — Wood vs Coal recipes', () => {
+  it('a fresh Steelworks starts on Wood; switching a copy to Coal yields more steel per iron', () => {
+    const s = newGame(1);
+    s.run.tech.push('steelmaking');
+    s.run.resources.wood = 500;
+    s.run.resources.stone = 200;
+    s.run.resources.iron = 500;
+    s.run.resources.coal = 500;
+    expect(build(s, 'steelworks')).toBe(true); // starts active on recipe 0 (Wood)
+    s.run.population.total = 1;
+    assignJob(s, 'smelter', 1);
+
+    // Wood fuel: −0.3 wood, −0.3 iron → +0.2 steel.
+    expect(productionRates(s).steel).toBeCloseTo(0.2, 6);
+    expect(productionRates(s).wood).toBeCloseTo(-0.3, 6);
+    expect(productionRates(s).coal).toBeCloseTo(0, 6);
+
+    // Re-fuel the single copy: 0 on Wood (recipe 0), 1 on Coal (recipe 1).
+    setRecipeActive(s, 'steelworks', 0, 0);
+    setRecipeActive(s, 'steelworks', 1, 1);
+    const r = productionRates(s);
+    expect(r.steel).toBeCloseTo(0.3, 6); // more steel...
+    expect(r.iron).toBeCloseTo(-0.3, 6); // ...for the SAME iron
+    expect(r.coal).toBeCloseTo(-0.3, 6); // burns coal instead of wood
+    expect(r.wood).toBeCloseTo(0, 6);
+  });
+
+  it('splits active copies across fuels (e.g. 3 wood + 2 coal of 6, 1 off), limited by Smelters', () => {
+    const s = newGame(1);
+    s.run.buildings.steelworks = 6; // active defaults to [6, 0] (all wood) until toggled
+    s.run.resources.wood = 1000;
+    s.run.resources.iron = 1000;
+    s.run.resources.coal = 1000;
+    s.run.population.total = 6;
+    assignJob(s, 'smelter', 6); // enough Smelters to back every active copy
+    expect(jobCapacity(s, 'smelter')).toBe(6);
+
+    // 3 on wood, 2 on coal, 1 left off.
+    setRecipeActive(s, 'steelworks', 0, 3);
+    setRecipeActive(s, 'steelworks', 1, 2);
+    const r = productionRates(s);
+    // steel: 3×0.2 (wood) + 2×0.3 (coal) = 1.2 ; iron: 5×0.3 = 1.5 ; wood 3×0.3=0.9 ; coal 2×0.3=0.6
+    expect(r.steel).toBeCloseTo(1.2, 6);
+    expect(r.iron).toBeCloseTo(-1.5, 6);
+    expect(r.wood).toBeCloseTo(-0.9, 6);
+    expect(r.coal).toBeCloseTo(-0.6, 6);
+  });
+
+  it('a shared Smelter pool backs recipes in order (basic Wood recipe fills first)', () => {
+    const s = newGame(1);
+    s.run.buildings.steelworks = 5;
+    s.run.resources.wood = 1000;
+    s.run.resources.iron = 1000;
+    s.run.resources.coal = 1000;
+    s.run.population.total = 4; // only 4 Smelters for 5 active copies
+    assignJob(s, 'smelter', 4);
+
+    setRecipeActive(s, 'steelworks', 0, 3); // 3 wood
+    setRecipeActive(s, 'steelworks', 1, 2); // 2 coal → 5 active, but only 4 workers
+    const r = productionRates(s);
+    // Workers fill Wood (3) first, leaving 1 for Coal → 3 wood + 1 coal run.
+    expect(r.steel).toBeCloseTo(3 * 0.2 + 1 * 0.3, 6);
+    expect(r.coal).toBeCloseTo(-0.3, 6); // only 1 coal copy actually runs
+  });
+});
+
+describe('Steel Tools research (a steel sink + top tool tier)', () => {
+  it('costs steel and boosts the gather jobs above Iron Working', () => {
+    expect(TECH_BY_ID['steel-tools'].resourceCost?.steel).toBe(40);
+    const s = newGame(1);
+    // A working Woodcutter to sample the tool multiplier.
+    s.run.buildings.hut = 1;
+    s.run.resources.wood = 25;
+    build(s, 'woodcutters-lodge');
+    s.run.population.total = 1;
+    assignJob(s, 'woodcutter', 1);
+    s.run.tech.push('bronze-working', 'iron-working');
+    const beforeTool = productionRates(s).wood; // 0.5 × 1.35 × 1.5
+
+    // Research Steel Tools (needs the prereq + research + 40 steel).
+    s.run.tech.push('steelmaking');
+    s.run.resources.research = 200;
+    s.run.resources.steel = 40;
+    expect(research(s, 'steel-tools')).toBe(true);
+    expect(s.run.resources.steel).toBe(0); // steel spent
+    expect(productionRates(s).wood).toBeCloseTo(beforeTool * 1.65, 6); // +65% on top
   });
 });

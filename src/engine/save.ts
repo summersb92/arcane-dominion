@@ -3,10 +3,11 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 6. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 7. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
 // `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
-// `coal`/`steel` materials + the converter `active` toggle map); `normalize` then backfills
+// `coal`/`steel` materials + the converter `active` toggle map; v6 → v7 made `active` per-recipe
+// arrays); `normalize` then backfills
 // every run.* container the read models touch so a partial/foreign save never dereferences
 // undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
 // out-of-range) rather than loading a broken run.
@@ -110,6 +111,8 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v5 → v6: added the `coal` + `steel` materials and the converter `active` toggle map. Resources
  *            default to 0 and caps to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS); the
  *            `active` map backfills to {} (absent entries read as all-on). Documents the bump.
+ *   v6 → v7: the converter `active` map became PER-RECIPE arrays (multi-fuel Steelworks). Any old
+ *            scalar count is wrapped into a one-element array here (its copies keep running recipe 0).
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -142,6 +145,16 @@ function migrate(state: GameState, fromVersion: number): void {
     if (hasResources) {
       state.run.resources.coal ??= 0;
       state.run.resources.steel ??= 0;
+    }
+  }
+  if (fromVersion < 7) {
+    // The converter `active` map went from a single count per building to a PER-RECIPE array.
+    // Wrap any old scalar count into a one-element array (its copies keep running recipe 0).
+    const active = state.run?.active;
+    if (active && typeof active === 'object') {
+      for (const [k, v] of Object.entries(active)) {
+        if (typeof v === 'number') (active as Record<string, number[]>)[k] = [v];
+      }
     }
   }
 }

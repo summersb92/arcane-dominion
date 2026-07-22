@@ -92,7 +92,8 @@ export const TECH_BONUS = {
   stonePick: 1.25, // Stonecutter only
   /** Global tool tiers — stack on all three gather jobs. */
   bronzeWorking: 1.35, // ×, stacks atop the stone tools
-  ironWorking: 1.5, // ×, the biggest tool-tier bump
+  ironWorking: 1.5, // ×, stacks atop bronze
+  steelTools: 1.65, // ×, the top tool-tier bump (researched with steel), stacks atop iron
   /** Crop tech — Farmer output only. */
   agriculture: 1.5, // +50% Farmer food
 };

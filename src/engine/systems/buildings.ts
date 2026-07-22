@@ -4,32 +4,68 @@
 // each tick from the building count (systems/jobs.ts, systems/production.ts). Requirement
 // gates (tech + affordability) are enforced before any resource is spent. Pure engine.
 
-import { BUILDINGS, BUILDING_BY_ID, type BuildingDef, type BuildingId } from '../../content/buildings';
+import { BUILDINGS, BUILDING_BY_ID, type BuildingDef, type BuildingEffect, type BuildingId } from '../../content/buildings';
 import { MUNDANE_RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
 const EPS = 1e-9;
 
-/** True if a building is a CONVERTER (has a `convert` effect) — toggled N-of-M via run.active. */
+export type ConvertEffect = Extract<BuildingEffect, { kind: 'convert' }>;
+
+/** A converter building's RECIPES — one per `convert` effect (e.g. the Steelworks has Wood + Coal). */
+export function convertEffects(def: BuildingDef): ConvertEffect[] {
+  return def.effects.filter((e): e is ConvertEffect => e.kind === 'convert');
+}
+
+/** True if a building is a CONVERTER (has ≥1 `convert` effect) — toggled per-recipe via run.active. */
 export function isConverter(def: BuildingDef): boolean {
   return def.effects.some((e) => e.kind === 'convert');
 }
 
-/** How many copies of `id` are switched ON. Absent from run.active → all copies (backwards-compat
- *  for old saves and buildings never toggled). Always clamped to [0, count]. */
-export function activeCount(state: GameState, id: BuildingId): number {
+/** How many copies run EACH recipe, aligned to convertEffects order. The sum never exceeds the
+ *  built count. Absent from run.active → all copies on the FIRST recipe (a fresh converter runs
+ *  its basic recipe; also the backwards-compat default for old saves). */
+export function activeRecipes(state: GameState, id: BuildingId): number[] {
+  const def = BUILDING_BY_ID[id];
+  const recipes = def ? convertEffects(def).length : 0;
   const count = state.run.buildings[id] ?? 0;
-  const a = state.run.active?.[id];
-  if (a === undefined) return count;
-  return Math.max(0, Math.min(count, Math.floor(a)));
+  const arr = new Array<number>(Math.max(recipes, 1)).fill(0);
+  if (recipes === 0) return arr;
+  const raw = state.run.active?.[id];
+  if (!Array.isArray(raw)) {
+    arr[0] = count; // absent → all copies on the first (basic) recipe
+    return arr;
+  }
+  let sum = 0;
+  for (let i = 0; i < recipes; i++) {
+    let v = Math.max(0, Math.floor(Number(raw[i] ?? 0)) || 0);
+    if (sum + v > count) v = Math.max(0, count - sum); // never allocate more copies than exist
+    arr[i] = v;
+    sum += v;
+  }
+  return arr;
 }
 
-/** Switch `n` copies of a converter ON (clamped to [0, count]). Used by the UI toggle. */
-export function setActive(state: GameState, id: BuildingId, n: number): void {
+/** Total copies of `id` switched ON across all recipes. */
+export function activeCount(state: GameState, id: BuildingId): number {
+  return activeRecipes(state, id).reduce((s, n) => s + n, 0);
+}
+
+/** Set recipe `r` of a converter to run `n` copies (clamped so the total never exceeds count). */
+export function setRecipeActive(state: GameState, id: BuildingId, r: number, n: number): void {
   const count = state.run.buildings[id] ?? 0;
+  const arr = activeRecipes(state, id);
+  if (r < 0 || r >= arr.length) return;
+  const others = arr.reduce((s, v, i) => (i === r ? s : s + v), 0);
+  arr[r] = Math.max(0, Math.min(count - others, Math.floor(n)));
   state.run.active ??= {};
-  state.run.active[id] = Math.max(0, Math.min(count, Math.floor(n)));
+  state.run.active[id] = arr;
+}
+
+/** Switch `n` copies of a single-recipe converter ON (recipe 0). Convenience for simple toggles. */
+export function setActive(state: GameState, id: BuildingId, n: number): void {
+  setRecipeActive(state, id, 0, n);
 }
 
 /** Current cost of the NEXT copy of a building (escalates by costGrowth^count). */
@@ -82,13 +118,15 @@ export function build(state: GameState, id: BuildingId): boolean {
   for (const [res, amt] of Object.entries(cost)) {
     state.run.resources[res as ResourceId] -= amt as number;
   }
-  state.run.buildings[id] = count + 1;
 
-  // Converter buildings track how many copies are switched ON. A freshly raised copy starts
-  // active (absent → treat as all-on, so `?? count` covers old/never-toggled state).
-  if (isConverter(def)) {
+  // Converter buildings track how many copies run each recipe. Snapshot the pre-build allocation,
+  // then start the freshly raised copy on the FIRST (basic) recipe — the player can re-allocate it.
+  const preRecipes = isConverter(def) ? activeRecipes(state, id) : null;
+  state.run.buildings[id] = count + 1;
+  if (preRecipes) {
+    preRecipes[0] += 1;
     state.run.active ??= {};
-    state.run.active[id] = (state.run.active[id] ?? count) + 1;
+    state.run.active[id] = preRecipes;
   }
 
   // Immediate, permanent stat bumps.
@@ -129,8 +167,9 @@ export interface BuildingView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
-  converter: boolean; // has a convert effect → toggled N-of-M
-  active: number; // how many copies are switched ON (converters only; else = count)
+  converter: boolean; // has ≥1 convert effect → toggled per-recipe
+  active: number; // total copies switched ON (converters only; else = count)
+  recipes: { label: string; active: number }[]; // per-recipe running counts (converters; else [])
 }
 
 /** Read model: every building's count, current cost, and buildability. */
@@ -139,6 +178,10 @@ export function buildingsView(state: GameState): BuildingView[] {
     const count = state.run.buildings[def.id] ?? 0;
     const maxed = def.max !== undefined && count >= def.max;
     const converter = isConverter(def);
+    const recipeRuns = converter ? activeRecipes(state, def.id) : [];
+    const recipes = converter
+      ? convertEffects(def).map((e, i) => ({ label: e.label ?? 'Active', active: recipeRuns[i] ?? 0 }))
+      : [];
     return {
       id: def.id,
       name: def.name,
@@ -151,6 +194,7 @@ export function buildingsView(state: GameState): BuildingView[] {
       construct: def.construct === true,
       converter,
       active: converter ? activeCount(state, def.id) : count,
+      recipes,
     };
   });
 }

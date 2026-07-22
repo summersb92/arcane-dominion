@@ -7,7 +7,7 @@ import { RESOURCE_IDS } from '../src/content/resources';
 describe('newGame shape', () => {
   it('bootstraps a fresh settlement with the documented starting values', () => {
     const s = newGame(42);
-    expect(s.version).toBe(6);
+    expect(s.version).toBe(7);
     expect(s.run.resources.food).toBe(20);
     expect(s.run.resources.wood).toBe(0);
     expect(s.run.resources.stone).toBe(0);
@@ -73,7 +73,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v1));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(1);
-    expect(res.state!.version).toBe(6);
+    expect(res.state!.version).toBe(7);
     expect(res.state!.run.resources.culture).toBe(0);
     expect(res.state!.run.resources.furs).toBe(0); // furs backfilled on the way up
     expect(res.state!.run.resources.manaCrystals).toBe(0); // manaCrystals backfilled too
@@ -110,7 +110,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v2));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(2);
-    expect(res.state!.version).toBe(6);
+    expect(res.state!.version).toBe(7);
     expect(res.state!.run.resources.furs).toBe(0);
     expect(res.state!.run.resources.culture).toBe(3); // preserved
     expect(res.state!.run.caps.furs).toBe(200);
@@ -144,7 +144,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v3));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(3);
-    expect(res.state!.version).toBe(6);
+    expect(res.state!.version).toBe(7);
     expect(res.state!.run.resources.manaCrystals).toBe(0);
     expect(res.state!.run.resources.furs).toBe(2); // preserved
     expect(res.state!.run.caps.manaCrystals).toBe(200);
@@ -178,7 +178,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v4));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(4);
-    expect(res.state!.version).toBe(6);
+    expect(res.state!.version).toBe(7);
     expect(res.state!.run.resources.iron).toBe(0);
     expect(res.state!.run.resources.stone).toBe(7); // preserved (old stone is NOT converted)
     expect(res.state!.run.caps.iron).toBe(200);
@@ -213,13 +213,48 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v5));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(5);
-    expect(res.state!.version).toBe(6);
+    expect(res.state!.version).toBe(7);
     expect(res.state!.run.resources.coal).toBe(0);
     expect(res.state!.run.resources.steel).toBe(0);
     expect(res.state!.run.resources.iron).toBe(4); // preserved
     expect(res.state!.run.caps.coal).toBe(200);
     expect(res.state!.run.caps.steel).toBe(200);
     expect(res.state!.run.active).toEqual({}); // toggle map backfilled
+  });
+
+  it('migrates a v6 save (scalar active counts) up to v7, wrapping each into a per-recipe array', () => {
+    // A v6 envelope whose `active` map still stores a single count per converter.
+    const v6: any = {
+      magic: SAVE_MAGIC,
+      version: 6,
+      state: {
+        version: 6,
+        seed: 1,
+        rngState: 1,
+        run: {
+          resources: { wood: 5, food: 20, stone: 7, iron: 4, coal: 2, steel: 1, furs: 2, manaCrystals: 1, mana: 0, research: 0, culture: 3 },
+          caps: { wood: 200, food: 200, stone: 200, iron: 200, coal: 200, steel: 200, furs: 200, manaCrystals: 200 },
+          population: { total: 0, jobs: {} },
+          popCap: 0,
+          buildings: { 'charcoal-ground': 2, steelworks: 3 },
+          active: { 'charcoal-ground': 2, steelworks: 3 }, // OLD scalar form
+          tech: [],
+          growthProgress: 0,
+          flags: {},
+          chronicle: [],
+        },
+        settings: { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono' },
+        playtime: 0,
+        lastSaved: Date.now(),
+      },
+    };
+    const res = safeLoad(JSON.stringify(v6));
+    expect(res.ok).toBe(true);
+    expect(res.migratedFrom).toBe(6);
+    expect(res.state!.version).toBe(7);
+    // Each scalar count becomes a one-element array (copies keep running recipe 0).
+    expect(res.state!.run.active['charcoal-ground']).toEqual([2]);
+    expect(res.state!.run.active.steelworks).toEqual([3]);
   });
 });
 

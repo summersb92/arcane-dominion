@@ -15,34 +15,46 @@ import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
-import { activeCount } from './buildings';
+import { activeRecipes, convertEffects } from './buildings';
 
 const EPS = 1e-9;
 
-/** One converter building's live run: how many copies are ON and what each copy trades per sec. */
+/** One converter RECIPE-run: how many copies of a building run this recipe, and its per-copy trade. */
 interface ConverterRun {
   name: string;
-  copies: number; // ACTIVE copies actually running (activation ∩ worker backing)
+  copies: number; // copies running this recipe (activation ∩ worker backing)
   consume: Partial<Record<ResourceId, number>>; // per copy, per sec
   produce: Partial<Record<ResourceId, number>>; // per copy, per sec
 }
 
-/** Every converter building that is currently running, with its effective (running) copy count.
- *  A copy runs only if it is switched ON (run.active) and — for worker-backed converters like the
- *  Steelworks — backed by an assigned worker of the required job. Input STARVATION is handled by
- *  the caller (runProduction scales by available stock); this reports intended throughput. */
+/** Every converter recipe that is currently running, with its effective (running) copy count.
+ *  A copy runs only if it is switched onto that recipe (run.active) and — for worker-backed
+ *  converters like the Steelworks — backed by an assigned worker. A building's worker pool is
+ *  shared across its recipes and allocated in recipe order (so the basic recipe fills first).
+ *  Input STARVATION is handled by the caller (runProduction scales by available stock); this
+ *  reports intended throughput. */
 function converterRuns(state: GameState): ConverterRun[] {
   const run = state.run;
   const out: ConverterRun[] = [];
   for (const b of BUILDINGS) {
     const count = run.buildings[b.id] ?? 0;
     if (count <= 0) continue;
-    const conv = b.effects.find((e) => e.kind === 'convert');
-    if (!conv || conv.kind !== 'convert') continue;
-    let copies = activeCount(state, b.id);
-    if (conv.requiresWorker) copies = Math.min(copies, run.population.jobs[conv.requiresWorker] ?? 0);
-    if (copies <= 0) continue;
-    out.push({ name: b.name, copies, consume: conv.consume, produce: conv.produce });
+    const recipes = convertEffects(b);
+    if (recipes.length === 0) continue;
+    const running = activeRecipes(state, b.id); // copies per recipe, aligned to `recipes`
+    // Worker-backed recipes draw from ONE shared pool for the building, filled in recipe order.
+    const workerJob = recipes.find((r) => r.requiresWorker)?.requiresWorker;
+    let workersLeft = workerJob ? (run.population.jobs[workerJob] ?? 0) : Infinity;
+    for (let i = 0; i < recipes.length; i++) {
+      const r = recipes[i];
+      let copies = running[i] ?? 0;
+      if (r.requiresWorker) {
+        copies = Math.min(copies, workersLeft);
+        workersLeft -= copies;
+      }
+      if (copies <= 0) continue;
+      out.push({ name: b.name, copies, consume: r.consume, produce: r.produce });
+    }
   }
   return out;
 }
@@ -82,6 +94,7 @@ function jobEfficiency(state: GameState, jobId: string): number {
   if (GATHER_JOBS.has(jobId)) {
     if (tech.includes('bronze-working')) m *= TECH_BONUS.bronzeWorking;
     if (tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
+    if (tech.includes('steel-tools')) m *= TECH_BONUS.steelTools;
   }
   if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
   m *= globalJobMult(state);

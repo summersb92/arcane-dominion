@@ -41,7 +41,8 @@ export type TechId =
   | 'bronze-working'
   // Iron Age
   | 'iron-working'
-  | 'steelmaking';
+  | 'steelmaking'
+  | 'steel-tools';
 
 export interface TechDef {
   id: TechId;
@@ -208,6 +209,15 @@ export const TECHS: TechDef[] = [
     cost: 130,
     requires: ['iron-working'],
     unlocks: ['Steelworks (building)', 'Steel (resource)'],
+  },
+  {
+    id: 'steel-tools',
+    name: 'Steel Tools',
+    blurb: 'Forge tools from steel — the sharpest edge there is. Consumes steel. Another +65% to the gather jobs, atop iron.',
+    cost: 150,
+    resourceCost: { steel: 40 }, // steel is spent refining the tools
+    requires: ['steelmaking'],
+    unlocks: ['+65% Woodcutter / Farmer / Stonecutter / Miner output'],
   },
 ];
 

@@ -26,7 +26,11 @@ import {
   assignJob as engineAssignJob,
   unassignJob as engineUnassignJob,
 } from '../engine/systems/jobs';
-import { buildingsView, build as engineBuild, setActive as engineSetActive } from '../engine/systems/buildings';
+import {
+  buildingsView,
+  build as engineBuild,
+  setRecipeActive as engineSetRecipeActive,
+} from '../engine/systems/buildings';
 import { techView, research as engineResearch } from '../engine/systems/tech';
 import { actionsView, doGather as engineDoGather } from '../engine/systems/actions';
 import type { OfflineSummary } from '../engine/offline';
@@ -92,8 +96,9 @@ export interface BuildingRowView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
-  converter: boolean; // toggled N-of-M (has a convert effect)
-  active: number; // active copies (converters); else = count
+  converter: boolean; // has ≥1 convert effect → per-recipe toggle
+  active: number; // total active copies (converters); else = count
+  recipes: { label: string; active: number }[]; // per-recipe running counts (converters; else [])
   disabled: boolean; // build button disabled
   reason: string; // why disabled ("maxed" / "can't afford"), else ''
 }
@@ -300,6 +305,7 @@ export function toView(state: GameState): UiState {
       construct: b.construct,
       converter: b.converter,
       active: b.active,
+      recipes: b.recipes,
       disabled,
       reason,
     };
@@ -563,9 +569,9 @@ export function build(id: BuildingId): void {
   engineBuild(state, id);
   publish();
 }
-/** Toggle a converter building: switch `n` of its copies ON (clamped to [0, count]). */
-export function setActive(id: BuildingId, n: number): void {
-  engineSetActive(state, id, n);
+/** Toggle a converter building: set recipe `r` to run `n` copies (clamped so the total ≤ count). */
+export function setRecipeActive(id: BuildingId, r: number, n: number): void {
+  engineSetRecipeActive(state, id, r, n);
   publish();
 }
 export function assignJob(id: JobId, n = 1): void {

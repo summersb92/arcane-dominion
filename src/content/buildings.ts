@@ -52,8 +52,11 @@ export type BuildingEffect =
   // N-of-M building — see run.active + systems/production.ts). If `requiresWorker` is set, a copy
   // only runs when backed by an assigned worker of that job (the Steelworks needs a Smelter);
   // converters with no `requiresWorker` run on activation alone (the Charcoal Ground).
+  // A building may carry SEVERAL convert effects — one per selectable RECIPE (e.g. the Steelworks'
+  // Wood vs Coal fuel). `label` names the recipe in the UI toggle; copies are allocated per recipe.
   | {
       kind: 'convert';
+      label?: string;
       consume: Partial<Record<ResourceId, number>>;
       produce: Partial<Record<ResourceId, number>>;
       requiresWorker?: JobId;
@@ -217,13 +220,16 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'steelworks',
     name: 'Steelworks',
-    blurb: 'A furnace that refines steel — each ACTIVE works, staffed by one Smelter, converts wood + iron into steel (−0.3 wood, −0.3 iron → +0.2 steel /s). +1 Smelter slot.',
+    blurb: 'A furnace that refines steel — each ACTIVE works is staffed by one Smelter and burns a fuel. Toggle how many run on WOOD (−0.3 wood, −0.3 iron → +0.2 steel /s) vs COAL (−0.3 coal, −0.3 iron → +0.3 steel /s — more steel per iron). +1 Smelter slot.',
     cost: { wood: 60, stone: 40, iron: 20 },
     costGrowth: 1.3,
     requiresTech: 'steelmaking',
     effects: [
       { kind: 'jobCapacity', job: 'smelter', slots: 1 },
-      { kind: 'convert', consume: { wood: 0.3, iron: 0.3 }, produce: { steel: 0.2 }, requiresWorker: 'smelter' },
+      // Recipe 0 = Wood fuel (the basic recipe a fresh Steelworks starts on).
+      { kind: 'convert', label: 'Wood', consume: { wood: 0.3, iron: 0.3 }, produce: { steel: 0.2 }, requiresWorker: 'smelter' },
+      // Recipe 1 = Coal fuel — hotter burn, more steel per iron.
+      { kind: 'convert', label: 'Coal', consume: { coal: 0.3, iron: 0.3 }, produce: { steel: 0.3 }, requiresWorker: 'smelter' },
     ],
   },
   {

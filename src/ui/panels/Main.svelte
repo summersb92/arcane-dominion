@@ -3,7 +3,7 @@
     game,
     activeTab,
     build,
-    setActive,
+    setRecipeActive,
     assignJob,
     unassignJob,
     research,
@@ -30,10 +30,10 @@
     }
   }
 
-  // Converter toggle: switch active copies up/down without triggering the card's build click.
-  function toggleActive(b: BuildingRowView, delta: number): void {
+  // Converter toggle: allocate a copy to/from a fuel recipe without triggering the card's build click.
+  function toggleRecipe(b: BuildingRowView, r: number, delta: number): void {
     hideTooltip();
-    setActive(b.id, b.active + delta);
+    setRecipeActive(b.id, r, b.recipes[r].active + delta);
   }
 
   // Research cards mirror the build cards: the whole card is the action. Cost, blurb,
@@ -117,19 +117,25 @@
               {#if b.converter && b.count > 0}
                 <!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
                 <div class="conv" on:click|stopPropagation>
-                  <button
-                    class="btn step"
-                    disabled={b.active <= 0}
-                    aria-label="Switch off one {b.name}"
-                    on:click|stopPropagation={() => toggleActive(b, -1)}
-                  >−</button>
-                  <span class="convn">on {b.active}/{b.count}</span>
-                  <button
-                    class="btn step"
-                    disabled={b.active >= b.count}
-                    aria-label="Switch on one {b.name}"
-                    on:click|stopPropagation={() => toggleActive(b, 1)}
-                  >+</button>
+                  {#if b.recipes.length > 1}<span class="convtot">active {b.active}/{b.count}</span>{/if}
+                  {#each b.recipes as rc, r (r)}
+                    <div class="convrow">
+                      {#if b.recipes.length > 1}<span class="convlbl">{rc.label}</span>{/if}
+                      <button
+                        class="btn step"
+                        disabled={rc.active <= 0}
+                        aria-label="Switch off one {b.name} ({rc.label})"
+                        on:click|stopPropagation={() => toggleRecipe(b, r, -1)}
+                      >−</button>
+                      <span class="convn">{b.recipes.length > 1 ? rc.active : `on ${rc.active}/${b.count}`}</span>
+                      <button
+                        class="btn step"
+                        disabled={b.active >= b.count}
+                        aria-label="Switch on one {b.name} ({rc.label})"
+                        on:click|stopPropagation={() => toggleRecipe(b, r, 1)}
+                      >+</button>
+                    </div>
+                  {/each}
                 </div>
               {/if}
             </div>
@@ -386,11 +392,29 @@
   /* Converter toggle inside a build card — its own controls, not the build click. */
   .conv {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    margin-top: 8px;
+    cursor: default;
+  }
+  .convrow {
+    display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 8px;
-    cursor: default;
+  }
+  .convtot {
+    color: var(--label);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: right;
+  }
+  .convlbl {
+    color: var(--dim);
+    font-size: 12px;
+    margin-right: auto;
   }
   .convn {
     color: var(--dim);

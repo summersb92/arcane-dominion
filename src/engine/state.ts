@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 6; // v6: added `coal`/`steel` materials + converter buildings' `active` toggle map (migrate/normalize backfill)
+export const SAVE_VERSION = 7; // v7: converter `active` map became per-recipe arrays (multi-fuel Steelworks)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -36,9 +36,10 @@ export interface RunState {
   population: Population;
   popCap: number; // housing capacity
   buildings: Partial<Record<BuildingId, number>>; // count built per building
-  /** How many copies of a CONVERTER building are switched ON (N of M). Absent → treat all as on
-   *  (see systems/buildings.ts activeCount). Only converter buildings appear here. */
-  active: Partial<Record<BuildingId, number>>;
+  /** Per-RECIPE running copy counts for CONVERTER buildings (aligned to the building's convert
+   *  effects — e.g. the Steelworks' [wood, coal]). The sum per building never exceeds its count.
+   *  Absent → all copies on the first recipe (see systems/buildings.ts activeRecipes). */
+  active: Partial<Record<BuildingId, number[]>>;
   tech: TechId[]; // unlocked tech ids
   /** Signed accumulator (seconds) driving deterministic pop growth (+) / starvation (−). */
   growthProgress: number;
