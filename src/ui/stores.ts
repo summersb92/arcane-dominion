@@ -189,6 +189,9 @@ function resToken(id: ResourceId): string {
     case 'iron':
     case 'coal':
     case 'steel':
+    case 'tools':
+    case 'engines':
+    case 'furniture':
       return 'dim';
     case 'mana':
     case 'manaCrystals':
@@ -247,6 +250,9 @@ export function toView(state: GameState): UiState {
     } else if (def.id === 'steel') {
       // Refined at the Steelworks — revealed once the first is produced.
       show = amount > EPS || rates.steel > EPS;
+    } else if (def.id === 'tools' || def.id === 'engines' || def.id === 'furniture') {
+      // Industrial goods — revealed once the first is produced (Toolworks / Engine Works / Factory).
+      show = amount > EPS || rates[def.id] > EPS;
     } else if (def.id === 'manaCrystals') {
       // Mined proto-magic material — revealed only once discovered (held or being produced).
       // A Mine yields it once Crystallurgy is researched.

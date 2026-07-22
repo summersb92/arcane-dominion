@@ -17,6 +17,8 @@ export type JobId =
   | 'miner'
   | 'coal-miner'
   | 'smelter'
+  | 'machinist'
+  | 'engineer'
   | 'scholar'
   | 'bard';
 
@@ -79,6 +81,20 @@ export const JOBS: JobDef[] = [
     blurb: 'Tends the Steelworks furnace — each Smelter lets one Steelworks convert wood + iron into steel.',
     produces: {}, // no direct output; a Smelter POWERS the Steelworks converter (see systems/production.ts)
     requiresBuildingCapacity: 'steelworks',
+  },
+  {
+    id: 'machinist',
+    name: 'Machinist',
+    blurb: 'Runs the machines — each Machinist powers one Toolworks or Factory (Tools / Furniture).',
+    produces: {}, // powers the Toolworks / Factory converters
+    requiresBuildingCapacity: 'toolworks',
+  },
+  {
+    id: 'engineer',
+    name: 'Engineer',
+    blurb: 'Builds and tends engines — each Engineer powers one Engine Works (Engines).',
+    produces: {}, // powers the Engine Works converter
+    requiresBuildingCapacity: 'engine-works',
   },
   {
     id: 'scholar',

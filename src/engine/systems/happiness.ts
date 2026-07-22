@@ -57,7 +57,16 @@ export function happiness(state: GameState): HappinessInfo {
   const furBonus = Math.min(HAPPINESS.fursHappinessMax, Math.floor(furs / HAPPINESS.fursPerHappiness));
   if (furBonus > 0) breakdown.push({ label: `Furs (${Math.floor(furs)})`, amount: furBonus });
 
-  const raw = HAPPINESS.base - crowding + bardBonus + luxury + furBonus;
+  // Furniture is a stronger industrial-era LUXURY good (from the Factory): +1 per fewer held,
+  // capped higher than furs.
+  const furniture = run.resources.furniture ?? 0;
+  const furnitureBonus = Math.min(
+    HAPPINESS.furnitureHappinessMax,
+    Math.floor(furniture / HAPPINESS.furniturePerHappiness),
+  );
+  if (furnitureBonus > 0) breakdown.push({ label: `Furniture (${Math.floor(furniture)})`, amount: furnitureBonus });
+
+  const raw = HAPPINESS.base - crowding + bardBonus + luxury + furBonus + furnitureBonus;
   const value = Math.max(0, Math.min(100, raw));
   return {
     value,

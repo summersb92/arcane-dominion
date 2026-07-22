@@ -15,7 +15,7 @@ import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
-import { activeRecipes, convertEffects } from './buildings';
+import { activeRecipes, activeCount, convertEffects, isConverter } from './buildings';
 
 const EPS = 1e-9;
 
@@ -64,16 +64,26 @@ function converterRuns(state: GameState): ConverterRun[] {
  *  boosts the Stonecutter only, not the Miner). */
 const GATHER_JOBS = new Set(['woodcutter', 'forager', 'quarry-worker', 'miner']);
 
-/** Global worker-output multiplier from buildings (Workshop/Forge jobOutputMult), applied
- *  to every job. 1 = no bonus; each qualifying building adds its fraction × its count. */
+/** Global worker-output multiplier from buildings (Workshop/Forge + mechanization), applied to
+ *  every job. 1 = no bonus. A plain building adds its fraction × its built count. A CONVERTER-based
+ *  mechanization building (Steam Works) adds its fraction × its ACTIVE copies — and only while it is
+ *  FUELLED (every convert input in stock), so an idle/starved works grants nothing. */
 function globalJobMult(state: GameState): number {
   let m = 1;
   for (const b of BUILDINGS) {
     const count = state.run.buildings[b.id] ?? 0;
     if (count <= 0) continue;
-    for (const eff of b.effects) {
-      if (eff.kind === 'jobOutputMult') m += count * eff.amount;
+    const mult = b.effects.find((e) => e.kind === 'jobOutputMult');
+    if (!mult || mult.kind !== 'jobOutputMult') continue;
+    let copies = count;
+    if (isConverter(b)) {
+      copies = activeCount(state, b.id);
+      const fuelled = convertEffects(b).every((c) =>
+        Object.entries(c.consume).every(([res, per]) => (per as number) <= 0 || state.run.resources[res as ResourceId] > EPS),
+      );
+      if (!fuelled) copies = 0;
     }
+    m += copies * mult.amount;
   }
   return m;
 }
@@ -269,7 +279,10 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.stone += f.gross.stone * dt;
   run.resources.iron += f.gross.iron * dt; // mined ore; clamped below like the other capped materials
   run.resources.coal += f.gross.coal * dt; // mined/charred fuel; clamped below
-  run.resources.steel += f.gross.steel * dt; // (no passive producer yet; converter adds it below)
+  run.resources.steel += f.gross.steel * dt; // (no passive producer; converters add it below)
+  run.resources.tools += f.gross.tools * dt; // (converters add these below)
+  run.resources.engines += f.gross.engines * dt;
+  run.resources.furniture += f.gross.furniture * dt;
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
@@ -311,7 +324,7 @@ export function runProduction(state: GameState, dt: number): void {
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
   // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
   // Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

@@ -12,6 +12,9 @@ export const STARTING = {
   iron: 0,
   coal: 0,
   steel: 0,
+  tools: 0,
+  engines: 0,
+  furniture: 0,
   furs: 0,
   manaCrystals: 0,
   mana: 0,
@@ -24,6 +27,9 @@ export const STARTING = {
   ironCap: 200,
   coalCap: 200,
   steelCap: 200,
+  toolsCap: 200,
+  enginesCap: 200,
+  furnitureCap: 200,
   fursCap: 200,
   manaCrystalsCap: 200,
   /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
@@ -46,6 +52,10 @@ export const HAPPINESS = {
   fursPerHappiness: 10,
   /** …capped at this much total happiness from furs (accumulating more is future trade). */
   fursHappinessMax: 15,
+  /** Furniture is a stronger (industrial-era) LUXURY: +1 happiness per this many held… */
+  furniturePerHappiness: 5,
+  /** …capped at this much total happiness from furniture. */
+  furnitureHappinessMax: 25,
 };
 
 /** Time / calendar. Days tick at daySeconds each; daysPerSeason days make a season; the

@@ -30,6 +30,10 @@ export type BuildingId =
   | 'coal-mine'
   | 'charcoal-ground'
   | 'steelworks'
+  | 'toolworks'
+  | 'engine-works'
+  | 'factory'
+  | 'steam-works'
   | 'workshop'
   | 'forge'
   | 'amphitheater'
@@ -245,6 +249,55 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'convert', label: 'Wood', consume: { wood: 0.3, iron: 0.3 }, produce: { steel: 0.2 }, requiresWorker: 'smelter' },
       // Recipe 1 = Coal fuel — hotter burn, more steel per iron.
       { kind: 'convert', label: 'Coal', consume: { coal: 0.3, iron: 0.3 }, produce: { steel: 0.3 }, requiresWorker: 'smelter' },
+    ],
+  },
+  {
+    id: 'toolworks',
+    name: 'Toolworks',
+    blurb: 'A steam-driven tool shop — each active works, staffed by a Machinist, forges Tools (−0.3 iron, −0.3 coal → +0.3 tools /s). +1 Machinist slot.',
+    cost: { wood: 100, stone: 80, iron: 40 },
+    costGrowth: 1.4,
+    requiresTech: 'steam-power',
+    effects: [
+      { kind: 'jobCapacity', job: 'machinist', slots: 1 },
+      { kind: 'convert', consume: { iron: 0.3, coal: 0.3 }, produce: { tools: 0.3 }, requiresWorker: 'machinist' },
+    ],
+  },
+  {
+    id: 'engine-works',
+    name: 'Engine Works',
+    blurb: 'Assembles steam Engines — each active works, staffed by an Engineer, builds Engines (−0.2 steel, −0.3 coal → +0.2 engines /s). Costs Tools to build. +1 Engineer slot.',
+    cost: { wood: 120, stone: 100, tools: 30 },
+    costGrowth: 1.4,
+    requiresTech: 'precision-engineering',
+    effects: [
+      { kind: 'jobCapacity', job: 'engineer', slots: 1 },
+      { kind: 'convert', consume: { steel: 0.2, coal: 0.3 }, produce: { engines: 0.2 }, requiresWorker: 'engineer' },
+    ],
+  },
+  {
+    id: 'factory',
+    name: 'Factory',
+    blurb: 'Turns out consumer Furniture — each active factory, staffed by a Machinist, makes Furniture (−0.5 wood, −0.3 tools → +0.3 furniture /s). Held furniture raises happiness. Costs Engines to build. +1 Machinist slot.',
+    cost: { wood: 150, stone: 120, engines: 20 },
+    costGrowth: 1.4,
+    requiresTech: 'industrialization',
+    effects: [
+      { kind: 'jobCapacity', job: 'machinist', slots: 1 },
+      { kind: 'convert', consume: { wood: 0.5, tools: 0.3 }, produce: { furniture: 0.3 }, requiresWorker: 'machinist' },
+    ],
+  },
+  {
+    id: 'steam-works',
+    name: 'Steam Works',
+    blurb: 'MECHANIZATION — each active works burns Coal + Engines to drive machines across the settlement: +20% to EVERY worker’s output while fuelled (−0.5 coal, −0.1 engines /s). Toggle how many run. Costs Engines to build.',
+    cost: { stone: 150, steel: 60, engines: 20 },
+    costGrowth: 1.4,
+    requiresTech: 'industrialization',
+    effects: [
+      { kind: 'jobOutputMult', amount: 0.2 },
+      // Fuel upkeep (no product). While its inputs are in stock the +20% applies (see globalJobMult).
+      { kind: 'convert', consume: { coal: 0.5, engines: 0.1 }, produce: {} },
     ],
   },
   {

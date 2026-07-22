@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 7; // v7: converter `active` map became per-recipe arrays (multi-fuel Steelworks)
+export const SAVE_VERSION = 8; // v8: added industrial goods `tools`/`engines`/`furniture` (migrate/normalize backfill → 0, cap → 200)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -74,6 +74,9 @@ export function freshResources(): Record<ResourceId, number> {
   r.iron = STARTING.iron;
   r.coal = STARTING.coal;
   r.steel = STARTING.steel;
+  r.tools = STARTING.tools;
+  r.engines = STARTING.engines;
+  r.furniture = STARTING.furniture;
   r.furs = STARTING.furs;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
@@ -91,6 +94,9 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     iron: STARTING.ironCap,
     coal: STARTING.coalCap,
     steel: STARTING.steelCap,
+    tools: STARTING.toolsCap,
+    engines: STARTING.enginesCap,
+    furniture: STARTING.furnitureCap,
     furs: STARTING.fursCap,
     manaCrystals: STARTING.manaCrystalsCap,
   };

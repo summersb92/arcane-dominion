@@ -3,8 +3,9 @@
 // human-readable `unlocks` list; the ACTUAL gating lives on the things gated
 // (BuildingDef.requiresTech, and the efficiency techs read in systems/production.ts).
 //
-// The tree is a Civilization-inspired DAG progressing Stone → Iron → Steel (Bronze Working was
-// retired; Iron follows Mining directly). MAGIC is no longer a tech — it is DISCOVERY-driven (see
+// The tree is a Civilization-inspired DAG progressing Stone → Iron → Steel → Industrial (Age of
+// Steam: Steam Power → Precision Engineering → Industrialization, with Victoria-style goods chains —
+// Tools, Engines, Furniture). Bronze Working was retired; Iron follows Mining directly. MAGIC is no longer a tech — it is DISCOVERY-driven (see
 // systems/magic.ts): any of three independent paths — Mana Crystals from the mines (which the
 // Crystallurgy tech first unlocks), a Sacred Grove (unlocked by the Naturalism tech), or enough
 // Culture — sets the `magicDiscovered` flag that opens the Arcane Font + Animated Tools.
@@ -45,7 +46,11 @@ export type TechId =
   | 'steelmaking'
   | 'steel-axe'
   | 'steel-hoe'
-  | 'steel-pick';
+  | 'steel-pick'
+  // Industrial Era (Age of Steam)
+  | 'steam-power'
+  | 'precision-engineering'
+  | 'industrialization';
 
 export interface TechDef {
   id: TechId;
@@ -233,6 +238,34 @@ export const TECHS: TechDef[] = [
     resourceCost: { steel: 40 },
     requires: ['steelmaking'],
     unlocks: ['+65% Stonecutter output'],
+  },
+
+  // ---- INDUSTRIAL ERA (Age of Steam) ----
+  {
+    id: 'steam-power',
+    name: 'Steam Power',
+    blurb: 'Harness the boiler and piston. Unlocks the Toolworks (Machinist job) — iron + coal into Tools, the first industrial good.',
+    cost: 4000,
+    requires: ['steelmaking'],
+    unlocks: ['Toolworks (building)', 'Tools (good)', 'Machinist (job)'],
+  },
+  {
+    id: 'precision-engineering',
+    name: 'Precision Engineering',
+    blurb: 'Machined parts to fine tolerances. Consumes Tools. Unlocks the Engine Works (Engineer job) — steel + coal into Engines.',
+    cost: 5500,
+    resourceCost: { tools: 50 }, // research sink: precision work spends tools
+    requires: ['steam-power'],
+    unlocks: ['Engine Works (building)', 'Engines (good)', 'Engineer (job)'],
+  },
+  {
+    id: 'industrialization',
+    name: 'Industrialization',
+    blurb: 'The factory system arrives. Consumes Engines. Unlocks the Factory (consumer Furniture) and the Steam Works (mechanization — spend goods for global output).',
+    cost: 7500,
+    resourceCost: { engines: 40 }, // research sink: retooling the economy spends engines
+    requires: ['precision-engineering'],
+    unlocks: ['Factory (building)', 'Furniture (good)', 'Steam Works (building)'],
   },
 ];
 

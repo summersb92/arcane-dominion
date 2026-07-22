@@ -3,11 +3,11 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 7. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 8. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
 // `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
 // `coal`/`steel` materials + the converter `active` toggle map; v6 → v7 made `active` per-recipe
-// arrays); `normalize` then backfills
+// arrays; v7 → v8 added the industrial goods `tools`/`engines`/`furniture`); `normalize` then backfills
 // every run.* container the read models touch so a partial/foreign save never dereferences
 // undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
 // out-of-range) rather than loading a broken run.
@@ -113,6 +113,8 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *            `active` map backfills to {} (absent entries read as all-on). Documents the bump.
  *   v6 → v7: the converter `active` map became PER-RECIPE arrays (multi-fuel Steelworks). Any old
  *            scalar count is wrapped into a one-element array here (its copies keep running recipe 0).
+ *   v7 → v8: added the industrial goods `tools`/`engines`/`furniture` (Age of Steam). Each defaults
+ *            to 0 and its cap to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -155,6 +157,15 @@ function migrate(state: GameState, fromVersion: number): void {
       for (const [k, v] of Object.entries(active)) {
         if (typeof v === 'number') (active as Record<string, number[]>)[k] = [v];
       }
+    }
+  }
+  if (fromVersion < 8) {
+    // Industrial goods (tools/engines/furniture) backfilled to 0 (RESOURCE_IDS loop) and their
+    // caps to 200 (MUNDANE_RESOURCE_IDS loop) by normalize. Nothing else to rewrite.
+    if (hasResources) {
+      state.run.resources.tools ??= 0;
+      state.run.resources.engines ??= 0;
+      state.run.resources.furniture ??= 0;
     }
   }
 }
