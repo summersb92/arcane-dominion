@@ -34,6 +34,9 @@ export type BuildingId =
   | 'engine-works'
   | 'factory'
   | 'steam-works'
+  | 'tannery'
+  | 'scriptorium'
+  | 'archive'
   | 'workshop'
   | 'forge'
   | 'amphitheater'
@@ -298,6 +301,39 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobOutputMult', amount: 0.2 },
       // Fuel upkeep (no product). While its inputs are in stock the +20% applies (see globalJobMult).
       { kind: 'convert', consume: { coal: 0.5, engines: 0.1 }, produce: {} },
+    ],
+  },
+  {
+    id: 'tannery',
+    name: 'Tannery',
+    blurb: 'Cures hides into Parchment — each active tannery converts furs into parchment (−0.4 furs → +0.3 parchment /s). No settlers needed. (Furs spent here are furs not kept for happiness.)',
+    cost: { wood: 40, stone: 20 },
+    costGrowth: 1.3,
+    requiresTech: 'bookbinding',
+    effects: [{ kind: 'convert', consume: { furs: 0.4 }, produce: { parchment: 0.3 } }],
+  },
+  {
+    id: 'scriptorium',
+    name: 'Scriptorium',
+    blurb: 'Binds Books from parchment — each active scriptorium, staffed by a Scribe, turns parchment + research into books (−0.3 parchment, −0.5 research → +0.1 books /s). Held books raise research per settler. +1 Scribe slot.',
+    cost: { wood: 60, stone: 40 },
+    costGrowth: 1.3,
+    requiresTech: 'bookbinding',
+    effects: [
+      { kind: 'jobCapacity', job: 'scribe', slots: 1 },
+      { kind: 'convert', consume: { parchment: 0.3, research: 0.5 }, produce: { books: 0.1 }, requiresWorker: 'scribe' },
+    ],
+  },
+  {
+    id: 'archive',
+    name: 'Archive',
+    blurb: 'Compiles Compendiums — each active archive, staffed by a Scribe, turns books + research into compendiums (−0.2 books, −1 research → +0.05 compendiums /s). Held compendiums raise the research cap and yield mana per settler. +1 Scribe slot.',
+    cost: { wood: 80, stone: 60, tools: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'compendia',
+    effects: [
+      { kind: 'jobCapacity', job: 'scribe', slots: 1 },
+      { kind: 'convert', consume: { books: 0.2, research: 1 }, produce: { compendiums: 0.05 }, requiresWorker: 'scribe' },
     ],
   },
   {

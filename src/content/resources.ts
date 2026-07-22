@@ -15,6 +15,9 @@ export type ResourceId =
   | 'tools'
   | 'engines'
   | 'furniture'
+  | 'parchment'
+  | 'books'
+  | 'compendiums'
   | 'furs'
   | 'manaCrystals'
   | 'mana'
@@ -35,6 +38,9 @@ export type MundaneResourceId =
   | 'tools'
   | 'engines'
   | 'furniture'
+  | 'parchment'
+  | 'books'
+  | 'compendiums'
   | 'furs'
   | 'manaCrystals';
 
@@ -66,6 +72,14 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane' },
   // Furniture — a consumer/luxury good from the Factory (wood + tools). Held furniture raises happiness.
   { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane' },
+  // ---- Knowledge chain (furs → parchment → books → compendiums). Each capped like a material; hidden until produced. ----
+  // Parchment — cured from furs at the Tannery. The raw stock for books.
+  { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane' },
+  // Books — bound at the Scriptorium (parchment + research). HELD books raise research gained per settler.
+  { id: 'books', label: 'Books', glyph: '📖', tier: 'mundane' },
+  // Compendiums — compiled at the Archive (books + research). HELD compendiums raise the research cap
+  // AND yield a little mana per settler.
+  { id: 'compendiums', label: 'Compendiums', glyph: '📚', tier: 'mundane' },
   // Furs — a luxury good hunters bring in. Capped like the mundane materials and listed
   // with the main resources (tier 'mundane' groups it there, not under Magic).
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane' },
@@ -92,6 +106,9 @@ export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = [
   'tools',
   'engines',
   'furniture',
+  'parchment',
+  'books',
+  'compendiums',
   'furs',
   'manaCrystals',
 ];

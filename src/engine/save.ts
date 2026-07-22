@@ -3,11 +3,12 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 8. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 9. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
 // `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
 // `coal`/`steel` materials + the converter `active` toggle map; v6 → v7 made `active` per-recipe
-// arrays; v7 → v8 added the industrial goods `tools`/`engines`/`furniture`); `normalize` then backfills
+// arrays; v7 → v8 added the industrial goods `tools`/`engines`/`furniture`; v8 → v9 added the
+// knowledge-chain goods `parchment`/`books`/`compendiums`); `normalize` then backfills
 // every run.* container the read models touch so a partial/foreign save never dereferences
 // undefined; `validate` finally rejects anything structurally garbage (NaN, wrong type,
 // out-of-range) rather than loading a broken run.
@@ -115,6 +116,8 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *            scalar count is wrapped into a one-element array here (its copies keep running recipe 0).
  *   v7 → v8: added the industrial goods `tools`/`engines`/`furniture` (Age of Steam). Each defaults
  *            to 0 and its cap to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
+ *   v8 → v9: added the knowledge-chain goods `parchment`/`books`/`compendiums`. Each defaults to 0 and
+ *            its cap to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -166,6 +169,15 @@ function migrate(state: GameState, fromVersion: number): void {
       state.run.resources.tools ??= 0;
       state.run.resources.engines ??= 0;
       state.run.resources.furniture ??= 0;
+    }
+  }
+  if (fromVersion < 9) {
+    // Knowledge-chain goods (parchment/books/compendiums) backfilled to 0 (RESOURCE_IDS loop) and
+    // their caps to 200 (MUNDANE_RESOURCE_IDS loop) by normalize. Nothing else to rewrite.
+    if (hasResources) {
+      state.run.resources.parchment ??= 0;
+      state.run.resources.books ??= 0;
+      state.run.resources.compendiums ??= 0;
     }
   }
 }

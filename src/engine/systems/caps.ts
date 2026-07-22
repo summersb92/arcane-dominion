@@ -4,13 +4,13 @@
 // buildings (Scholar's Study, Library). Mana and culture stay UNCAPPED (Infinity). Pure
 // engine, no DOM.
 
-import { STARTING } from '../../content/config';
+import { STARTING, KNOWLEDGE } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
 import { isUncappedResource, type MundaneResourceId, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 
-/** The effective RESEARCH cap: the base cap plus every science building's researchCap effect
- *  × its count. Grows as you raise Scholar's Studies (+50) and Libraries (+100). */
+/** The effective RESEARCH cap: the base cap, every science building's researchCap effect × its
+ *  count (Library +100, Academy +600), plus a bonus from HELD compendiums (Archive output). */
 export function researchCap(state: GameState): number {
   let cap = STARTING.researchCap;
   for (const b of BUILDINGS) {
@@ -20,6 +20,9 @@ export function researchCap(state: GameState): number {
       if (eff.kind === 'researchCap') cap += count * eff.amount;
     }
   }
+  // Held compendiums lift the ceiling (capped) — a knowledge-chain payoff.
+  const compendiums = state.run.resources.compendiums ?? 0;
+  cap += Math.min(KNOWLEDGE.compendiumResearchCapMax, compendiums * KNOWLEDGE.compendiumResearchCap);
   return cap;
 }
 

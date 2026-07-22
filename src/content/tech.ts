@@ -34,6 +34,8 @@ export type TechId =
   | 'naturalism'
   | 'masonry'
   | 'writing'
+  | 'bookbinding'
+  | 'compendia'
   | 'calendar'
   | 'the-arts'
   // Bronze Age (Bronze Working retired)
@@ -140,6 +142,22 @@ export const TECHS: TechDef[] = [
     cost: 500,
     requires: ['pottery'],
     unlocks: ['Library (building)'],
+  },
+  {
+    id: 'bookbinding',
+    name: 'Bookbinding',
+    blurb: 'Cure hides into parchment and bind books. Unlocks the Tannery (furs → parchment) and the Scriptorium (parchment + research → Books). HELD books raise research gained per settler.',
+    cost: 900,
+    requires: ['writing'],
+    unlocks: ['Tannery + Scriptorium (buildings)', 'Parchment & Books (goods)', 'Scribe (job)'],
+  },
+  {
+    id: 'compendia',
+    name: 'Compendia',
+    blurb: 'Compile great reference works. Unlocks the Archive (books + research → Compendiums). HELD compendiums raise the research cap and yield a little mana per settler.',
+    cost: 2000,
+    requires: ['bookbinding'],
+    unlocks: ['Archive (building)', 'Compendiums (good)'],
   },
   {
     id: 'calendar',

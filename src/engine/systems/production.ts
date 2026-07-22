@@ -9,7 +9,7 @@
 // It also exposes the per-second NET rate read model (productionRates / foodBalance)
 // the CLI and UI show. Pure engine, no DOM.
 
-import { POPULATION, TECH_BONUS } from '../../content/config';
+import { POPULATION, TECH_BONUS, KNOWLEDGE } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
 import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
@@ -126,6 +126,18 @@ function idleCount(run: GameState['run']): number {
   return Math.max(0, run.population.total - assigned);
 }
 
+/** Extra research/settler/s from HELD books (capped) — the knowledge-chain payoff. */
+function booksResearchPerPop(state: GameState): number {
+  const books = state.run.resources.books ?? 0;
+  return Math.min(KNOWLEDGE.booksResearchPerPopMax, books * KNOWLEDGE.booksResearchPerPop);
+}
+
+/** Mana/settler/s from HELD compendiums (capped) — the top knowledge-chain payoff. */
+function compendiumManaPerPop(state: GameState): number {
+  const comp = state.run.resources.compendiums ?? 0;
+  return Math.min(KNOWLEDGE.compendiumManaPerPopMax, comp * KNOWLEDGE.compendiumManaPerPop);
+}
+
 /** Compute every per-second flow from the current assignment + building counts. */
 function flows(state: GameState): Flows {
   const gross = {} as Record<ResourceId, number>;
@@ -136,9 +148,11 @@ function flows(state: GameState): Flows {
   const foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total;
   let manaUpkeep = 0;
 
-  // Curiosity trickle: every settler passively yields a little Research (the tech
-  // currency), starting with the first settler — so tech is reachable before Scholars.
-  gross.research += POPULATION.researchPerSettler * run.population.total;
+  // Curiosity trickle: every settler passively yields a little Research (the tech currency),
+  // starting with the first settler. HELD books raise the per-settler yield (knowledge chain).
+  gross.research += (POPULATION.researchPerSettler + booksResearchPerPop(state)) * run.population.total;
+  // HELD compendiums yield a little mana per settler.
+  gross.mana += compendiumManaPerPop(state) * run.population.total;
 
   // Jobs: Σ workers × per-worker output × efficiency. No food upkeep per worker.
   for (const job of JOBS) {
@@ -214,6 +228,13 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   // The per-settler curiosity trickle (Research only), from the first settler onward.
   if (id === 'research' && run.population.total > 0) {
     producers.push({ label: `Settlers${times(run.population.total)}`, amount: POPULATION.researchPerSettler * run.population.total });
+    const booksBonus = booksResearchPerPop(state) * run.population.total;
+    if (booksBonus > 0) producers.push({ label: `Books (per settler)`, amount: booksBonus });
+  }
+  // Held compendiums yield mana per settler.
+  if (id === 'mana' && run.population.total > 0) {
+    const compMana = compendiumManaPerPop(state) * run.population.total;
+    if (compMana > 0) producers.push({ label: `Compendiums (per settler)`, amount: compMana });
   }
   // Jobs that produce this resource (workers × per-worker × tech efficiency).
   for (const job of JOBS) {
@@ -283,6 +304,9 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.tools += f.gross.tools * dt; // (converters add these below)
   run.resources.engines += f.gross.engines * dt;
   run.resources.furniture += f.gross.furniture * dt;
+  run.resources.parchment += f.gross.parchment * dt; // (converters add these below)
+  run.resources.books += f.gross.books * dt;
+  run.resources.compendiums += f.gross.compendiums * dt;
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
@@ -324,7 +348,7 @@ export function runProduction(state: GameState, dt: number): void {
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
   // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
   // Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

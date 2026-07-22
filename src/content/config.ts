@@ -15,6 +15,9 @@ export const STARTING = {
   tools: 0,
   engines: 0,
   furniture: 0,
+  parchment: 0,
+  books: 0,
+  compendiums: 0,
   furs: 0,
   manaCrystals: 0,
   mana: 0,
@@ -30,6 +33,9 @@ export const STARTING = {
   toolsCap: 200,
   enginesCap: 200,
   furnitureCap: 200,
+  parchmentCap: 200,
+  booksCap: 200,
+  compendiumsCap: 200,
   fursCap: 200,
   manaCrystalsCap: 200,
   /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
@@ -88,6 +94,24 @@ export const POPULATION = {
   growthIntervalSec: 8,
   /** Seconds of sustained starvation before one settler is lost. */
   starveIntervalSec: 12,
+};
+
+/** Knowledge chain (furs → parchment → books → compendiums). HELD books/compendiums feed back
+ *  into the economy — books raise research gained per settler; compendiums raise the research cap
+ *  and yield a little mana per settler. Each bonus scales with the held count, up to a cap. */
+export const KNOWLEDGE = {
+  /** + research/settler/s per BOOK held… */
+  booksResearchPerPop: 0.005,
+  /** …capped at this much extra research/settler/s (reached at ~50 books). */
+  booksResearchPerPopMax: 0.25,
+  /** + research CAP per COMPENDIUM held… */
+  compendiumResearchCap: 15,
+  /** …capped at this much extra research cap (reached at 200 compendiums). */
+  compendiumResearchCapMax: 3000,
+  /** + mana/settler/s per COMPENDIUM held… */
+  compendiumManaPerPop: 0.003,
+  /** …capped at this much extra mana/settler/s (reached at 100 compendiums). */
+  compendiumManaPerPopMax: 0.3,
 };
 
 /** Efficiency multipliers granted by tech (systems/production.ts).

@@ -8,7 +8,7 @@ import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../conten
 import type { TechId } from '../content/tech';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 8; // v8: added industrial goods `tools`/`engines`/`furniture` (migrate/normalize backfill → 0, cap → 200)
+export const SAVE_VERSION = 9; // v9: added knowledge-chain goods `parchment`/`books`/`compendiums` (migrate/normalize backfill → 0, cap → 200)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -77,6 +77,9 @@ export function freshResources(): Record<ResourceId, number> {
   r.tools = STARTING.tools;
   r.engines = STARTING.engines;
   r.furniture = STARTING.furniture;
+  r.parchment = STARTING.parchment;
+  r.books = STARTING.books;
+  r.compendiums = STARTING.compendiums;
   r.furs = STARTING.furs;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
@@ -97,6 +100,9 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     tools: STARTING.toolsCap,
     engines: STARTING.enginesCap,
     furniture: STARTING.furnitureCap,
+    parchment: STARTING.parchmentCap,
+    books: STARTING.booksCap,
+    compendiums: STARTING.compendiumsCap,
     furs: STARTING.fursCap,
     manaCrystals: STARTING.manaCrystalsCap,
   };

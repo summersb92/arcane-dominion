@@ -19,6 +19,7 @@ export type JobId =
   | 'smelter'
   | 'machinist'
   | 'engineer'
+  | 'scribe'
   | 'scholar'
   | 'bard';
 
@@ -95,6 +96,13 @@ export const JOBS: JobDef[] = [
     blurb: 'Builds and tends engines — each Engineer powers one Engine Works (Engines).',
     produces: {}, // powers the Engine Works converter
     requiresBuildingCapacity: 'engine-works',
+  },
+  {
+    id: 'scribe',
+    name: 'Scribe',
+    blurb: 'Copies and binds — each Scribe powers one Scriptorium or Archive (Books / Compendiums).',
+    produces: {}, // powers the Scriptorium / Archive converters
+    requiresBuildingCapacity: 'scriptorium',
   },
   {
     id: 'scholar',
