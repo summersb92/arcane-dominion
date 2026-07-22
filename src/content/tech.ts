@@ -8,8 +8,10 @@
 // Tools, Engines, Furniture). Bronze Working was retired; Iron follows Mining directly. MAGIC is no longer a tech — it is DISCOVERY-driven (see
 // systems/magic.ts): any of three independent paths — Mana Crystals from the mines (which the
 // Crystallurgy tech first unlocks), a Sacred Grove (unlocked by the Naturalism tech), or enough
-// Culture — sets the `magicDiscovered` flag that opens the Arcane Font + Animated Tools.
-// Naturalism and Crystallurgy are the techs that feed the earth/crystal paths.
+// Culture — sets the `magicDiscovered` flag. Once magic is discovered, MANA-COSTED magic techs
+// open (TechDef.requiresFlag): a NATURE line in the Bronze era (Naturalism → Druidry →
+// Seasonal Rites, plant/season mana) and a CRYSTAL line in the Iron era (Crystallurgy →
+// Enchantment → Runecraft). Some knowledge/art techs cost CULTURE (TechDef.resourceCost).
 // The STONE and STEEL tools are each split into three PER-TOOL techs (Axe / Hoe / Pick), each
 // boosting only its own gather job; Iron Working is the one GLOBAL tier stacking on all gather
 // jobs (TECH_BONUS + jobEfficiency, systems/production.ts). Techs may also cost MATERIALS
@@ -31,24 +33,33 @@ export type TechId =
   | 'archery'
   | 'pottery'
   | 'agriculture'
-  | 'naturalism'
   | 'masonry'
   | 'writing'
   | 'bookbinding'
   | 'compendia'
   | 'calendar'
   | 'the-arts'
-  // Bronze Age (Bronze Working retired)
+  | 'mathematics'
+  | 'construction'
+  | 'philosophy'
+  | 'mysticism'
+  // Bronze Age (early metal + first NATURE mana)
   | 'mining'
-  | 'crystallurgy'
   | 'coal-mining'
   | 'the-wheel'
-  // Iron Age
+  | 'naturalism'
+  | 'druidry'
+  | 'seasonal-rites'
+  // Iron Age (mana from CRYSTALS)
   | 'iron-working'
+  | 'crystallurgy'
+  | 'enchantment'
+  | 'runecraft'
   | 'steelmaking'
   | 'steel-axe'
   | 'steel-hoe'
   | 'steel-pick'
+  | 'sanitation'
   // Industrial Era (Age of Steam)
   | 'steam-power'
   | 'precision-engineering'
@@ -65,6 +76,9 @@ export interface TechDef {
   resourceCost?: Partial<Record<ResourceId, number>>;
   /** Prerequisite tech ids that must already be unlocked. */
   requires?: TechId[];
+  /** Run flag that must be true before this node is available (e.g. 'magicDiscovered' for the
+   *  mana-costed magic techs). Mirrors BuildingDef.requiresFlag. */
+  requiresFlag?: string;
   /** Human-readable list of what this node opens (for the UI). */
   unlocks: string[];
 }
@@ -127,6 +141,27 @@ export const TECHS: TechDef[] = [
     requires: ['agriculture'],
     unlocks: ['Sacred Grove (building)'],
   },
+  // NATURE MAGIC (Bronze era) — mana from plants and seasons. Gated behind discovering magic.
+  {
+    id: 'druidry',
+    name: 'Druidry',
+    blurb: 'Draw mana from root, leaf, and turning season. Unlocks the Ley Grove (passive mana from the living land). Requires magic to have been discovered.',
+    cost: 1500,
+    resourceCost: { mana: 120 },
+    requires: ['naturalism', 'mysticism'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Ley Grove (building)'],
+  },
+  {
+    id: 'seasonal-rites',
+    name: 'Seasonal Rites',
+    blurb: 'Bind the calendar to the craft — solstice and harvest rites. Unlocks the Standing Stones (mana, food, and happiness).',
+    cost: 2800,
+    resourceCost: { mana: 150, culture: 100 },
+    requires: ['druidry', 'calendar'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Standing Stones (building)'],
+  },
   {
     id: 'masonry',
     name: 'Masonry',
@@ -148,6 +183,7 @@ export const TECHS: TechDef[] = [
     name: 'Bookbinding',
     blurb: 'Cure hides into parchment and bind books. Unlocks the Tannery (furs → parchment) and the Scriptorium (parchment + research → Books). HELD books raise research gained per settler.',
     cost: 900,
+    resourceCost: { culture: 50 }, // a literate culture underwrites the craft
     requires: ['writing'],
     unlocks: ['Tannery + Scriptorium (buildings)', 'Parchment & Books (goods)', 'Scribe (job)'],
   },
@@ -156,8 +192,44 @@ export const TECHS: TechDef[] = [
     name: 'Compendia',
     blurb: 'Compile great reference works. Unlocks the Archive (books + research → Compendiums). HELD compendiums raise the research cap and yield a little mana per settler.',
     cost: 2000,
+    resourceCost: { culture: 150 },
     requires: ['bookbinding'],
     unlocks: ['Archive (building)', 'Compendiums (good)'],
+  },
+  {
+    id: 'mathematics',
+    name: 'Mathematics',
+    blurb: 'Number, proof, and measure. Unlocks the Observatory — a science building (research cap + Scholar + passive research).',
+    cost: 700,
+    requires: ['writing', 'masonry'], // a classic combination tech
+    unlocks: ['Observatory (building)'],
+  },
+  {
+    id: 'construction',
+    name: 'Construction',
+    blurb: 'Arches, aqueducts, and load-bearing works. Unlocks the Aqueduct (more housing + happiness).',
+    cost: 800,
+    resourceCost: { stone: 50 },
+    requires: ['masonry', 'the-wheel'],
+    unlocks: ['Aqueduct (building)'],
+  },
+  {
+    id: 'philosophy',
+    name: 'Philosophy',
+    blurb: 'Reasoned inquiry and civic thought. Unlocks the Forum — Culture, happiness, and Bard slots.',
+    cost: 1000,
+    resourceCost: { culture: 100 },
+    requires: ['writing', 'the-arts'],
+    unlocks: ['Forum (building)'],
+  },
+  {
+    id: 'mysticism',
+    name: 'Mysticism',
+    blurb: 'Rites, omens, and the unseen. Unlocks the Shrine (Culture + happiness) and opens the road to nature magic.',
+    cost: 700,
+    resourceCost: { culture: 80 },
+    requires: ['the-arts'],
+    unlocks: ['Shrine (building)', 'Road to Druidry'],
   },
   {
     id: 'calendar',
@@ -176,7 +248,7 @@ export const TECHS: TechDef[] = [
     unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Bard (job)'],
   },
 
-  // ---- BRONZE AGE ----
+  // ---- BRONZE AGE (early metal; NATURE mana arrives via Naturalism → Druidry) ----
   {
     id: 'mining',
     name: 'Mining',
@@ -184,14 +256,6 @@ export const TECHS: TechDef[] = [
     cost: 900,
     requires: ['masonry'],
     unlocks: ['Mine (building)', 'Iron (resource)'],
-  },
-  {
-    id: 'crystallurgy',
-    name: 'Crystallurgy',
-    blurb: 'Learn to read the glimmer in the deep rock. Mines also trickle Mana Crystals (+0.05/s) — one of the paths to discovering magic.',
-    cost: 1300,
-    requires: ['mining'],
-    unlocks: ['Mana Crystals from Mines', 'A path toward magic'],
   },
   {
     id: 'coal-mining',
@@ -210,7 +274,7 @@ export const TECHS: TechDef[] = [
     unlocks: ['Workshop (building)'],
   },
 
-  // ---- IRON AGE ----
+  // ---- IRON AGE (mana now arrives as CRYSTALS: Crystallurgy → Enchantment → Runecraft) ----
   {
     id: 'iron-working',
     name: 'Iron Working',
@@ -219,6 +283,35 @@ export const TECHS: TechDef[] = [
     resourceCost: { iron: 25 }, // iron ore is smelted into the new tools
     requires: ['mining'], // Bronze Working retired — Iron follows Mining directly
     unlocks: ['+50% to every gather job', 'Forge (building)'],
+  },
+  {
+    id: 'crystallurgy',
+    name: 'Crystallurgy',
+    blurb: 'Learn to read the glimmer in the deep rock. Mines also trickle Mana Crystals (+0.05/s) — the iron-age path to discovering magic.',
+    cost: 1300,
+    requires: ['mining'],
+    unlocks: ['Mana Crystals from Mines', 'A path toward magic'],
+  },
+  // CRYSTAL MAGIC (Iron era) — mana worked through crystals into constructs. Gated behind discovery.
+  {
+    id: 'enchantment',
+    name: 'Enchantment',
+    blurb: 'Bind mana into crystal and metal. Unlocks the Golem Works — a construct that mines iron + stone with no settlers, on mana upkeep.',
+    cost: 2200,
+    resourceCost: { mana: 120, manaCrystals: 30 },
+    requires: ['crystallurgy'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Golem Works (construct)'],
+  },
+  {
+    id: 'runecraft',
+    name: 'Runecraft',
+    blurb: 'Inscribe runes that work metal by themselves. Unlocks the Arcane Foundry — steel from raw mana, no coal or iron.',
+    cost: 4200,
+    resourceCost: { mana: 250, manaCrystals: 60 },
+    requires: ['enchantment'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Arcane Foundry (construct)'],
   },
   {
     id: 'steelmaking',
@@ -256,6 +349,15 @@ export const TECHS: TechDef[] = [
     resourceCost: { steel: 40 },
     requires: ['steelmaking'],
     unlocks: ['+65% Stonecutter output'],
+  },
+  {
+    id: 'sanitation',
+    name: 'Sanitation',
+    blurb: 'Clean water and sewers for a crowded settlement. Unlocks the Sewers — a big lift to housing and happiness.',
+    cost: 4000,
+    resourceCost: { culture: 200 },
+    requires: ['construction', 'compendia'],
+    unlocks: ['Sewers (building)'],
   },
 
   // ---- INDUSTRIAL ERA (Age of Steam) ----

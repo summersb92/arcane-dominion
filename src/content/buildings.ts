@@ -26,6 +26,15 @@ export type BuildingId =
   | 'granary'
   | 'library'
   | 'academy'
+  | 'observatory'
+  | 'aqueduct'
+  | 'forum'
+  | 'sewers'
+  | 'shrine'
+  | 'ley-grove'
+  | 'standing-stones'
+  | 'golem-works'
+  | 'arcane-foundry'
   | 'mine'
   | 'coal-mine'
   | 'charcoal-ground'
@@ -198,6 +207,73 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobCapacity', job: 'scholar', slots: 2 },
       { kind: 'produce', resource: 'research', perSec: 0.5 },
       { kind: 'researchCap', amount: 600 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'observatory',
+    name: 'Observatory',
+    blurb: 'Charts the heavens. +1 Scholar slot, +0.3 research/s, +400 research cap, +20 storage.',
+    cost: { wood: 120, stone: 100 },
+    costGrowth: 1.4,
+    requiresTech: 'mathematics',
+    effects: [
+      { kind: 'jobCapacity', job: 'scholar', slots: 1 },
+      { kind: 'produce', resource: 'research', perSec: 0.3 },
+      { kind: 'researchCap', amount: 400 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'aqueduct',
+    name: 'Aqueduct',
+    blurb: 'Carries clean water into the settlement. +5 population cap, +4 happiness, +20 storage.',
+    cost: { wood: 80, stone: 120 },
+    costGrowth: 1.4,
+    requiresTech: 'construction',
+    effects: [
+      { kind: 'popCap', amount: 5 },
+      { kind: 'happiness', amount: 4 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'forum',
+    name: 'Forum',
+    blurb: 'A public square for debate and performance. +1 Bard slot, +0.3 culture/s, +5 happiness, +20 storage.',
+    cost: { wood: 100, stone: 100 },
+    costGrowth: 1.4,
+    requiresTech: 'philosophy',
+    effects: [
+      { kind: 'jobCapacity', job: 'bard', slots: 1 },
+      { kind: 'produce', resource: 'culture', perSec: 0.3 },
+      { kind: 'happiness', amount: 5 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'sewers',
+    name: 'Sewers',
+    blurb: 'Drains and cisterns for a great settlement. +12 population cap, +6 happiness, +20 storage.',
+    cost: { stone: 200, iron: 40 },
+    costGrowth: 1.4,
+    requiresTech: 'sanitation',
+    effects: [
+      { kind: 'popCap', amount: 12 },
+      { kind: 'happiness', amount: 6 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'shrine',
+    name: 'Shrine',
+    blurb: 'A place of rite and reflection. +0.2 culture/s, +4 happiness, +20 storage.',
+    cost: { wood: 60, stone: 40 },
+    costGrowth: 1.4,
+    requiresTech: 'mysticism',
+    effects: [
+      { kind: 'produce', resource: 'culture', perSec: 0.2 },
+      { kind: 'happiness', amount: 4 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -399,6 +475,57 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'produce', resource: 'wood', perSec: 0.5 },
       { kind: 'manaUpkeep', perSec: 0.1 },
+    ],
+  },
+  // NATURE magic (Druidry / Seasonal Rites) — mana and life drawn from the living land.
+  {
+    id: 'ley-grove',
+    name: 'Ley Grove',
+    blurb: 'A grove sung along the ley lines — draws mana from the living land (+0.6 mana/s), no settlers.',
+    cost: { wood: 80, stone: 40 },
+    costGrowth: 1.3,
+    requiresTech: 'druidry',
+    construct: true,
+    effects: [{ kind: 'produce', resource: 'mana', perSec: 0.6 }],
+  },
+  {
+    id: 'standing-stones',
+    name: 'Standing Stones',
+    blurb: 'A ring aligned to the seasons — +0.4 mana/s, +0.5 food/s, and +8 happiness.',
+    cost: { stone: 150 },
+    costGrowth: 1.3,
+    requiresTech: 'seasonal-rites',
+    construct: true,
+    effects: [
+      { kind: 'produce', resource: 'mana', perSec: 0.4 },
+      { kind: 'produce', resource: 'food', perSec: 0.5 },
+      { kind: 'happiness', amount: 8 },
+    ],
+  },
+  // CRYSTAL magic (Enchantment / Runecraft) — mana worked through crystals into labour.
+  {
+    id: 'golem-works',
+    name: 'Golem Works',
+    blurb: 'Crystal-bound golems that mine on their own — iron + stone with NO settlers, only mana upkeep (0.3/s).',
+    cost: { stone: 100, manaCrystals: 20 },
+    requiresTech: 'enchantment',
+    construct: true,
+    effects: [
+      { kind: 'produce', resource: 'iron', perSec: 0.4 },
+      { kind: 'produce', resource: 'stone', perSec: 0.4 },
+      { kind: 'manaUpkeep', perSec: 0.3 },
+    ],
+  },
+  {
+    id: 'arcane-foundry',
+    name: 'Arcane Foundry',
+    blurb: 'Runes forge steel from raw magic — steel with NO coal, NO iron, NO settlers, only mana upkeep (0.5/s).',
+    cost: { stone: 120, manaCrystals: 40 },
+    requiresTech: 'runecraft',
+    construct: true,
+    effects: [
+      { kind: 'produce', resource: 'steel', perSec: 0.3 },
+      { kind: 'manaUpkeep', perSec: 0.5 },
     ],
   },
 ];

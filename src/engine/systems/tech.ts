@@ -10,8 +10,10 @@ import { logEvent } from './chronicle';
 
 const EPS = 1e-9;
 
-/** True once every prerequisite tech is unlocked. */
+/** True once every prerequisite tech is unlocked AND any required run flag is set (magic techs
+ *  gate behind `magicDiscovered`, like the magic buildings). */
 export function prereqsMet(state: GameState, def: TechDef): boolean {
+  if (def.requiresFlag && state.run.flags[def.requiresFlag] !== true) return false;
   for (const pre of def.requires ?? []) {
     if (!state.run.tech.includes(pre)) return false;
   }
