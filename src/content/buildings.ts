@@ -25,6 +25,7 @@ export type BuildingId =
   | 'quarry'
   | 'granary'
   | 'library'
+  | 'academy'
   | 'mine'
   | 'coal-mine'
   | 'charcoal-ground'
@@ -176,6 +177,20 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobCapacity', job: 'scholar', slots: 1 },
       { kind: 'produce', resource: 'research', perSec: 0.1 },
       { kind: 'researchCap', amount: 100 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'academy',
+    name: 'Academy',
+    blurb: 'A hall of higher learning. +2 Scholar slots, +0.5 research/s, +600 research cap, +20 storage. The reservoir that makes the costliest research reachable.',
+    cost: { wood: 150, stone: 120 },
+    costGrowth: 1.4,
+    requiresTech: 'writing',
+    effects: [
+      { kind: 'jobCapacity', job: 'scholar', slots: 2 },
+      { kind: 'produce', resource: 'research', perSec: 0.5 },
+      { kind: 'researchCap', amount: 600 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },

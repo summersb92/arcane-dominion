@@ -78,24 +78,23 @@ function globalJobMult(state: GameState): number {
   return m;
 }
 
-/** Tech-driven output multiplier for a job. The STONE tools are PER-JOB (Stone Axe →
- *  Woodcutter, Stone Hoe → Farmer, Stone Pick → Stonecutter, each +25% to only that job);
- *  the GLOBAL tool tiers (Bronze Working < Iron Working) stack on all three gather jobs
- *  atop whichever stone tools are owned. Agriculture is a Farmer-only crop bonus. The
- *  global Workshop/Forge output boost applies to every job. */
+/** Tech-driven output multiplier for a job. The STONE and STEEL tools are PER-JOB (Axe →
+ *  Woodcutter, Hoe → Farmer, Pick → Stonecutter — each +25% (stone) / +65% (steel) to only that
+ *  job); Iron Working is the one GLOBAL tool tier, stacking on all gather jobs (incl. Miners).
+ *  Agriculture is a Farmer-only crop bonus. The global Workshop/Forge boost applies to every job. */
 function jobEfficiency(state: GameState, jobId: string): number {
   const tech = state.run.tech;
   let m = 1;
-  // Per-tool stone techs — each boosts only its own gather job.
+  // Per-tool STONE techs — each boosts only its own gather job.
   if (jobId === 'woodcutter' && tech.includes('stone-axe')) m *= TECH_BONUS.stoneAxe;
   if (jobId === 'forager' && tech.includes('stone-hoe')) m *= TECH_BONUS.stoneHoe;
   if (jobId === 'quarry-worker' && tech.includes('stone-pick')) m *= TECH_BONUS.stonePick;
-  // Global tool tiers — stack on ALL three gather jobs.
-  if (GATHER_JOBS.has(jobId)) {
-    if (tech.includes('bronze-working')) m *= TECH_BONUS.bronzeWorking;
-    if (tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
-    if (tech.includes('steel-tools')) m *= TECH_BONUS.steelTools;
-  }
+  // Per-tool STEEL techs — the top per-job tier, atop the stone tools.
+  if (jobId === 'woodcutter' && tech.includes('steel-axe')) m *= TECH_BONUS.steelAxe;
+  if (jobId === 'forager' && tech.includes('steel-hoe')) m *= TECH_BONUS.steelHoe;
+  if (jobId === 'quarry-worker' && tech.includes('steel-pick')) m *= TECH_BONUS.steelPick;
+  // Iron Working — the one GLOBAL tool tier, on all gather jobs (incl. Miners).
+  if (GATHER_JOBS.has(jobId) && tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
   if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
   m *= globalJobMult(state);
   return m;

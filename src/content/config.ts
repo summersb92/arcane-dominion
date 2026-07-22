@@ -26,10 +26,10 @@ export const STARTING = {
   steelCap: 200,
   fursCap: 200,
   manaCrystalsCap: 200,
-  /** BASE research cap. Research is no longer uncapped — this small base holds the early
-   *  Stone-Age techs; pricier techs require science buildings (Scholar's Study / Library,
-   *  which add `researchCap` effects). See systems/caps.ts effectiveCap. */
-  researchCap: 50,
+  /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
+   *  techs require science buildings (Library +100, Academy +600 each) to raise the ceiling
+   *  toward the ~3000 needed by Steelmaking. See systems/caps.ts effectiveCap. */
+  researchCap: 300,
   popCap: 0, // no housing yet — build a House to admit settlers
 };
 
@@ -69,7 +69,7 @@ export const POPULATION = {
   /** Research each settler passively generates per second — a curiosity trickle that
    *  begins with your very first settler, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */
-  researchPerSettler: 0.02,
+  researchPerSettler: 0.1,
   /** Food each IDLE (unassigned) settler forages for themselves per second — a small
    *  subsistence trickle that softens their upkeep. Below baseFoodUpkeep, so idle folk
    *  are still a slight net drain; Farmers/Hunters are needed to truly grow. */
@@ -81,19 +81,21 @@ export const POPULATION = {
 };
 
 /** Efficiency multipliers granted by tech (systems/production.ts).
- *  STONE TOOLS are now split into THREE per-tool techs, each boosting ONLY its own gather
- *  job: Stone Axe → Woodcutter, Stone Hoe → Farmer, Stone Pick → Stonecutter. The GLOBAL
- *  tool tiers (Bronze Working < Iron Working) still stack on ALL three gather jobs, atop
- *  whichever stone tools are owned. Agriculture is a crop bonus that applies to the Farmer only. */
+ *  STONE and STEEL tools are split into THREE per-tool techs each, boosting ONLY their own gather
+ *  job: (Stone/Steel) Axe → Woodcutter, Hoe → Farmer, Pick → Stonecutter. Iron Working is the one
+ *  GLOBAL tool tier, stacking on all gather jobs (incl. Miners). Bronze Working was retired.
+ *  Agriculture is a crop bonus that applies to the Farmer only. */
 export const TECH_BONUS = {
-  /** Per-tool stone techs — each boosts a single gather job by +25%. */
+  /** Per-tool STONE techs — each boosts a single gather job by +25%. */
   stoneAxe: 1.25, // Woodcutter only
   stoneHoe: 1.25, // Farmer only
   stonePick: 1.25, // Stonecutter only
-  /** Global tool tiers — stack on all three gather jobs. */
-  bronzeWorking: 1.35, // ×, stacks atop the stone tools
-  ironWorking: 1.5, // ×, stacks atop bronze
-  steelTools: 1.65, // ×, the top tool-tier bump (researched with steel), stacks atop iron
+  /** Global tool tier — stacks on all gather jobs. */
+  ironWorking: 1.5, // ×, the one global tool tier
+  /** Per-tool STEEL techs — the top per-job tier (researched with steel), stack atop iron. */
+  steelAxe: 1.65, // Woodcutter only
+  steelHoe: 1.65, // Farmer only
+  steelPick: 1.65, // Stonecutter only
   /** Crop tech — Farmer output only. */
   agriculture: 1.5, // +50% Farmer food
 };

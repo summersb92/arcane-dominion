@@ -271,11 +271,11 @@ describe('resource breakdown (hover math)', () => {
 describe('tech', () => {
   it('researching a tech spends research (and any material cost) and unlocks it', () => {
     const s = newGame(1);
-    s.run.resources.research = 20;
+    s.run.resources.research = 320;
     s.run.resources.stone = 15; // stone-axe also consumes 10 stone
-    expect(research(s, 'stone-axe')).toBe(true); // cost 10 research + 10 stone
+    expect(research(s, 'stone-axe')).toBe(true); // cost 300 research + 10 stone
     expect(s.run.tech).toContain('stone-axe');
-    expect(s.run.resources.research).toBe(10);
+    expect(s.run.resources.research).toBe(20);
     expect(s.run.resources.stone).toBe(5);
   });
 
@@ -303,6 +303,6 @@ describe('tech', () => {
     const s = newGame(1);
     s.run.resources.research = 2;
     s.run.resources.stone = 100; // plenty of the material — research is the shortfall
-    expect(research(s, 'stone-axe')).toBe(false); // costs 10 research
+    expect(research(s, 'stone-axe')).toBe(false); // costs 300 research
   });
 });

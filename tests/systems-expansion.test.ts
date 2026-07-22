@@ -12,52 +12,54 @@ import { growthStatus } from '../src/engine/systems/population';
 describe('techs can cost materials (resourceCost)', () => {
   it('refuses stone-axe without the stone, with NO mutation', () => {
     const s = newGame(1);
-    s.run.resources.research = 100; // plenty of research…
+    s.run.resources.research = 400; // plenty of research…
     s.run.resources.stone = 0; // …but no stone
     expect(canAffordTech(s, 'stone-axe')).toBe(false);
     expect(research(s, 'stone-axe')).toBe(false);
     expect(s.run.tech).not.toContain('stone-axe');
-    expect(s.run.resources.research).toBe(100); // untouched on refusal
+    expect(s.run.resources.research).toBe(400); // untouched on refusal
   });
 
   it('spends BOTH research and the material when affordable', () => {
     const s = newGame(1);
-    s.run.resources.research = 50;
+    s.run.resources.research = 350;
     s.run.resources.stone = 50;
-    expect(research(s, 'stone-axe')).toBe(true); // 10 research + 10 stone
-    expect(s.run.resources.research).toBe(40);
+    expect(research(s, 'stone-axe')).toBe(true); // 300 research + 10 stone
+    expect(s.run.resources.research).toBe(50);
     expect(s.run.resources.stone).toBe(40);
     expect(s.run.tech).toContain('stone-axe');
   });
 });
 
 describe('research is capped by science buildings', () => {
-  it('base research cap is 50 on a fresh game', () => {
+  it('base research cap is 300 on a fresh game', () => {
     const s = newGame(1);
-    expect(researchCap(s)).toBe(50);
-    expect(effectiveCap(s, 'research')).toBe(50);
+    expect(researchCap(s)).toBe(300);
+    expect(effectiveCap(s, 'research')).toBe(300);
   });
 
-  it('the Library (+100) is the single science building and raises the research cap', () => {
+  it('the Library (+100) and Academy (+600) raise the research cap', () => {
     const s = newGame(1);
-    expect(researchCap(s)).toBe(50); // base
-    s.run.tech.push('writing'); // unlocks the Library (the merged science building)
+    expect(researchCap(s)).toBe(300); // base
+    s.run.tech.push('writing'); // unlocks the Library + Academy
     s.run.resources.wood = 500;
     s.run.resources.stone = 500;
     expect(build(s, 'library')).toBe(true);
-    expect(researchCap(s)).toBe(150); // 50 base + 100 library
-    // A Scholar can be assigned to the Library (the merged Scholar's Study role).
+    expect(researchCap(s)).toBe(400); // 300 base + 100 library
+    expect(build(s, 'academy')).toBe(true);
+    expect(researchCap(s)).toBe(1000); // + 600 academy
+    // A Scholar can be assigned to the Library.
     s.run.population.total = 1;
     expect(assignJob(s, 'scholar', 1)).toBe(1);
   });
 
   it('research clamps at its effective cap in a tick (excess is lost)', () => {
     const s = newGame(1);
-    // No science buildings → cap stays at the base 50. Many settlers trickle research.
-    s.run.population.total = 10; // 10 × 0.02 = 0.2 research/s
-    s.run.resources.research = 45;
-    runProduction(s, 100); // would add 20 → 65, but clamps at 50
-    expect(s.run.resources.research).toBe(50);
+    // No science buildings → cap stays at the base 300. Many settlers trickle research.
+    s.run.population.total = 10; // 10 × 0.1 = 1 research/s
+    s.run.resources.research = 250;
+    runProduction(s, 100); // would add 100 → 350, but clamps at 300
+    expect(s.run.resources.research).toBe(300);
   });
 });
 

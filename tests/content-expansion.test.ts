@@ -64,11 +64,9 @@ describe('Miner job (Mine opens Miner, yields iron not stone)', () => {
     s.run.tech.push('stone-pick');
     expect(productionRates(s).iron).toBeCloseTo(0.6, 6);
 
-    // Global tool tiers (Bronze/Iron Working) DO apply to the Miner's 0.4 base.
-    s.run.tech.push('bronze-working');
-    expect(productionRates(s).iron).toBeCloseTo(0.4 * 1.35 + 0.2, 6);
+    // Iron Working (the one global tool tier) DOES apply to the Miner's 0.4 base.
     s.run.tech.push('iron-working');
-    expect(productionRates(s).iron).toBeCloseTo(0.4 * 1.35 * 1.5 + 0.2, 6);
+    expect(productionRates(s).iron).toBeCloseTo(0.4 * 1.5 + 0.2, 6);
   });
 });
 
@@ -82,8 +80,8 @@ describe('iron resource + Crystallurgy tech', () => {
   it('Iron Working consumes iron ore (resourceCost) as well as research', () => {
     expect(TECH_BY_ID['iron-working'].resourceCost?.iron).toBe(25);
     const s = newGame(1);
-    s.run.tech.push('bronze-working'); // the prereq
-    s.run.resources.research = 200;
+    s.run.tech.push('mining'); // the prereq (Bronze Working retired)
+    s.run.resources.research = 2000; // enough for the 1800 research cost
     s.run.resources.iron = 10; // not enough ore
     expect(research(s, 'iron-working')).toBe(false);
     expect(s.run.tech).not.toContain('iron-working');
@@ -123,10 +121,14 @@ describe('per-job food upkeep removed', () => {
   });
 });
 
-describe('tech tree — doubled costs and Stone→Bronze→Iron DAG (magic is discovery-driven, not a tech)', () => {
-  it('doubles the retained tech costs', () => {
-    expect(TECH_BY_ID.agriculture.cost).toBe(20); // was 10
-    expect(TECH_BY_ID.masonry.cost).toBe(30); // was 15
+describe('tech tree — steep research costs, Stone→Iron→Steel DAG (magic is discovery-driven, not a tech)', () => {
+  it('ramps research costs steeply (≈300 entry → ≈3000 at Steelmaking)', () => {
+    expect(TECH_BY_ID['stone-axe'].cost).toBe(300); // entry tier
+    expect(TECH_BY_ID.agriculture.cost).toBe(500);
+    expect(TECH_BY_ID.masonry.cost).toBe(550);
+    expect(TECH_BY_ID.mining.cost).toBe(900);
+    expect(TECH_BY_ID['iron-working'].cost).toBe(1800);
+    expect(TECH_BY_ID.steelmaking.cost).toBe(3000);
   });
 
   it('a Stone-Age tech is available at the very start', () => {
@@ -141,12 +143,14 @@ describe('tech tree — doubled costs and Stone→Bronze→Iron DAG (magic is di
     expect(available).not.toContain('iron-working');
   });
 
-  it('forms a clean prereq chain up to Iron Working, with Naturalism hanging off Agriculture', () => {
+  it('forms a clean prereq chain up to Steelmaking (Bronze Working retired), Naturalism off Agriculture', () => {
     // Agriculture/Masonry now hang off the per-tool stone techs.
     expect(TECH_BY_ID.agriculture.requires).toContain('stone-hoe');
     expect(TECH_BY_ID.masonry.requires).toContain('stone-pick');
-    expect(TECH_BY_ID['bronze-working'].requires).toContain('mining');
-    expect(TECH_BY_ID['iron-working'].requires).toContain('bronze-working');
+    // Bronze Working is gone; Iron Working follows Mining directly, Steelmaking follows Iron.
+    expect(TECH_BY_ID['bronze-working' as never]).toBeUndefined();
+    expect(TECH_BY_ID['iron-working'].requires).toContain('mining');
+    expect(TECH_BY_ID.steelmaking.requires).toContain('iron-working');
     // Naturalism (the one magic-feeding tech, opening the Sacred Grove) follows Agriculture.
     expect(TECH_BY_ID.naturalism.requires).toContain('agriculture');
     // The retired magic-tier techs are gone entirely.
@@ -183,7 +187,7 @@ describe('per-tool stone techs boost ONLY their own gather job', () => {
 });
 
 describe('tool-tier efficiency stacks on a gather job', () => {
-  it('Stone Axe < Bronze Working < Iron Working each raise Woodcutter output multiplicatively', () => {
+  it('Stone Axe < Iron Working < Steel Axe each raise Woodcutter output multiplicatively', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1;
@@ -194,22 +198,22 @@ describe('tool-tier efficiency stacks on a gather job', () => {
     const base = productionRates(s).wood;
     expect(base).toBeCloseTo(0.5, 6);
 
-    s.run.tech.push('stone-axe');
+    s.run.tech.push('stone-axe'); // per-tool +25%
     const withStone = productionRates(s).wood;
     expect(withStone).toBeCloseTo(0.5 * 1.25, 6);
 
-    s.run.tech.push('bronze-working');
-    const withBronze = productionRates(s).wood;
-    expect(withBronze).toBeCloseTo(0.5 * 1.25 * 1.35, 6);
-
-    s.run.tech.push('iron-working');
+    s.run.tech.push('iron-working'); // global +50%
     const withIron = productionRates(s).wood;
-    expect(withIron).toBeCloseTo(0.5 * 1.25 * 1.35 * 1.5, 6);
+    expect(withIron).toBeCloseTo(0.5 * 1.25 * 1.5, 6);
+
+    s.run.tech.push('steel-axe'); // per-tool +65% (top tier)
+    const withSteel = productionRates(s).wood;
+    expect(withSteel).toBeCloseTo(0.5 * 1.25 * 1.5 * 1.65, 6);
 
     // Strictly increasing tiers.
     expect(withStone).toBeGreaterThan(base);
-    expect(withBronze).toBeGreaterThan(withStone);
-    expect(withIron).toBeGreaterThan(withBronze);
+    expect(withIron).toBeGreaterThan(withStone);
+    expect(withSteel).toBeGreaterThan(withIron);
   });
 });
 

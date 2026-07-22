@@ -182,9 +182,10 @@ describe('Steelworks fuel toggle — Wood vs Coal recipes', () => {
   });
 });
 
-describe('Steel Tools research (a steel sink + top tool tier)', () => {
-  it('costs steel and boosts the gather jobs above Iron Working', () => {
-    expect(TECH_BY_ID['steel-tools'].resourceCost?.steel).toBe(40);
+describe('Steel Tools research (split per tool; a steel sink + top per-job tier)', () => {
+  it('Steel Axe costs steel + research and boosts ONLY the Woodcutter, above Iron Working', () => {
+    expect(TECH_BY_ID['steel-axe'].resourceCost?.steel).toBe(40);
+    expect(TECH_BY_ID['steel-axe'].requires).toContain('steelmaking');
     const s = newGame(1);
     // A working Woodcutter to sample the tool multiplier.
     s.run.buildings.hut = 1;
@@ -192,15 +193,16 @@ describe('Steel Tools research (a steel sink + top tool tier)', () => {
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
-    s.run.tech.push('bronze-working', 'iron-working');
-    const beforeTool = productionRates(s).wood; // 0.5 × 1.35 × 1.5
+    s.run.tech.push('iron-working'); // the one global tier
+    const beforeTool = productionRates(s).wood; // 0.5 × 1.5
 
-    // Research Steel Tools (needs the prereq + research + 40 steel).
+    // Research Steel Axe (needs the prereq + research + 40 steel).
     s.run.tech.push('steelmaking');
-    s.run.resources.research = 200;
+    s.run.resources.research = 3500;
     s.run.resources.steel = 40;
-    expect(research(s, 'steel-tools')).toBe(true);
+    expect(research(s, 'steel-axe')).toBe(true);
     expect(s.run.resources.steel).toBe(0); // steel spent
+    expect(s.run.resources.research).toBe(0); // research spent
     expect(productionRates(s).wood).toBeCloseTo(beforeTool * 1.65, 6); // +65% on top
   });
 });
