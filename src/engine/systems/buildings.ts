@@ -17,7 +17,11 @@ import { MUNDANE_RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
-const EPS = 1e-9;
+// Affordability tolerance. Resources accumulate as floats (rate × dt summed over thousands of
+// ticks), so a stock the player believes is "exactly 15" can land on 14.999999999999998. That
+// must never block a build: the tolerance is far below anything the UI renders (2 decimals) but
+// comfortably above accumulated float drift.
+const EPS = 1e-6;
 
 export type ConvertEffect = Extract<BuildingEffect, { kind: 'convert' }>;
 

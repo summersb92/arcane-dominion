@@ -8,7 +8,9 @@ import type { ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
-const EPS = 1e-9;
+// Affordability tolerance — see systems/buildings.ts. Float drift in an accumulated stock must
+// never block research the player can see they have paid for.
+const EPS = 1e-6;
 
 /** True once every prerequisite tech is unlocked AND any required run flag is set (magic techs
  *  gate behind `magicDiscovered`, like the magic buildings). */
