@@ -54,19 +54,19 @@ describe('buildings', () => {
     expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(15 * 1.5)); // 23
   });
 
-  it('only the Hut is unlocked at the start; workplaces reveal after a Hut', () => {
+  it('the House and the two founding workplaces are unlocked at the start', () => {
     const s = newGame(1);
     const unlocked = () => buildingsView(s).filter((b) => b.unlocked).map((b) => b.id);
-    expect(unlocked()).toEqual(['hut']); // v0.1: nothing else at the very start
+    // A settlement can shelter itself, plant, and fell timber on day one — no tech needed.
+    expect(unlocked()).toEqual(['hut', 'woodcutters-lodge', 'forager-hut']);
 
     s.run.resources.wood = 15;
     expect(build(s, 'hut')).toBe(true);
     const after = unlocked();
-    expect(after).toContain('storehouse');
-    expect(after).not.toContain('woodcutters-lodge'); // now gated behind the Forestry tech
-    expect(after).not.toContain('forager-hut'); // the Farm is gated behind the Agriculture tech
-    expect(after).not.toContain('hunters-lodge'); // now gated behind the Archery tech
-    expect(after).not.toContain('library'); // the science building is still gated behind Writing
+    expect(after).toContain('storehouse'); // reveals once a House stands
+    expect(after).not.toContain('hunters-lodge'); // gated behind the Archery tech
+    expect(after).not.toContain('library'); // the science building is gated behind Writing
+    expect(after).not.toContain('farm-house'); // the housing/farm hybrid needs Agriculture
   });
 
   it("the Hunter's Lodge is gated behind the Archery tech", () => {
@@ -78,12 +78,10 @@ describe('buildings', () => {
     expect(jobCapacity(s, 'hunter')).toBe(1); // one job per building
   });
 
-  it('the Farm is gated behind the Agriculture tech', () => {
+  it('the Farm needs no tech and opens a Farmer slot immediately', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
-    expect(build(s, 'forager-hut')).toBe(false); // no Agriculture yet
-    s.run.tech.push('agriculture');
-    expect(build(s, 'forager-hut')).toBe(true);
+    expect(build(s, 'forager-hut')).toBe(true); // buildable from turn one
     expect(jobCapacity(s, 'forager')).toBe(1); // one Farmer slot per Farm
   });
 
@@ -103,7 +101,6 @@ describe('jobs', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge'); // opens 2 woodcutter slots
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 1)).toBe(1);
@@ -123,7 +120,6 @@ describe('jobs', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // only 1 idle
@@ -135,7 +131,6 @@ describe('jobs', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge'); // capacity 1 — one building, one slot
     s.run.population.total = 5;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // capped at the single slot
@@ -151,7 +146,6 @@ describe('buildings: storage bump + escalating cost', () => {
     s.run.resources.wood = 200;
     const capBefore = s.run.caps.wood;
     const costBefore = buildingCost(s, 'woodcutters-lodge').wood as number;
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     expect(build(s, 'woodcutters-lodge')).toBe(true);
     expect(s.run.caps.wood).toBe(capBefore + 20); // +20 storage on top of the job slots
     const costAfter = buildingCost(s, 'woodcutters-lodge').wood as number;
@@ -257,7 +251,6 @@ describe('resource breakdown (hover math)', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
@@ -276,9 +269,9 @@ describe('resource breakdown (hover math)', () => {
 describe('tech', () => {
   it('researching a tech spends research (and any material cost) and unlocks it', () => {
     const s = newGame(1);
-    s.run.resources.research = 320;
-    s.run.resources.stone = 15; // stone-axe also consumes 10 stone
-    expect(research(s, 'stone-axe')).toBe(true); // cost 300 research + 10 stone
+    s.run.resources.research = 170;
+    s.run.resources.stone = 45; // stone-axe also consumes 40 stone
+    expect(research(s, 'stone-axe')).toBe(true); // cost 150 research + 40 stone
     expect(s.run.tech).toContain('stone-axe');
     expect(s.run.resources.research).toBe(20);
     expect(s.run.resources.stone).toBe(5);
@@ -288,7 +281,6 @@ describe('tech', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);

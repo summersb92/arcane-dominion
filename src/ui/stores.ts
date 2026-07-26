@@ -50,7 +50,7 @@ import { actionsView, doGather as engineDoGather } from '../engine/systems/actio
 import type { OfflineSummary } from '../engine/offline';
 import { serialize, LOCALSTORAGE_KEY } from '../engine/save';
 import type { Notation } from '../engine/format';
-import { setNotation, fmt } from './format';
+import { setNotation, fmt, fmtCost } from './format';
 import { applyFont } from './font';
 
 const EPS = 1e-9;
@@ -232,10 +232,11 @@ function resToken(id: ResourceId): string {
       return 'gold'; // wood
   }
 }
-/** Format a cost map into "Wood 15 · Stone 10" — named, no icons. */
+/** Format a cost map into "Wood 15 · Stone 10" — named, no icons. Costs render EXACTLY
+ *  (never abbreviated or rounded), so the label always matches what the build charges. */
 function costText(cost: Partial<Record<ResourceId, number>>): string {
   return (Object.entries(cost) as [ResourceId, number][])
-    .map(([id, amt]) => `${RESOURCE_BY_ID[id].label} ${numStr(amt)}`)
+    .map(([id, amt]) => `${RESOURCE_BY_ID[id].label} ${fmtCost(amt)}`)
     .join(' · ');
 }
 /** A job's EFFECTIVE per-worker output as "Wood +0.63/s" — after tool techs and the
@@ -567,7 +568,8 @@ export function resourceTooltip(r: ResourceView): TooltipContent {
     ],
   });
   if (r.capped) {
-    sections.push({ label: 'Stored', lines: [{ text: `${numStr(r.amount)} / ${numStr(r.cap)}` }] });
+    // Exact on hover — the compact row floors its figure, this is the precise one.
+    sections.push({ label: 'Stored', lines: [{ text: `${fmtCost(+r.amount.toFixed(2))} / ${fmtCost(r.cap)}` }] });
   }
   const note = r.atCap ? 'At cap — further gains are wasted. Build a Storehouse.' : undefined;
   return { title: r.label, titleCls: resToken(r.id), sections, note };

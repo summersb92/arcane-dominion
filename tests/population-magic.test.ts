@@ -91,7 +91,6 @@ describe('determinism', () => {
       const s = newGame(123);
       for (let i = 0; i < 20; i++) doGather(s, 'gather-wood');
       s.run.buildings.hut = 1; // Hut prereq unlocks the workplace
-      s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
       build(s, 'woodcutters-lodge');
       s.run.popCap = 10;
       simulate(s, 120);

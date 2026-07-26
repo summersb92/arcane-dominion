@@ -33,7 +33,6 @@ export type TechId =
   | 'archery'
   | 'pottery'
   | 'agriculture'
-  | 'forestry'
   | 'masonry'
   | 'writing'
   | 'bookbinding'
@@ -108,30 +107,32 @@ export interface TechDef {
 
 export const TECHS: TechDef[] = [
   // ---- STONE AGE ----
-  // The old single "Stone Tools" is split into three per-tool techs, each boosting ONLY
-  // its own gather job. Each consumes STONE as well as research (resourceCost).
-  {
-    id: 'stone-axe',
-    name: 'Stone Axe',
-    blurb: 'A knapped edge for felling. The trees stop winning.',
-    cost: 300,
-    resourceCost: { stone: 10 },
-    unlocks: ['+25% Woodcutter output'],
-  },
+  // The Farm and the Woodcutter's Lodge need NO tech — a settlement can plant and fell from
+  // the first day. The stone tools are the true openers: each boosts ONLY its own gather job
+  // and consumes STONE as well as research. The Stone Hoe is the cheapest and opens the
+  // farming branch (Agriculture and everything past it).
   {
     id: 'stone-hoe',
     name: 'Stone Hoe',
     blurb: 'A stone blade for the soil. The soil comes around.',
+    cost: 100,
+    resourceCost: { stone: 40 },
+    unlocks: ['+25% Farmer output', 'Agriculture (tech)'],
+  },
+  {
+    id: 'stone-axe',
+    name: 'Stone Axe',
+    blurb: 'A knapped edge for felling. The trees stop winning.',
     cost: 150,
-    resourceCost: { stone: 10 },
-    unlocks: ['+25% Farmer output'],
+    resourceCost: { stone: 40 },
+    unlocks: ['+25% Woodcutter output'],
   },
   {
     id: 'stone-pick',
     name: 'Stone Pick',
     blurb: 'A hafted pick for breaking rock, and the patience to use it.',
-    cost: 300,
-    resourceCost: { stone: 10 },
+    cost: 150,
+    resourceCost: { stone: 40 },
     unlocks: ['+25% Stonecutter output'],
   },
   {
@@ -156,21 +157,15 @@ export const TECHS: TechDef[] = [
     cost: 300,
     unlocks: ['Granary (building)'],
   },
-  // The two OPENERS: the first things a settlement works out, so the food and timber
-  // economies can start. Deliberately cheap — everything past them ramps steeply.
+  // Agriculture is the gateway to the whole farming branch — Farm House, Irrigation,
+  // Naturalism, Animal Husbandry and Milling all hang off it. Revealed by the Stone Hoe.
   {
     id: 'agriculture',
     name: 'Agriculture',
     blurb: 'Tend the land instead of scavenging it. The land, eventually, agrees.',
-    cost: 10,
-    unlocks: ['Farm (building)', 'Farm House (building)'],
-  },
-  {
-    id: 'forestry',
-    name: 'Forestry',
-    blurb: 'Learn which trees to take and which to leave. The wood lasts longer either way.',
-    cost: 15,
-    unlocks: ["Woodcutter's Lodge (building)", 'Woodcutter (job)'],
+    cost: 150,
+    requires: ['stone-hoe'],
+    unlocks: ['Farm House (building)', 'The farming branch'],
   },
   {
     id: 'irrigation',

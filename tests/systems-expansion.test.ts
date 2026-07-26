@@ -22,11 +22,11 @@ describe('techs can cost materials (resourceCost)', () => {
 
   it('spends BOTH research and the material when affordable', () => {
     const s = newGame(1);
-    s.run.resources.research = 350;
+    s.run.resources.research = 200;
     s.run.resources.stone = 50;
-    expect(research(s, 'stone-axe')).toBe(true); // 300 research + 10 stone
+    expect(research(s, 'stone-axe')).toBe(true); // 150 research + 40 stone
     expect(s.run.resources.research).toBe(50);
-    expect(s.run.resources.stone).toBe(40);
+    expect(s.run.resources.stone).toBe(10);
     expect(s.run.tech).toContain('stone-axe');
   });
 });

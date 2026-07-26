@@ -84,7 +84,6 @@ describe('Steam Works — mechanization (spend goods → global output)', () => 
     // A working Woodcutter to sample the global multiplier.
     s.run.buildings.hut = 1;
     s.run.resources.wood = 25;
-    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);

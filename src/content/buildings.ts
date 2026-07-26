@@ -217,7 +217,7 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.3,
-    requiresTech: 'forestry',
+    // Buildable from the very start, alongside the Farm — the two founding workplaces.
     effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
@@ -227,7 +227,7 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 20 },
     costGrowth: 1.3,
-    requiresTech: 'agriculture',
+    // Buildable from the very start — a settlement knows how to plant before it theorizes.
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {

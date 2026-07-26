@@ -2,7 +2,7 @@
   import { game, openTip, hideTooltip, resourceTooltip } from '../stores';
   import type { ResourceView } from '../stores';
   import Gather from './Gather.svelte';
-  import { fmt, fmtRate } from '../format';
+  import { fmtHeld, fmtRate } from '../format';
 
   // amber when at/above 90% of a finite cap
   function nearCap(r: ResourceView): boolean {
@@ -33,7 +33,7 @@
         <span class="nm" class:mana={r.magic}>{r.label}</span>
         <span class="val">
           <span class="vl" class:amber={nearCap(r)}>
-            {fmt(r.amount)}{#if r.capped}<span class="lockt"> / {fmt(r.cap)}</span>{/if}
+            {fmtHeld(r.amount)}{#if r.capped}<span class="lockt"> / {fmtHeld(r.cap)}</span>{/if}
           </span>
           <span class="rt">{fmtRate(r.rate)}</span>
         </span>

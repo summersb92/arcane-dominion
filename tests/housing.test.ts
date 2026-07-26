@@ -61,45 +61,50 @@ describe('Aqueduct rework — repeatable Farmer infrastructure', () => {
   });
 });
 
-describe('the early-game openers (Agriculture / Forestry) and the Ranch', () => {
-  it('Agriculture and Forestry are cheap, prereq-free openers available from turn one', () => {
-    expect(TECH_BY_ID.agriculture.cost).toBe(10);
-    expect(TECH_BY_ID.forestry.cost).toBe(15);
-    expect(TECH_BY_ID.agriculture.requires).toBeUndefined();
-    expect(TECH_BY_ID.forestry.requires).toBeUndefined();
+describe('the founding workplaces and the early tech openers', () => {
+  it('the Farm and the Woodcutter\'s Lodge need NO tech — both buildable from turn one', () => {
+    expect(BUILDING_BY_ID['forager-hut'].requiresTech).toBeUndefined();
+    expect(BUILDING_BY_ID['forager-hut'].requiresBuilding).toBeUndefined();
+    expect(BUILDING_BY_ID['woodcutters-lodge'].requiresTech).toBeUndefined();
+    expect(BUILDING_BY_ID['woodcutters-lodge'].requiresBuilding).toBeUndefined();
+
+    // A brand-new settlement can raise both with nothing but gathered wood.
+    const s = newGame(1);
+    s.run.resources.wood = 100;
+    expect(build(s, 'forager-hut')).toBe(true);
+    expect(build(s, 'woodcutters-lodge')).toBe(true);
+    expect(jobCapacity(s, 'forager')).toBe(1);
+    expect(jobCapacity(s, 'woodcutter')).toBe(1);
+    // Forestry was retired entirely.
+    expect(TECH_BY_ID['forestry' as never]).toBeUndefined();
+  });
+
+  it('the stone tools are the openers: Hoe 100, Axe/Pick 150, each 40 stone', () => {
+    expect(TECH_BY_ID['stone-hoe'].cost).toBe(100);
+    expect(TECH_BY_ID['stone-axe'].cost).toBe(150);
+    expect(TECH_BY_ID['stone-pick'].cost).toBe(150);
+    for (const id of ['stone-hoe', 'stone-axe', 'stone-pick'] as const) {
+      expect(TECH_BY_ID[id].resourceCost?.stone, id).toBe(40);
+      expect(TECH_BY_ID[id].requires, id).toBeUndefined();
+    }
     const s = newGame(1);
     const available = techView(s).filter((t) => t.available).map((t) => t.id);
-    expect(available).toContain('agriculture');
-    expect(available).toContain('forestry');
+    expect(available).toContain('stone-hoe');
+    expect(available).not.toContain('agriculture'); // revealed by the Stone Hoe
   });
 
-  it('Agriculture carries NO output multiplier; Stone Hoe (150) is the Farmer upgrade', () => {
-    expect(TECH_BY_ID['stone-hoe'].cost).toBe(150);
+  it('Agriculture (150) is revealed by the Stone Hoe and carries no output multiplier', () => {
     const s = newGame(1);
-    const base = jobEffectiveProduces(s, 'forager').food!;
-    s.run.tech.push('agriculture');
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base, 6); // enabler only
-    s.run.tech.push('stone-hoe');
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base * 1.25, 6);
-  });
+    s.run.resources.research = 400;
+    s.run.resources.stone = 100;
+    expect(research(s, 'agriculture')).toBe(false); // needs the Stone Hoe first
+    expect(research(s, 'stone-hoe')).toBe(true); // 100 research + 40 stone
+    expect(s.run.resources.stone).toBe(60);
 
-  it('Agriculture is affordable from the settler research trickle alone, and opens the Farm', () => {
-    const s = newGame(1);
-    s.run.resources.research = 10; // exactly the cost
-    expect(research(s, 'agriculture')).toBe(true);
-    expect(s.run.resources.research).toBe(0);
-    s.run.resources.wood = 100;
-    expect(build(s, 'forager-hut')).toBe(true); // the basic Farm now exists
-  });
-
-  it("Forestry gates the Woodcutter's Lodge (no longer just a House)", () => {
-    const s = newGame(1);
-    s.run.resources.wood = 100;
-    s.run.buildings.hut = 1;
-    expect(build(s, 'woodcutters-lodge')).toBe(false); // a House is no longer enough
-    s.run.tech.push('forestry');
-    expect(build(s, 'woodcutters-lodge')).toBe(true);
-    expect(jobCapacity(s, 'woodcutter')).toBe(1);
+    const withHoe = jobEffectiveProduces(s, 'forager').food!;
+    expect(withHoe).toBeCloseTo(0.5 * 1.25, 6); // the Hoe is the Farmer upgrade
+    expect(research(s, 'agriculture')).toBe(true); // now revealed, 150 research
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(withHoe, 6); // gateway only
   });
 
   it('Animal Husbandry costs 100, follows Agriculture, and unlocks the flat-food Ranch', () => {

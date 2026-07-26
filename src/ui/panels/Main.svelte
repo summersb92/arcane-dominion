@@ -17,7 +17,7 @@
   } from '../stores';
   import type { BuildingRowView, TechRowView } from '../stores';
   import BuildCard from '../components/BuildCard.svelte';
-  import { fmt, fmtRate } from '../format';
+  import { fmt, fmtRate, fmtCost } from '../format';
 
   // Research cards mirror the build cards: the whole card is the action. Cost, blurb,
   // unlocks and any reason live in the hover tooltip; a red name means "can't afford".
@@ -328,7 +328,7 @@
             >
               <div class="tt">
                 <span class="nm">{t.name}</span>
-                <span class="chip">{fmt(t.cost)}</span>
+                <span class="chip">{fmtCost(t.cost)}</span>
               </div>
             </div>
           {/each}
