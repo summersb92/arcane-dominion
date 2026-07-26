@@ -17,6 +17,9 @@ import type { ResourceId } from './resources';
 
 export type BuildingId =
   | 'hut'
+  | 'farm-house'
+  | 'apartments'
+  | 'mansion'
   | 'storehouse'
   | 'warehouse'
   | 'woodcutters-lodge'
@@ -65,6 +68,7 @@ export type BuildingEffect =
   // ONGOING (derived per tick / per read from building count):
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
   | { kind: 'jobOutputMult'; amount: number } // +fraction to EVERY worker's output (Workshop/Forge)
+  | { kind: 'jobBoost'; job: JobId; amount: number } // +fraction to ONE job's output per copy (Aqueduct → Farmer)
   // Passive construct output. An optional `requiresTech` gates the output: production only
   // flows once that tech is researched (e.g. the Mine's mana-crystal trickle behind Crystallurgy).
   | { kind: 'produce'; resource: ResourceId; perSec: number; requiresTech?: string }
@@ -130,6 +134,44 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 15 },
     costGrowth: 1.5,
     effects: [{ kind: 'popCap', amount: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
+  },
+  {
+    id: 'farm-house',
+    name: 'Farm House',
+    blurb: 'A home with its boots already muddy. The fields are right outside.',
+    category: 'housing',
+    cost: { wood: 30 },
+    costGrowth: 1.4,
+    requiresTech: 'agriculture',
+    effects: [
+      { kind: 'popCap', amount: 1 },
+      { kind: 'jobCapacity', job: 'forager', slots: 1 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'apartments',
+    name: 'Apartments',
+    blurb: 'Homes stacked on homes. The stairs are nobody’s favourite.',
+    category: 'housing',
+    cost: { wood: 60, stone: 40 },
+    costGrowth: 1.4,
+    requiresTech: 'construction',
+    effects: [{ kind: 'popCap', amount: 4 }, { kind: 'cap', amount: STRUCT_CAP }],
+  },
+  {
+    id: 'mansion',
+    name: 'Mansion',
+    blurb: 'More rooms than residents, and proud of it.',
+    category: 'housing',
+    cost: { wood: 120, stone: 80, furniture: 10 },
+    costGrowth: 1.4,
+    requiresTech: 'sanitation',
+    effects: [
+      { kind: 'popCap', amount: 5 },
+      { kind: 'happiness', amount: 3 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
   },
   {
     id: 'storehouse',
@@ -249,14 +291,13 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'aqueduct',
     name: 'Aqueduct',
-    blurb: 'Clean water arrives uphill of the sewage. A civic triumph.',
-    category: 'housing',
+    blurb: 'Water walks to the fields on stone legs. The Farmers approve.',
+    category: 'production',
     cost: { wood: 80, stone: 120 },
     costGrowth: 1.4,
     requiresTech: 'construction',
     effects: [
-      { kind: 'popCap', amount: 5 },
-      { kind: 'happiness', amount: 4 },
+      { kind: 'jobBoost', job: 'forager', amount: 0.1 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },

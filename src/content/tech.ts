@@ -153,7 +153,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Tend the land instead of scavenging it. The land, eventually, agrees.',
     cost: 500,
     requires: ['stone-hoe'],
-    unlocks: ['+50% Farmer output'],
+    unlocks: ['+50% Farmer output', 'Farm (building)', 'Farm House (building)'],
   },
   {
     id: 'irrigation',
@@ -241,7 +241,7 @@ export const TECHS: TechDef[] = [
     cost: 800,
     resourceCost: { stone: 50 },
     requires: ['masonry', 'the-wheel'],
-    unlocks: ['Aqueduct (building)'],
+    unlocks: ['Aqueduct (building) — waters the Farms', 'Apartments (building)'],
   },
   {
     id: 'philosophy',
@@ -473,7 +473,7 @@ export const TECHS: TechDef[] = [
     cost: 4000,
     resourceCost: { culture: 200 },
     requires: ['construction', 'compendia'],
-    unlocks: ['Sewers (building)'],
+    unlocks: ['Sewers (building)', 'Mansion (building)'],
   },
 
   // ---- INDUSTRIAL ERA (Age of Steam) ----

@@ -29,8 +29,10 @@ describe('Civ-style combination techs (two prerequisites)', () => {
     expect(BUILDING_BY_ID.aqueduct.requiresTech).toBe('construction');
     const obsKinds = BUILDING_BY_ID.observatory.effects.map((e) => e.kind);
     expect(obsKinds).toContain('researchCap');
+    // The Aqueduct was reworked into repeatable FARM infrastructure (+10% Farmer per copy).
     const aqKinds = BUILDING_BY_ID.aqueduct.effects.map((e) => e.kind);
-    expect(aqKinds).toEqual(expect.arrayContaining(['popCap', 'happiness']));
+    expect(aqKinds).toContain('jobBoost');
+    expect(aqKinds).not.toContain('popCap');
   });
 });
 

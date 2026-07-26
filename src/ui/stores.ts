@@ -277,6 +277,9 @@ function effectLines(id: BuildingId): TooltipLine[] {
       case 'jobOutputMult':
         lines.push({ text: `+${Math.round(e.amount * 100)}% to every worker's output`, cls: 'ok' });
         break;
+      case 'jobBoost':
+        lines.push({ text: `+${Math.round(e.amount * 100)}% ${JOB_BY_ID[e.job].name} output (per copy)`, cls: 'ok' });
+        break;
       case 'produce': {
         const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
         lines.push({ text: `+${numStr(e.perSec)} ${RESOURCE_BY_ID[e.resource].label}/s${gate}`, cls: 'ok' });

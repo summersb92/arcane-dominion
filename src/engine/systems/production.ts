@@ -66,6 +66,20 @@ function converterRuns(state: GameState): ConverterRun[] {
  *  boosts the Stonecutter only, not the Miner). */
 const GATHER_JOBS = new Set(['woodcutter', 'forager', 'quarry-worker', 'miner']);
 
+/** Per-JOB building boost (Aqueduct → Farmer): Σ over buildings of count × jobBoost.amount
+ *  for the given job, as a 1+x multiplier. Stacks linearly per copy, like globalJobMult. */
+function jobBoostMult(state: GameState, jobId: string): number {
+  let m = 1;
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'jobBoost' && eff.job === jobId) m += count * eff.amount;
+    }
+  }
+  return m;
+}
+
 /** Global worker-output multiplier from buildings (Workshop/Forge + mechanization), applied to
  *  every job. 1 = no bonus. A plain building adds its fraction × its built count. A CONVERTER-based
  *  mechanization building (Steam Works) adds its fraction × its ACTIVE copies — and only while it is
@@ -115,6 +129,7 @@ function jobEfficiency(state: GameState, jobId: string): number {
   if (jobId === 'miner' && tech.includes('bloomery')) m *= TECH_BONUS.bloomery;
   if (jobId === 'scholar' && tech.includes('optics')) m *= TECH_BONUS.optics;
   if (GATHER_JOBS.has(jobId) && tech.includes('wheelbarrows')) m *= TECH_BONUS.wheelbarrows;
+  m *= jobBoostMult(state, jobId); // per-job infrastructure (Aqueduct → Farmer)
   m *= globalJobMult(state);
   // Governance: the form's passive and any live worker policies apply to every job.
   m *= formBonuses(state).workerMult * policyMults(state).worker;

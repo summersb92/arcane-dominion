@@ -173,6 +173,9 @@ export function build(state: GameState, id: BuildingId): boolean {
  *  Buildings without an entry fall back to the plain `Built X.` receipt. */
 const FIRST_BUILD_QUIPS: Partial<Record<BuildingId, string>> = {
   hut: 'The first house stands. It leans, but it stands.',
+  'farm-house': 'A farm house rises among the rows. Commuting is measured in strides.',
+  apartments: 'The apartments open. Neighbours discover one another, audibly.',
+  mansion: 'A mansion crowns the hill. Everyone pretends not to covet it.',
   storehouse: 'A storehouse rises. Ownership disputes begin the same afternoon.',
   'forager-hut': 'The first field is sown. Now comes the waiting.',
   'hunters-lodge': 'The lodge opens. Dinner improves; the stories inflate.',
