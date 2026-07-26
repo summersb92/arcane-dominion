@@ -39,6 +39,7 @@ import {
   type GovernmentView,
 } from '../engine/systems/government';
 import type { PolicyId } from '../content/policies';
+import { tradeView, buy as engineBuy } from '../engine/systems/trade';
 import {
   educationView,
   setCurriculum as engineSetCurriculum,
@@ -144,6 +145,15 @@ export interface ActionRowView {
   available: boolean;
   retired: boolean; // storage cap hit the retire threshold → hand-gathering turned off
 }
+/** A market stall: what it sells, for how much, and whether the treasury covers it. */
+export interface TradeRowView {
+  id: string;
+  resource: ResourceId;
+  resLabel: string;
+  amount: number;
+  price: number;
+  affordable: boolean;
+}
 export interface ChronicleView {
   t: string;
   text: string;
@@ -160,6 +170,7 @@ export interface UiState {
   chronicle: ChronicleView[];
   calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
   government: GovernmentView; // forms + policies (systems/government.ts)
+  trade: TradeRowView[]; // market stalls unlocked by Currency / Banking (systems/trade.ts)
   education: EducationView; // Arcanum yield, curriculum focus, opposition (systems/education.ts)
 }
 
@@ -228,6 +239,8 @@ function resToken(id: ResourceId): string {
       return 'mana';
     case 'research':
       return 'insight';
+    case 'gold':
+      return 'gold';
     default:
       return 'gold'; // wood
   }
@@ -379,6 +392,9 @@ export function toView(state: GameState): UiState {
     } else if (def.id === 'research') {
       show =
         amount > EPS || rates.research > EPS || jobCapacity(state, 'scholar') > 0 || run.tech.length > 0;
+    } else if (def.id === 'gold') {
+      // The treasury — revealed once the first coin is earned (a Harbour, Market or Bank).
+      show = amount > EPS || rates.gold > EPS;
     } else if (def.id === 'culture') {
       // A future currency, revealed only once discovered (produced/held) — same progressive
       // reveal as research/mana. A Bard at the Amphitheater is what first yields it.
@@ -514,6 +530,14 @@ export function toView(state: GameState): UiState {
       .map((c) => ({ t: mmss(c.at), text: c.text, kind: c.kind })),
     calendar: calendar(state),
     government: governmentView(state),
+    trade: tradeView(state).map((p) => ({
+      id: p.id,
+      resource: p.resource as ResourceId,
+      resLabel: RESOURCE_BY_ID[p.resource as ResourceId].label,
+      amount: p.amount,
+      price: p.price,
+      affordable: p.affordable,
+    })),
     education: educationView(state, (id) => RESOURCE_BY_ID[id].label),
   };
 }
@@ -776,6 +800,11 @@ export function enactPolicy(id: PolicyId): void {
 }
 export function revokePolicy(id: PolicyId): void {
   engineRevokePolicy(state, id);
+  publish();
+}
+/** Buy a lot of goods at the market (spends gold). */
+export function buy(id: string): void {
+  engineBuy(state, id);
   publish();
 }
 /** Teach a discipline at the Arcanum (null = general studies). */

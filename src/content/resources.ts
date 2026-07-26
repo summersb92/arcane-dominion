@@ -26,6 +26,7 @@ export type ResourceId =
   | 'fireEssence'
   | 'waterEssence'
   | 'prismatic'
+  | 'gold'
   | 'research'
   | 'culture';
 
@@ -56,7 +57,7 @@ export type MundaneResourceId =
 /** Display group for the resource column — each renders under its own heading, in
  *  RESOURCES order: raw Materials, refined Goods, Knowledge (chain goods + currencies),
  *  and Magic. Purely presentational; the cap machinery keys off MundaneResourceId. */
-export type ResourceGroup = 'materials' | 'goods' | 'knowledge' | 'magic' | 'prismatic';
+export type ResourceGroup = 'materials' | 'goods' | 'wealth' | 'knowledge' | 'magic' | 'prismatic';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -83,6 +84,9 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane', group: 'goods' },
   // Furniture — a consumer luxury from the Factory; held furniture raises happiness.
   { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane', group: 'goods' },
+  // ---- WEALTH — the treasury. Earned by Harbours, Markets and Banks (the Currency line),
+  // spent at the market to buy materials outright. Uncapped, like the other currencies. ----
+  { id: 'gold', label: 'Gold', glyph: '🪙', tier: 'knowledge', group: 'wealth' },
   // ---- KNOWLEDGE — the chain goods (furs → parchment → books → compendiums) + currencies. ----
   { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane', group: 'knowledge' },
   // Held BOOKS raise research gained per settler.
@@ -140,5 +144,5 @@ export const RESOURCE_BY_ID: Record<ResourceId, ResourceDef> = Object.fromEntrie
 /** True for the currencies with NO finite storage cap (effectiveCap returns Infinity):
  *  mana and culture. Research is now capped by science buildings, so it is NOT included. */
 export function isUncappedResource(id: ResourceId): boolean {
-  return id === 'mana' || id === 'culture' || id === 'prismatic';
+  return id === 'mana' || id === 'culture' || id === 'prismatic' || id === 'gold';
 }

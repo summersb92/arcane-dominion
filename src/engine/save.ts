@@ -3,7 +3,7 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 12. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 13. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
 // `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
 // `coal`/`steel` materials + the converter `active` toggle map; v6 → v7 made `active` per-recipe
@@ -122,6 +122,7 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v10 → v11: added the four prismatic essences + Prismatic Mana. Each defaults to 0; the essence
  *            caps default to 100 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
  *   v11 → v12: added `curriculum` (the Arcanum's chosen discipline). Backfills to null (normalize).
+ *   v12 → v13: added the `gold` treasury (the Currency line). Uncapped; backfills to 0 (normalize).
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -187,6 +188,10 @@ function migrate(state: GameState, fromVersion: number): void {
   if (fromVersion < 10) {
     // Active policies backfilled to [] by normalize. Nothing else to rewrite.
     if (state.run && typeof state.run === 'object') state.run.policies ??= [];
+  }
+  if (fromVersion < 13) {
+    // gold backfilled to 0 by normalize (RESOURCE_IDS loop). Uncapped, so no cap entry.
+    if (hasResources) state.run.resources.gold ??= 0;
   }
   if (fromVersion < 12) {
     // curriculum backfilled to null by normalize (no discipline chosen yet).

@@ -34,6 +34,13 @@ export type BuildingId =
   | 'arcanum'
   | 'aqueduct'
   | 'windmill'
+  | 'harbor'
+  | 'seaport'
+  | 'market'
+  | 'bank'
+  | 'ironworks'
+  | 'monastery'
+  | 'theatre'
   | 'forum'
   | 'shrine'
   | 'ley-grove'
@@ -148,9 +155,9 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'House',
     blurb: 'Four walls, a roof, and opinions about both. Settlers insist on all three.',
     category: 'housing',
-    cost: { wood: 15 },
+    cost: { wood: 10 },
     costGrowth: 1.5,
-    effects: [{ kind: 'popCap', amount: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [{ kind: 'popCap', amount: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
     id: 'farm-house',
@@ -216,7 +223,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A base for fellers. The forest pretends not to notice.',
     category: 'production',
     cost: { wood: 25 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     // Buildable from the very start, alongside the Farm — the two founding workplaces.
     effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
@@ -226,7 +233,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Tilled rows and stubborn pens. The waiting is the hard part.',
     category: 'production',
     cost: { wood: 20 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     // Buildable from the very start — a settlement knows how to plant before it theorizes.
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
@@ -236,7 +243,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Fenced pasture and patient animals. Dinner arrives on its own legs.',
     category: 'production',
     cost: { wood: 60, stone: 20 },
-    costGrowth: 1.35,
+    costGrowth: 1.15,
     requiresTech: 'animal-husbandry',
     effects: [
       { kind: 'produce', resource: 'food', perSec: 0.4 },
@@ -249,7 +256,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Trackers, trappers, and tall tales with the furs to prove them.',
     category: 'production',
     cost: { wood: 25 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'archery',
     effects: [{ kind: 'jobCapacity', job: 'hunter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
@@ -259,7 +266,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A worked pit where the hill used to be.',
     category: 'production',
     cost: { wood: 20, stone: 5 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'masonry',
     effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
@@ -341,7 +348,7 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 80, stone: 120 },
     costGrowth: 1.4,
-    requiresTech: 'construction',
+    requiresTech: 'engineering',
     effects: [
       { kind: 'jobBoost', job: 'forager', amount: 0.1 },
       { kind: 'cap', amount: STRUCT_CAP },
@@ -357,6 +364,104 @@ export const BUILDINGS: BuildingDef[] = [
     requiresTech: 'milling',
     effects: [
       { kind: 'jobBoost', job: 'forager', amount: 0.15 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'harbor',
+    name: 'Harbour',
+    blurb: 'Boats, nets, and a jetty that smells of the tide. Half the town suddenly has business here.',
+    category: 'production',
+    cost: { wood: 80, stone: 40 },
+    costGrowth: 1.15,
+    requiresTech: 'sailing',
+    effects: [
+      { kind: 'produce', resource: 'food', perSec: 0.3 },
+      { kind: 'produce', resource: 'gold', perSec: 0.15 },
+      { kind: 'cap', amount: 40 },
+    ],
+  },
+  {
+    id: 'seaport',
+    name: 'Seaport',
+    blurb: 'Deep berths and a harbourmaster with opinions. The sea route becomes a road.',
+    category: 'production',
+    cost: { wood: 160, stone: 120, tools: 15 },
+    costGrowth: 1.4,
+    requiresTech: 'navigation',
+    requiresBuilding: 'harbor',
+    effects: [
+      { kind: 'produce', resource: 'food', perSec: 0.4 },
+      { kind: 'produce', resource: 'gold', perSec: 0.5 },
+      { kind: 'cap', amount: 60 },
+    ],
+  },
+  {
+    id: 'market',
+    name: 'Market',
+    blurb: 'Stalls, haggling, and a scale everyone privately distrusts.',
+    category: 'civic',
+    cost: { wood: 90, stone: 60 },
+    costGrowth: 1.4,
+    requiresTech: 'currency',
+    effects: [
+      { kind: 'produce', resource: 'gold', perSec: 0.3 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'bank',
+    name: 'Bank',
+    blurb: 'Other people’s coin, carefully counted and quietly lent.',
+    category: 'civic',
+    cost: { stone: 150, iron: 50, gold: 150 },
+    costGrowth: 1.45,
+    requiresTech: 'banking',
+    effects: [
+      { kind: 'produce', resource: 'gold', perSec: 0.8 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'ironworks',
+    name: 'Ironworks',
+    blurb: 'Cast, cooled, and finished under one long roof. Every trade collects better tools.',
+    category: 'industry',
+    cost: { stone: 180, iron: 120 },
+    costGrowth: 1.45,
+    requiresTech: 'metal-casting',
+    effects: [
+      { kind: 'jobOutputMult', amount: 0.2 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'monastery',
+    name: 'Monastery',
+    blurb: 'Quiet cloisters, patient copying, and a garden nobody hurries.',
+    category: 'civic',
+    cost: { wood: 100, stone: 90 },
+    costGrowth: 1.4,
+    requiresTech: 'theology',
+    effects: [
+      { kind: 'produce', resource: 'culture', perSec: 0.25 },
+      { kind: 'happiness', amount: 5 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'theatre',
+    name: 'Theatre',
+    blurb: 'Printed playbills, a paying crowd, and one memorable disaster per season.',
+    category: 'civic',
+    cost: { wood: 160, stone: 120, parchment: 40 },
+    costGrowth: 1.45,
+    requiresTech: 'printing-press',
+    effects: [
+      { kind: 'jobCapacity', job: 'bard', slots: 1 },
+      { kind: 'produce', resource: 'culture', perSec: 0.5 },
+      { kind: 'produce', resource: 'gold', perSec: 0.2 },
+      { kind: 'happiness', amount: 8 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -395,7 +500,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A deep shaft for iron. The dark, on occasion, stares back.',
     category: 'production',
     cost: { wood: 40, stone: 20 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'mining',
     effects: [
       { kind: 'jobCapacity', job: 'miner', slots: 1 },
@@ -412,7 +517,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A colliery on the seam. Everything nearby turns slowly grey.',
     category: 'production',
     cost: { wood: 45, stone: 25 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'coal-mining',
     effects: [
       { kind: 'jobCapacity', job: 'coal-miner', slots: 1 },
@@ -426,7 +531,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A smouldering mound that turns wood into coal — slowly, and without complaint.',
     category: 'industry',
     cost: { wood: 30, stone: 10 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'coal-mining',
     effects: [{ kind: 'convert', consume: { wood: 0.5 }, produce: { coal: 0.4 } }],
   },
@@ -436,7 +541,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'A furnace hot enough to make iron reconsider. Feed it wood or coal — coal burns hotter.',
     category: 'industry',
     cost: { wood: 60, stone: 40, iron: 20 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'steelmaking',
     effects: [
       { kind: 'jobCapacity', job: 'smelter', slots: 1 },
@@ -505,7 +610,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Hides go in; parchment comes out. Nobody asks about the middle part.',
     category: 'industry',
     cost: { wood: 40, stone: 20 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'bookbinding',
     effects: [{ kind: 'convert', consume: { furs: 0.4 }, produce: { parchment: 0.3 } }],
   },
@@ -515,7 +620,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Ink-stained fingers, immaculate letters. Held Books sharpen every settler’s curiosity.',
     category: 'industry',
     cost: { wood: 60, stone: 40 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'bookbinding',
     effects: [
       { kind: 'jobCapacity', job: 'scribe', slots: 1 },
@@ -541,7 +646,7 @@ export const BUILDINGS: BuildingDef[] = [
     blurb: 'Pulped timber pressed into pages. The forest, repurposed for arguments.',
     category: 'industry',
     cost: { wood: 80, stone: 40 },
-    costGrowth: 1.3,
+    costGrowth: 1.15,
     requiresTech: 'paper-making',
     effects: [{ kind: 'convert', consume: { wood: 0.6 }, produce: { parchment: 0.25 } }],
   },

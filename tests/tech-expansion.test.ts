@@ -24,9 +24,9 @@ describe('Civ-style combination techs (two prerequisites)', () => {
     expect(math.available).toBe(true);
   });
 
-  it('Mathematics unlocks the Observatory; Construction the Aqueduct', () => {
+  it('Mathematics unlocks the Observatory; Engineering the Aqueduct (as in Civ 5)', () => {
     expect(BUILDING_BY_ID.observatory.requiresTech).toBe('mathematics');
-    expect(BUILDING_BY_ID.aqueduct.requiresTech).toBe('construction');
+    expect(BUILDING_BY_ID.aqueduct.requiresTech).toBe('engineering');
     const obsKinds = BUILDING_BY_ID.observatory.effects.map((e) => e.kind);
     expect(obsKinds).toContain('researchCap');
     // The Aqueduct was reworked into repeatable FARM infrastructure (+10% Farmer per copy).

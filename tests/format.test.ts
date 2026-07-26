@@ -30,7 +30,7 @@ describe('cost labels are EXACT (the "takes more than it says" bug)', () => {
   });
 });
 
-describe('"I have 15 wood but cannot build a 15-wood House"', () => {
+describe('"I have N wood but cannot build an N-wood House" (House now costs 10)', () => {
   it('the OLD display rounded a short stock UP to the cost — the reported bug', () => {
     // 14.96 wood used to render as "15.0" (toFixed rounds), so the player saw 15, the card
     // said 15, and the build was refused because they were really 0.04 short.
@@ -39,30 +39,30 @@ describe('"I have 15 wood but cannot build a 15-wood House"', () => {
     expect(formatNumber(14.999, 'suffix', 'floor')).toBe('14.9');
   });
 
-  it('a stock that DISPLAYS as 15 can always buy a 15-cost House', () => {
+  it('a stock that DISPLAYS as the cost can always buy the House', () => {
     const s = newGame(1);
-    // Sweep the boundary in fine steps: whenever the floored display reads "15" or more,
+    const cost = buildingCost(s, 'hut').wood as number; // 10
+    // Sweep the boundary in fine steps: whenever the floored display reads the cost or more,
     // the build must succeed. This is the invariant the bug violated.
     for (let i = 0; i <= 200; i++) {
       const probe = newGame(1);
-      probe.run.resources.wood = 14.5 + i * 0.005;
+      probe.run.resources.wood = cost - 0.5 + i * 0.005;
       const shown = formatNumber(probe.run.resources.wood, 'suffix', 'floor');
-      const readsAtLeast15 = Number(shown) >= 15;
-      if (readsAtLeast15) {
+      if (Number(shown) >= cost) {
         expect(canAfford(probe, 'hut'), `shown "${shown}" (${probe.run.resources.wood})`).toBe(true);
       }
     }
     // And float drift just below an exact integer never blocks a build either.
-    s.run.resources.wood = 15 - 1e-12;
+    s.run.resources.wood = cost - 1e-12;
     expect(canAfford(s, 'hut')).toBe(true);
   });
 
   it('a genuinely short stock is still refused (no free lunch)', () => {
     const s = newGame(1);
-    s.run.resources.wood = 14.9;
+    s.run.resources.wood = 9.9; // the House costs 10
     expect(canAfford(s, 'hut')).toBe(false);
     expect(build(s, 'hut')).toBe(false);
-    expect(s.run.resources.wood).toBe(14.9); // no mutation on refusal
+    expect(s.run.resources.wood).toBe(9.9); // no mutation on refusal
   });
 });
 

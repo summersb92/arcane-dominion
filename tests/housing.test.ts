@@ -41,7 +41,7 @@ describe('housing tiers', () => {
 describe('Aqueduct rework — repeatable Farmer infrastructure', () => {
   it('no longer grants housing; each copy adds +10% Farmer output, stacking', () => {
     const s = newGame(1);
-    s.run.tech.push('construction');
+    s.run.tech.push('construction', 'engineering'); // the Aqueduct moved to Engineering
     s.run.resources.wood = 1000;
     s.run.resources.stone = 1000;
 

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { game, openTip, hideTooltip, resourceTooltip } from '../stores';
   import type { ResourceView } from '../stores';
-  import Gather from './Gather.svelte';
   import { fmtHeld, fmtRate } from '../format';
 
   // amber when at/above 90% of a finite cap
@@ -14,6 +13,7 @@
   const GROUPS: { id: string; label: string }[] = [
     { id: 'materials', label: 'Materials' },
     { id: 'goods', label: 'Goods' },
+    { id: 'wealth', label: 'Wealth' },
     { id: 'knowledge', label: 'Knowledge' },
     { id: 'magic', label: 'Magic' },
     { id: 'prismatic', label: 'Prismatic' },
@@ -40,9 +40,6 @@
       </div>
     {/each}
   {/each}
-
-  <!-- Hand-gathering lives at the foot of the column, next to the numbers it changes. -->
-  <Gather />
 </div>
 
 <style>

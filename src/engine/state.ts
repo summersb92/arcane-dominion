@@ -10,7 +10,7 @@ import type { PolicyId } from '../content/policies';
 import type { CurriculumId } from '../content/education';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 12; // v12: added `curriculum` (the Arcanum's chosen discipline; backfills → null)
+export const SAVE_VERSION = 13; // v13: added the `gold` treasury (Currency line; backfills → 0)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -96,6 +96,7 @@ export function freshResources(): Record<ResourceId, number> {
   r.fireEssence = STARTING.fireEssence;
   r.waterEssence = STARTING.waterEssence;
   r.prismatic = STARTING.prismatic;
+  r.gold = STARTING.gold;
   r.research = STARTING.research;
   r.culture = STARTING.culture;
   return r;

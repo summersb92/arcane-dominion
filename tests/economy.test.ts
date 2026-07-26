@@ -39,19 +39,19 @@ describe('buildings', () => {
 
   it('building a hut costs wood and raises popCap', () => {
     const s = newGame(1);
-    s.run.resources.wood = 15;
-    expect(buildingCost(s, 'hut')).toEqual({ wood: 15 });
+    s.run.resources.wood = 10;
+    expect(buildingCost(s, 'hut')).toEqual({ wood: 10 });
     expect(build(s, 'hut')).toBe(true);
     expect(s.run.resources.wood).toBe(0);
-    expect(s.run.popCap).toBe(2);
+    expect(s.run.popCap).toBe(1);
     expect(s.run.buildings.hut).toBe(1);
   });
 
   it('hut cost escalates with each build', () => {
     const s = newGame(1);
     s.run.resources.wood = 1000;
-    build(s, 'hut'); // 15
-    expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(15 * 1.5)); // 23
+    build(s, 'hut'); // 10
+    expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(10 * 1.5)); // 15
   });
 
   it('the House and the two founding workplaces are unlocked at the start', () => {
@@ -60,7 +60,7 @@ describe('buildings', () => {
     // A settlement can shelter itself, plant, and fell timber on day one — no tech needed.
     expect(unlocked()).toEqual(['hut', 'woodcutters-lodge', 'forager-hut']);
 
-    s.run.resources.wood = 15;
+    s.run.resources.wood = 10;
     expect(build(s, 'hut')).toBe(true);
     const after = unlocked();
     expect(after).toContain('storehouse'); // reveals once a House stands

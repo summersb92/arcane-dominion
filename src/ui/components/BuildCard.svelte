@@ -32,8 +32,11 @@
     <span class="nm">{b.name}</span>
     <span class="chip" class:construct={b.construct}>×{b.count}</span>
   </button>
-  <!-- At-a-glance cost: red text is no longer the only affordability channel. -->
-  <div class="cost" class:short={!b.affordable && !b.maxed}>{b.costText}</div>
+  <!-- At-a-glance cost. Once one copy stands the price has ESCALATED, so the line says so
+       explicitly — the cost shown is always for the NEXT copy, never the base. -->
+  <div class="cost" class:short={!b.affordable && !b.maxed}>
+    {#if b.count > 0}<span class="nextlbl">next</span>{/if}{b.costText}
+  </div>
   {#if b.converter && b.count > 0}
     <div class="conv">
       {#if b.recipes.length > 1}<span class="convtot">active {b.active}/{b.count}</span>{/if}
@@ -100,6 +103,18 @@
   .cost.short {
     color: var(--life);
     opacity: 0.85;
+  }
+  .nextlbl {
+    display: inline-block;
+    margin-right: 5px;
+    padding: 0 4px;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--label);
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    vertical-align: 1px;
   }
   /* Converter toggles — a footer set apart from the build action by a divider. */
   .conv {

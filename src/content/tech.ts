@@ -41,6 +41,14 @@ export type TechId =
   | 'the-arts'
   | 'mathematics'
   | 'construction'
+  // Civ-5-derived: the naval + economy line and the structural combination techs
+  | 'sailing'
+  | 'navigation'
+  | 'currency'
+  | 'banking'
+  | 'engineering'
+  | 'theology'
+  | 'printing-press'
   | 'philosophy'
   | 'mysticism'
   | 'animal-husbandry'
@@ -61,6 +69,7 @@ export type TechId =
   | 'seasonal-rites'
   // Iron Age (mana from CRYSTALS)
   | 'iron-working'
+  | 'metal-casting'
   | 'crystallurgy'
   | 'enchantment'
   | 'runecraft'
@@ -253,7 +262,67 @@ export const TECHS: TechDef[] = [
     cost: 800,
     resourceCost: { stone: 50 },
     requires: ['masonry', 'the-wheel'],
-    unlocks: ['Aqueduct (building) — waters the Farms', 'Apartments (building)'],
+    unlocks: ['Apartments (building)'],
+  },
+  // ---- CIV-5-DERIVED: the sea, the treasury, and the classic combination techs. ----
+  {
+    id: 'sailing',
+    name: 'Sailing',
+    blurb: 'Hulls, sails, and the nerve to leave the shore. Unlocks the Harbour.',
+    cost: 400,
+    requires: ['pottery'],
+    unlocks: ['Harbour (building)'],
+  },
+  {
+    id: 'navigation',
+    name: 'Navigation',
+    blurb: 'Charts, stars, and a reckoning that mostly holds. Unlocks the Seaport.',
+    cost: 1600,
+    requires: ['sailing', 'mathematics'],
+    unlocks: ['Seaport (building)'],
+  },
+  {
+    id: 'currency',
+    name: 'Currency',
+    blurb: 'Coin, weighed and stamped. Trade stops being an argument about goats.',
+    cost: 900,
+    requires: ['mathematics'],
+    unlocks: ['Gold (resource)', 'Market (building)', 'Buy basic goods at the market'],
+  },
+  {
+    id: 'banking',
+    name: 'Banking',
+    blurb: 'Ledgers, credit, and a vault nobody is allowed to admire.',
+    cost: 2200,
+    resourceCost: { gold: 200 },
+    requires: ['currency', 'philosophy'],
+    unlocks: ['Bank (building)', 'Buy ore and metal at the market'],
+  },
+  {
+    id: 'engineering',
+    name: 'Engineering',
+    blurb: 'Load, span, and tolerance, worked out on purpose rather than by collapse.',
+    cost: 1000,
+    requires: ['mathematics', 'construction'],
+    unlocks: ['Aqueduct (building)'],
+  },
+  {
+    id: 'theology',
+    name: 'Theology',
+    blurb: 'The rites are written down and, inevitably, disputed. Unlocks the Monastery.',
+    cost: 1200,
+    resourceCost: { culture: 120 },
+    requires: ['calendar', 'philosophy'],
+    unlocks: ['Monastery (building)'],
+  },
+  {
+    id: 'printing-press',
+    name: 'Printing Press',
+    blurb: 'Set the type once and print all afternoon. Unlocks the Theatre.',
+    cost: 2500,
+    resourceCost: { culture: 200 },
+    requires: ['bookbinding', 'the-wheel'],
+    unlocks: ['Theatre (building)'],
   },
   {
     id: 'philosophy',
@@ -480,6 +549,15 @@ export const TECHS: TechDef[] = [
     cost: 2400,
     requires: ['iron-working', 'coal-mining'],
     unlocks: ['Blast Furnace (building)'],
+  },
+  {
+    id: 'metal-casting',
+    name: 'Metal Casting',
+    blurb: 'Pour the metal instead of beating it. Unlocks the Ironworks.',
+    cost: 2200,
+    resourceCost: { iron: 60 },
+    requires: ['iron-working'],
+    unlocks: ['Ironworks (building)'],
   },
   {
     id: 'crystallurgy',

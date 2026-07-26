@@ -25,6 +25,7 @@ export const STARTING = {
   fireEssence: 0,
   waterEssence: 0,
   prismatic: 0,
+  gold: 0,
   mana: 0,
   research: 0,
   culture: 0,

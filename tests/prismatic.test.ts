@@ -39,7 +39,7 @@ describe('Sewers struck; the Windmill replaces it', () => {
     s.run.resources.stone = 500;
     s.run.resources.tools = 50;
     expect(build(s, 'windmill')).toBe(false); // needs Milling
-    s.run.tech.push('milling', 'construction');
+    s.run.tech.push('milling', 'construction', 'engineering');
     expect(build(s, 'windmill')).toBe(true);
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.15, 6);
     expect(build(s, 'windmill')).toBe(true); // stacks per copy
@@ -74,7 +74,7 @@ describe('attunements — each element earns its essence differently', () => {
 
   it('WATER: the Tide Basin needs an Aqueduct', () => {
     const s = primed();
-    s.run.tech.push('hydromancy', 'construction');
+    s.run.tech.push('hydromancy', 'construction', 'engineering');
     expect(build(s, 'tide-basin')).toBe(false); // no Aqueduct yet
     expect(build(s, 'aqueduct')).toBe(true);
     expect(build(s, 'tide-basin')).toBe(true);
@@ -258,7 +258,7 @@ describe('save migration v10 → v11', () => {
     const res = safeLoad(JSON.stringify(v10));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(10);
-    expect(res.state!.version).toBe(12);
+    expect(res.state!.version).toBe(13);
     expect(res.state!.run.resources.airEssence).toBe(0);
     expect(res.state!.run.resources.prismatic).toBe(0);
     expect(res.state!.run.resources.mana).toBe(7); // preserved

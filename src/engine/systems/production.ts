@@ -406,6 +406,7 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.fireEssence += f.gross.fireEssence * dt;
   run.resources.waterEssence += f.gross.waterEssence * dt;
   run.resources.prismatic += f.gross.prismatic * dt;
+  run.resources.gold += f.gross.gold * dt; // treasury — uncapped, like mana and culture
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
   // Culture accumulates (uncapped) — then LIVE policies draw their upkeep from it. The

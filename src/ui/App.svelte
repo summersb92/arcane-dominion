@@ -4,6 +4,8 @@
   import Tabs from './panels/Tabs.svelte';
   import Resources from './panels/Resources.svelte';
   import Chronicle from './panels/Chronicle.svelte';
+  import Gather from './panels/Gather.svelte';
+  import Trade from './panels/Trade.svelte';
   import Main from './panels/Main.svelte';
   import System from './panels/System.svelte';
   import OfflinePanel from './components/OfflinePanel.svelte';
@@ -98,7 +100,12 @@
       on:pointerdown={(e) => drag('right', e)}
       on:keydown={(e) => key('right', e)}
     ></div>
+    <!-- The right rail holds the CLICK panels (Gather, Market) plus the Chronicle. They live
+         here rather than under the resource list so they never shift position as new
+         resource rows are revealed. -->
     <aside class="right">
+      <Gather />
+      <Trade />
       <Chronicle />
     </aside>
   </div>
