@@ -122,7 +122,7 @@ export const TECHS: TechDef[] = [
     id: 'stone-hoe',
     name: 'Stone Hoe',
     blurb: 'A stone blade for the soil. The soil comes around.',
-    cost: 300,
+    cost: 150,
     resourceCost: { stone: 10 },
     unlocks: ['+25% Farmer output'],
   },
@@ -163,7 +163,7 @@ export const TECHS: TechDef[] = [
     name: 'Agriculture',
     blurb: 'Tend the land instead of scavenging it. The land, eventually, agrees.',
     cost: 10,
-    unlocks: ['Farm (building)', 'Farm House (building)', '+50% Farmer output'],
+    unlocks: ['Farm (building)', 'Farm House (building)'],
   },
   {
     id: 'forestry',

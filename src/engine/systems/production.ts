@@ -130,7 +130,8 @@ function essenceBoost(state: GameState, jobId: string): number {
 /** Tech-driven output multiplier for a job. The STONE and STEEL tools are PER-JOB (Axe →
  *  Woodcutter, Hoe → Farmer, Pick → Stonecutter — each +25% (stone) / +65% (steel) to only that
  *  job); Iron Working is the one GLOBAL tool tier, stacking on all gather jobs (incl. Miners).
- *  Agriculture is a Farmer-only crop bonus. The global Workshop/Forge boost applies to every job. */
+ *  The global Workshop/Forge boost applies to every job. Agriculture is purely an ENABLER now
+ *  (it opens the Farm) — it carries no output multiplier. */
 function jobEfficiency(state: GameState, jobId: string): number {
   const tech = state.run.tech;
   let m = 1;
@@ -144,7 +145,6 @@ function jobEfficiency(state: GameState, jobId: string): number {
   if (jobId === 'quarry-worker' && tech.includes('steel-pick')) m *= TECH_BONUS.steelPick;
   // Iron Working — the one GLOBAL tool tier, on all gather jobs (incl. Miners).
   if (GATHER_JOBS.has(jobId) && tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
-  if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
   // Mini-step boosts — small per-job wins between the big tiers.
   if (jobId === 'hunter' && tech.includes('animal-husbandry')) m *= TECH_BONUS.animalHusbandry;
   if (jobId === 'forager' && tech.includes('irrigation')) m *= TECH_BONUS.irrigation;

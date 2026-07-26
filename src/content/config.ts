@@ -171,8 +171,6 @@ export const TECH_BONUS = {
   steelAxe: 1.65, // Woodcutter only
   steelHoe: 1.65, // Farmer only
   steelPick: 1.65, // Stonecutter only
-  /** Crop tech — Farmer output only. */
-  agriculture: 1.5, // +50% Farmer food
   /** Mini-step boosts — small per-job wins that fill the cost-ladder gaps. */
   animalHusbandry: 1.25, // Hunter only
   irrigation: 1.25, // Farmer only (stacks with Agriculture)

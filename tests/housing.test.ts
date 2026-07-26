@@ -73,6 +73,16 @@ describe('the early-game openers (Agriculture / Forestry) and the Ranch', () => 
     expect(available).toContain('forestry');
   });
 
+  it('Agriculture carries NO output multiplier; Stone Hoe (150) is the Farmer upgrade', () => {
+    expect(TECH_BY_ID['stone-hoe'].cost).toBe(150);
+    const s = newGame(1);
+    const base = jobEffectiveProduces(s, 'forager').food!;
+    s.run.tech.push('agriculture');
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base, 6); // enabler only
+    s.run.tech.push('stone-hoe');
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base * 1.25, 6);
+  });
+
   it('Agriculture is affordable from the settler research trickle alone, and opens the Farm', () => {
     const s = newGame(1);
     s.run.resources.research = 10; // exactly the cost

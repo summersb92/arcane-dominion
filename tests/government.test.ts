@@ -25,11 +25,14 @@ describe('mini-step techs — per-job boosts', () => {
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6); // untouched
   });
 
-  it('Irrigation and Fertilizer stack on the Farmer with Agriculture', () => {
+  it('Irrigation, Stone Hoe and Fertilizer stack on the Farmer (Agriculture adds no multiplier)', () => {
     const s = newGame(1);
-    s.run.tech.push('agriculture', 'irrigation', 'fertilizer');
-    // 0.5 × 1.5 (agri) × 1.25 (irrigation) × 1.5 (fertilizer)
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.5 * 1.25 * 1.5, 6);
+    // Agriculture is an ENABLER only — it opens the Farm and multiplies nothing.
+    s.run.tech.push('agriculture');
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5, 6);
+    s.run.tech.push('stone-hoe', 'irrigation', 'fertilizer');
+    // 0.5 × 1.25 (hoe) × 1.25 (irrigation) × 1.5 (fertilizer)
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.25 * 1.25 * 1.5, 6);
   });
 
   it('Bloomery boosts the Miner; Optics the Scholar; Wheelbarrows every gather job', () => {

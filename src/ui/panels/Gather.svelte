@@ -25,7 +25,8 @@
           on:mouseleave={hideTooltip}
           on:blur={hideTooltip}
         >
-          {a.resLabel}
+          <span class="gl">{a.resLabel}</span>
+          <span class="gg">{a.gainText}</span>
         </button>
       {/each}
     </div>
@@ -36,25 +37,39 @@
   .gather {
     margin-top: 10px;
   }
+  /* One button PER ROW, full width and deliberately large — these are clicked hundreds of
+     times in the opening minutes, so they must be an easy target. They retire on their own
+     once storage (and therefore production) outgrows hand-gathering. */
   .gbtns {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 8px;
   }
   .gbtn {
-    flex: 1 1 auto;
-    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--edge);
-    border-left: 3px solid var(--gold);
-    border-radius: 8px;
+    border-left: 4px solid var(--gold);
+    border-radius: 10px;
     cursor: pointer;
-    text-align: center;
+    text-align: left;
     transition: border-color 0.12s, transform 0.05s;
+  }
+  .gbtn .gg {
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
   }
   .gbtn:hover {
     border-color: var(--accent);
