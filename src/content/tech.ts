@@ -33,6 +33,7 @@ export type TechId =
   | 'archery'
   | 'pottery'
   | 'agriculture'
+  | 'forestry'
   | 'masonry'
   | 'writing'
   | 'bookbinding'
@@ -143,10 +144,10 @@ export const TECHS: TechDef[] = [
   {
     id: 'animal-husbandry',
     name: 'Animal Husbandry',
-    blurb: 'Keep the beasts instead of chasing them. Hunters return heavier-laden.',
-    cost: 450,
-    requires: ['archery'],
-    unlocks: ['+25% Hunter output'],
+    blurb: 'Keep the beasts instead of chasing them. They come to you, which is the whole idea.',
+    cost: 100,
+    requires: ['agriculture'],
+    unlocks: ['Ranch (building)', '+25% Hunter output'],
   },
   {
     id: 'pottery',
@@ -155,13 +156,21 @@ export const TECHS: TechDef[] = [
     cost: 300,
     unlocks: ['Granary (building)'],
   },
+  // The two OPENERS: the first things a settlement works out, so the food and timber
+  // economies can start. Deliberately cheap — everything past them ramps steeply.
   {
     id: 'agriculture',
     name: 'Agriculture',
     blurb: 'Tend the land instead of scavenging it. The land, eventually, agrees.',
-    cost: 500,
-    requires: ['stone-hoe'],
-    unlocks: ['+50% Farmer output', 'Farm (building)', 'Farm House (building)'],
+    cost: 10,
+    unlocks: ['Farm (building)', 'Farm House (building)', '+50% Farmer output'],
+  },
+  {
+    id: 'forestry',
+    name: 'Forestry',
+    blurb: 'Learn which trees to take and which to leave. The wood lasts longer either way.',
+    cost: 15,
+    unlocks: ["Woodcutter's Lodge (building)", 'Woodcutter (job)'],
   },
   {
     id: 'irrigation',

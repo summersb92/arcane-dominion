@@ -37,8 +37,8 @@
   // sectioned). Constructs keep their own "Arcane Constructs" section below.
   const CATEGORIES: { id: BuildingRowView['category']; label: string }[] = [
     { id: 'housing', label: 'Housing' },
-    { id: 'storage', label: 'Storage' },
     { id: 'production', label: 'Production' },
+    { id: 'storage', label: 'Storage' },
     { id: 'science', label: 'Science' },
     { id: 'civic', label: 'Civic' },
     { id: 'industry', label: 'Industry' },

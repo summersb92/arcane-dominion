@@ -178,6 +178,7 @@ const FIRST_BUILD_QUIPS: Partial<Record<BuildingId, string>> = {
   mansion: 'A mansion crowns the hill. Everyone pretends not to covet it.',
   storehouse: 'A storehouse rises. Ownership disputes begin the same afternoon.',
   'forager-hut': 'The first field is sown. Now comes the waiting.',
+  ranch: 'The first pasture is fenced. The animals inspect it and approve.',
   'hunters-lodge': 'The lodge opens. Dinner improves; the stories inflate.',
   quarry: 'The quarry opens. The hill begins its long surrender.',
   granary: 'The granary is sealed. The mice regroup.',

@@ -24,6 +24,7 @@ export type BuildingId =
   | 'warehouse'
   | 'woodcutters-lodge'
   | 'forager-hut'
+  | 'ranch'
   | 'hunters-lodge'
   | 'quarry'
   | 'granary'
@@ -216,7 +217,7 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.3,
-    requiresBuilding: 'hut',
+    requiresTech: 'forestry',
     effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
   },
   {
@@ -228,6 +229,19 @@ export const BUILDINGS: BuildingDef[] = [
     costGrowth: 1.3,
     requiresTech: 'agriculture',
     effects: [{ kind: 'jobCapacity', job: 'forager', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+  },
+  {
+    id: 'ranch',
+    name: 'Ranch',
+    blurb: 'Fenced pasture and patient animals. Dinner arrives on its own legs.',
+    category: 'production',
+    cost: { wood: 60, stone: 20 },
+    costGrowth: 1.35,
+    requiresTech: 'animal-husbandry',
+    effects: [
+      { kind: 'produce', resource: 'food', perSec: 0.4 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
   },
   {
     id: 'hunters-lodge',

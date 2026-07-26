@@ -112,6 +112,7 @@ describe('per-job food upkeep removed', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
     s.run.buildings.hut = 1;
+    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge'); // 1 woodcutter slot
     build(s, 'woodcutters-lodge'); // a 2nd lodge → 2 slots total
     s.run.population.total = 2;
@@ -124,7 +125,7 @@ describe('per-job food upkeep removed', () => {
 describe('tech tree — steep research costs, Stone→Iron→Steel DAG (magic is discovery-driven, not a tech)', () => {
   it('ramps research costs steeply (≈300 entry → ≈3000 at Steelmaking)', () => {
     expect(TECH_BY_ID['stone-axe'].cost).toBe(300); // entry tier
-    expect(TECH_BY_ID.agriculture.cost).toBe(500);
+    expect(TECH_BY_ID.agriculture.cost).toBe(10); // an opener: cheap on purpose
     expect(TECH_BY_ID.masonry.cost).toBe(550);
     expect(TECH_BY_ID.mining.cost).toBe(900);
     expect(TECH_BY_ID['iron-working'].cost).toBe(1800);
@@ -145,7 +146,8 @@ describe('tech tree — steep research costs, Stone→Iron→Steel DAG (magic is
 
   it('forms a clean prereq chain up to Steelmaking (Bronze Working retired), Naturalism off Agriculture', () => {
     // Agriculture/Masonry now hang off the per-tool stone techs.
-    expect(TECH_BY_ID.agriculture.requires).toContain('stone-hoe');
+    expect(TECH_BY_ID.agriculture.requires).toBeUndefined(); // an opener — no prerequisite
+    expect(TECH_BY_ID.forestry.requires).toBeUndefined();
     expect(TECH_BY_ID.masonry.requires).toContain('stone-pick');
     // Bronze Working is gone; Iron Working follows Mining directly, Steelmaking follows Iron.
     expect(TECH_BY_ID['bronze-working' as never]).toBeUndefined();
@@ -166,6 +168,7 @@ describe('per-tool stone techs boost ONLY their own gather job', () => {
     s.run.resources.stone = 200;
     s.run.buildings.hut = 1;
     s.run.tech.push('masonry'); // opens the Quarry/Stonecutter
+    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     build(s, 'forager-hut');
     build(s, 'quarry');
@@ -191,6 +194,7 @@ describe('tool-tier efficiency stacks on a gather job', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     s.run.buildings.hut = 1;
+    s.run.tech.push('forestry'); // the Lodge is gated behind Forestry
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
