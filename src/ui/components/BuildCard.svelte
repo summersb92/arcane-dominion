@@ -1,7 +1,11 @@
 <script lang="ts">
-  // One build card. The card header is a REAL <button> (click to build); the converter
-  // toggle rows live below it as separate controls — no nested-interactive ARIA problem,
-  // and a missed stepper click can no longer accidentally build another copy.
+  // One build card. The BUILD BUTTON is a real <button> that covers the ENTIRE card surface
+  // (name, count, cost, and the card's own padding) — clicking anywhere on the card builds.
+  // Only the converter toggle footer sits outside it, so there is no nested-interactive ARIA
+  // problem and a missed stepper click still cannot accidentally build another copy.
+  //
+  // Regression guard: an earlier version wrapped only the title row, leaving ~70% of the card
+  // dead to clicks. Keep the button spanning the whole clickable region.
   import { build, setRecipeActive, openTip, hideTooltip, buildingTooltip } from '../stores';
   import type { BuildingRowView } from '../stores';
 
@@ -29,14 +33,16 @@
     on:mouseleave={hideTooltip}
     on:blur={hideTooltip}
   >
-    <span class="nm">{b.name}</span>
-    <span class="chip" class:construct={b.construct}>×{b.count}</span>
+    <span class="tt">
+      <span class="nm">{b.name}</span>
+      <span class="chip" class:construct={b.construct}>×{b.count}</span>
+    </span>
+    <!-- At-a-glance cost. Once one copy stands the price has ESCALATED, so the line says so
+         explicitly — the cost shown is always for the NEXT copy, never the base. -->
+    <span class="cost" class:short={!b.affordable && !b.maxed}>
+      {#if b.count > 0}<span class="nextlbl">next</span> {/if}{b.costText}
+    </span>
   </button>
-  <!-- At-a-glance cost. Once one copy stands the price has ESCALATED, so the line says so
-       explicitly — the cost shown is always for the NEXT copy, never the base. -->
-  <div class="cost" class:short={!b.affordable && !b.maxed}>
-    {#if b.count > 0}<span class="nextlbl">next</span>{/if}{b.costText}
-  </div>
   {#if b.converter && b.count > 0}
     <div class="conv">
       {#if b.recipes.length > 1}<span class="convtot">active {b.active}/{b.count}</span>{/if}
@@ -68,21 +74,36 @@
 </div>
 
 <style>
-  /* The header button IS the build action — restyled to fill the card top. */
+  /* The build button covers the WHOLE card. Negative margins pull it out over .tcard's
+     7px/10px padding and it re-applies that padding internally, so every pixel of the card
+     — including its edges — is a live click target. */
   .cardbtn {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 0;
+    display: block;
+    width: calc(100% + 20px);
+    /* .tcard is a flex COLUMN with a min-height, so the button must grow to fill any
+       leftover vertical space — otherwise a few pixels at the bottom stay dead to clicks. */
+    flex: 1 1 auto;
+    margin: -7px -10px;
+    padding: 7px 10px;
     font-family: inherit;
     font-size: inherit;
     color: inherit;
     background: none;
     border: 0;
+    border-radius: 7px;
     cursor: pointer;
     text-align: left;
+  }
+  /* When a converter footer follows, the button gives back its bottom margin so the divider
+     sits correctly. */
+  .cardbtn:not(:only-child) {
+    margin-bottom: 0;
+  }
+  .cardbtn .tt {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
   }
   .cardbtn:disabled {
     cursor: not-allowed;
@@ -93,6 +114,7 @@
     border-radius: 4px;
   }
   .cost {
+    display: block;
     margin-top: 4px;
     font-size: 11.5px;
     color: var(--faint);
