@@ -108,6 +108,17 @@ export function freshCaps(): Record<MundaneResourceId, number> {
   };
 }
 
+/** Opening chronicle lines — one is picked per run (deterministic by seed), so each new
+ *  settlement starts its story a little differently. */
+const OPENINGS = [
+  "A handful of settlers make camp at the forest's edge.",
+  'A handful of settlers, a forest, and a plan that is mostly optimism.',
+  "The wagons stop at the forest's edge. Nobody remembers deciding that.",
+  'They came for the timber. They stayed because the wagon broke.',
+  "The forest's edge. Home, pending further notice.",
+  'Someone plants a stake in the ground and calls it a settlement. The ground disagrees.',
+];
+
 /** A brand-new settlement: settlers make camp with a little food and nothing else. */
 export function newGame(seed: number = seedFrom(Date.now())): GameState {
   const now = Date.now();
@@ -125,7 +136,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       tech: [],
       growthProgress: 0,
       flags: {},
-      chronicle: [{ at: 0, text: "A handful of settlers make camp at the forest's edge." }],
+      chronicle: [{ at: 0, text: OPENINGS[(seed >>> 0) % OPENINGS.length] }],
     },
     settings: { notation: 'suffix', theme: 'kittens', chronicleLines: 8, font: 'mono' },
     playtime: 0,

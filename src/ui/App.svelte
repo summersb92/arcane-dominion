@@ -4,7 +4,6 @@
   import Tabs from './panels/Tabs.svelte';
   import Resources from './panels/Resources.svelte';
   import Chronicle from './panels/Chronicle.svelte';
-  import Gather from './panels/Gather.svelte';
   import Main from './panels/Main.svelte';
   import System from './panels/System.svelte';
   import OfflinePanel from './components/OfflinePanel.svelte';
@@ -14,8 +13,8 @@
   // defaults as fallback) and persist to localStorage so a reload keeps them.
   const LKEY = 'ad-left-w';
   const RKEY = 'ad-right-w';
-  const LMIN = 150, LMAX = 460, RMIN = 160, RMAX = 560;
-  let leftW = 240;
+  const LMIN = 200, LMAX = 460, RMIN = 160, RMAX = 560;
+  let leftW = 280;
   let rightW = 320;
 
   const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
@@ -100,12 +99,10 @@
       on:keydown={(e) => key('right', e)}
     ></div>
     <aside class="right">
-      <Gather />
       <Chronicle />
     </aside>
   </div>
   <div class="foot">
-    <span>Left = resources · center = build · right = gather &amp; Chronicle. Theme &amp; Settings in the header. Drag the edges to resize.</span>
     <span>Magic base-builder · idle-first · no server</span>
   </div>
 </div>

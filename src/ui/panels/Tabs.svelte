@@ -21,11 +21,29 @@
       role="tab"
       aria-selected={$activeTab === t.id}
       aria-disabled={t.locked}
-      title={t.locked ? 'Coming in v0.2' : ''}
       on:click={() => select(t.id, t.locked)}
       on:keydown={(e) => onKey(e, t.id, t.locked)}
     >
       {t.label}{#if t.locked} 🔒{/if}
+      {#if t.badge}<span class="badge" title="{t.badge} idle settler{t.badge === 1 ? '' : 's'}">{t.badge}</span>{/if}
     </button>
   {/each}
 </nav>
+
+<style>
+  /* Idle-settler badge — tells you when the settlement tab needs a visit without leaving
+     Build/Research. */
+  .badge {
+    display: inline-block;
+    min-width: 16px;
+    margin-left: 6px;
+    padding: 0 4px;
+    font-size: 10.5px;
+    line-height: 16px;
+    text-align: center;
+    color: var(--card);
+    background: var(--accent);
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

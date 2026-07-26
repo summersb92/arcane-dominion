@@ -163,7 +163,7 @@ header {
 .body {
   flex: 1; min-height: 0;
   display: grid;
-  grid-template-columns: var(--left-w, 240px) 6px minmax(0, 1fr) 6px var(--right-w, 320px);
+  grid-template-columns: var(--left-w, 280px) 6px minmax(0, 1fr) 6px var(--right-w, 320px);
   grid-template-rows: minmax(0, 1fr);
 }
 .left { padding: 12px; border-right: 1px solid var(--edge); background: var(--col-left); overflow-y: auto; min-height: 0; }
@@ -195,7 +195,9 @@ h2.mt { margin-top: 16px; }
 ul.chron { padding-left: 0; margin: 6px 0 0; } .chron li { margin-bottom: 6px; list-style: none; }
 
 /* task cards on a grid — whole card is the button */
-.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 10px; margin-top: 6px; }
+/* align-items:start keeps short cards short — a converter card's toggle rows no longer
+   inflate every neighbour in its row. */
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 10px; margin-top: 6px; align-items: start; }
 .tcard {
   border: 1px solid var(--edge); border-left: 3px solid var(--edge); border-radius: 8px; padding: 7px 10px;
   background: var(--card); display: flex; flex-direction: column; gap: 4px; min-height: 52px; text-align: left;

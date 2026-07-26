@@ -82,10 +82,18 @@ export type BuildingEffect =
   | { kind: 'researchCap'; amount: number } // +N to the RESEARCH cap (science buildings; caps.ts)
   | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
 
+/** Build-tab section a building files under. Constructs render in their own "Arcane
+ *  Constructs" section regardless; their category is 'arcane' for completeness. */
+export type BuildingCategory = 'housing' | 'storage' | 'production' | 'science' | 'civic' | 'industry' | 'arcane';
+
 export interface BuildingDef {
   id: BuildingId;
   name: string;
+  /** ONE flavor sentence (dry wit + quiet wonder). NO stats or rates here — the tooltip
+   *  derives every mechanical line from `effects`/`cost` (see stores.ts effectLines). One
+   *  short mechanical clause is allowed only when the mechanic is choice-bearing. */
   blurb: string;
+  category: BuildingCategory;
   cost: Partial<Record<ResourceId, number>>;
   /** Per-existing-count cost multiplier (default 1 = flat). Every normal building
    *  escalates (costs more per copy); only the "special" magic constructs stay flat. */
@@ -114,7 +122,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'hut',
     name: 'House',
-    blurb: 'Simple shelter. +2 population cap, +20 storage. Cost rises with each house.',
+    blurb: 'Four walls, a roof, and opinions about both. Settlers insist on all three.',
+    category: 'housing',
     cost: { wood: 15 },
     costGrowth: 1.5,
     effects: [{ kind: 'popCap', amount: 2 }, { kind: 'cap', amount: STRUCT_CAP }],
@@ -122,7 +131,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'storehouse',
     name: 'Storehouse',
-    blurb: 'Raises storage for every mundane material (+50 to each cap). Cost rises with each.',
+    blurb: 'Shelves, hooks, and a door that locks. Everything keeps better indoors.',
+    category: 'storage',
     cost: { wood: 20, stone: 10 },
     costGrowth: 1.5,
     requiresBuilding: 'hut',
@@ -131,7 +141,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'warehouse',
     name: 'Warehouse',
-    blurb: 'Bulk stores for goods and ore. Raises every material cap EXCEPT food (+100 each). Cost rises with each.',
+    blurb: 'Row upon row of crates. The food goes elsewhere, by popular demand.',
+    category: 'storage',
     cost: { wood: 60, stone: 40 },
     costGrowth: 1.5,
     requiresTech: 'masonry',
@@ -140,7 +151,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'woodcutters-lodge',
     name: "Woodcutter's Lodge",
-    blurb: 'A base for fellers. +1 Woodcutter job slot, +20 storage.',
+    blurb: 'A base for fellers. The forest pretends not to notice.',
+    category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.3,
     requiresBuilding: 'hut',
@@ -149,7 +161,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'forager-hut',
     name: 'Farm',
-    blurb: 'Tilled fields and pens. +1 Farmer job slot, +20 storage.',
+    blurb: 'Tilled rows and stubborn pens. The waiting is the hard part.',
+    category: 'production',
     cost: { wood: 20 },
     costGrowth: 1.3,
     requiresTech: 'agriculture',
@@ -158,7 +171,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'hunters-lodge',
     name: "Hunter's Lodge",
-    blurb: 'A lodge for trackers and trappers. +1 Hunter job slot (food + furs), +20 storage.',
+    blurb: 'Trackers, trappers, and tall tales with the furs to prove them.',
+    category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.3,
     requiresTech: 'archery',
@@ -167,7 +181,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'quarry',
     name: 'Quarry',
-    blurb: 'A worked stone pit. +1 Stonecutter job slot, +20 storage.',
+    blurb: 'A worked pit where the hill used to be.',
+    category: 'production',
     cost: { wood: 20, stone: 5 },
     costGrowth: 1.3,
     requiresTech: 'masonry',
@@ -176,7 +191,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'granary',
     name: 'Granary',
-    blurb: 'Dry, sealed storage for grain. Raises the Food cap (+150). Cost rises with each.',
+    blurb: 'Dry, sealed, and defended against mice with mixed results.',
+    category: 'storage',
     cost: { wood: 30, stone: 10 },
     costGrowth: 1.5,
     requiresTech: 'pottery',
@@ -185,7 +201,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'library',
     name: 'Library',
-    blurb: 'Shelves of scrolls. +1 Scholar slot, +0.1 research/s, +100 research cap, +20 storage.',
+    blurb: 'Shelves of scrolls, and one scholar who insists on silence.',
+    category: 'science',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'writing',
@@ -199,7 +216,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'academy',
     name: 'Academy',
-    blurb: 'A hall of higher learning. +2 Scholar slots, +0.5 research/s, +600 research cap, +20 storage. The reservoir that makes the costliest research reachable.',
+    blurb: 'Higher learning: the same questions as the Library, asked more expensively.',
+    category: 'science',
     cost: { wood: 150, stone: 120 },
     costGrowth: 1.4,
     requiresTech: 'writing',
@@ -213,7 +231,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'observatory',
     name: 'Observatory',
-    blurb: 'Charts the heavens. +1 Scholar slot, +0.3 research/s, +400 research cap, +20 storage.',
+    blurb: 'Charts the heavens, which decline to comment.',
+    category: 'science',
     cost: { wood: 120, stone: 100 },
     costGrowth: 1.4,
     requiresTech: 'mathematics',
@@ -227,7 +246,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'aqueduct',
     name: 'Aqueduct',
-    blurb: 'Carries clean water into the settlement. +5 population cap, +4 happiness, +20 storage.',
+    blurb: 'Clean water arrives uphill of the sewage. A civic triumph.',
+    category: 'housing',
     cost: { wood: 80, stone: 120 },
     costGrowth: 1.4,
     requiresTech: 'construction',
@@ -240,7 +260,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'forum',
     name: 'Forum',
-    blurb: 'A public square for debate and performance. +1 Bard slot, +0.3 culture/s, +5 happiness, +20 storage.',
+    blurb: 'A public square where everyone is briefly a philosopher.',
+    category: 'civic',
     cost: { wood: 100, stone: 100 },
     costGrowth: 1.4,
     requiresTech: 'philosophy',
@@ -254,7 +275,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'sewers',
     name: 'Sewers',
-    blurb: 'Drains and cisterns for a great settlement. +12 population cap, +6 happiness, +20 storage.',
+    blurb: 'Out of sight and downhill. The whole settlement breathes easier.',
+    category: 'housing',
     cost: { stone: 200, iron: 40 },
     costGrowth: 1.4,
     requiresTech: 'sanitation',
@@ -267,7 +289,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'shrine',
     name: 'Shrine',
-    blurb: 'A place of rite and reflection. +0.2 culture/s, +4 happiness, +20 storage.',
+    blurb: 'A quiet place for rites. Whatever listens appreciates the tidiness.',
+    category: 'civic',
     cost: { wood: 60, stone: 40 },
     costGrowth: 1.4,
     requiresTech: 'mysticism',
@@ -280,7 +303,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'mine',
     name: 'Mine',
-    blurb: 'A deep shaft for iron ore. +1 Miner slot, +0.2 iron/s, +20 storage. With Crystallurgy, also trickles Mana Crystals (+0.05/s).',
+    blurb: 'A deep shaft for iron. The dark, on occasion, stares back.',
+    category: 'production',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'mining',
@@ -296,7 +320,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'coal-mine',
     name: 'Coal Mine',
-    blurb: 'A colliery working the coal seams. +1 Coal Miner slot, +0.2 coal/s, +20 storage.',
+    blurb: 'A colliery on the seam. Everything nearby turns slowly grey.',
+    category: 'production',
     cost: { wood: 45, stone: 25 },
     costGrowth: 1.3,
     requiresTech: 'coal-mining',
@@ -309,7 +334,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'charcoal-ground',
     name: 'Charcoal Ground',
-    blurb: 'A charring pit — each ACTIVE ground burns wood into coal (−0.5 wood → +0.4 coal /s). Toggle how many run. No settlers needed.',
+    blurb: 'A smouldering mound that turns wood into coal — slowly, and without complaint.',
+    category: 'industry',
     cost: { wood: 30, stone: 10 },
     costGrowth: 1.3,
     requiresTech: 'coal-mining',
@@ -318,7 +344,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'steelworks',
     name: 'Steelworks',
-    blurb: 'A furnace that refines steel — each ACTIVE works is staffed by one Smelter and burns a fuel. Toggle how many run on WOOD (−0.3 wood, −0.3 iron → +0.2 steel /s) vs COAL (−0.3 coal, −0.3 iron → +0.3 steel /s — more steel per iron). +1 Smelter slot.',
+    blurb: 'A furnace hot enough to make iron reconsider. Feed it wood or coal — coal burns hotter.',
+    category: 'industry',
     cost: { wood: 60, stone: 40, iron: 20 },
     costGrowth: 1.3,
     requiresTech: 'steelmaking',
@@ -333,7 +360,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'toolworks',
     name: 'Toolworks',
-    blurb: 'A steam-driven tool shop — each active works, staffed by a Machinist, forges Tools (−0.3 iron, −0.3 coal → +0.3 tools /s). +1 Machinist slot.',
+    blurb: 'Machines that make tools that make machines. Best not to think about it too long.',
+    category: 'industry',
     cost: { wood: 100, stone: 80, iron: 40 },
     costGrowth: 1.4,
     requiresTech: 'steam-power',
@@ -345,7 +373,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'engine-works',
     name: 'Engine Works',
-    blurb: 'Assembles steam Engines — each active works, staffed by an Engineer, builds Engines (−0.2 steel, −0.3 coal → +0.2 engines /s). Costs Tools to build. +1 Engineer slot.',
+    blurb: 'Where steam learns to push. The neighbours were not consulted.',
+    category: 'industry',
     cost: { wood: 120, stone: 100, tools: 30 },
     costGrowth: 1.4,
     requiresTech: 'precision-engineering',
@@ -357,7 +386,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'factory',
     name: 'Factory',
-    blurb: 'Turns out consumer Furniture — each active factory, staffed by a Machinist, makes Furniture (−0.5 wood, −0.3 tools → +0.3 furniture /s). Held furniture raises happiness. Costs Engines to build. +1 Machinist slot.',
+    blurb: 'Furniture by the cartload. The settlement discovers wants it never knew it had.',
+    category: 'industry',
     cost: { wood: 150, stone: 120, engines: 20 },
     costGrowth: 1.4,
     requiresTech: 'industrialization',
@@ -369,7 +399,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'steam-works',
     name: 'Steam Works',
-    blurb: 'MECHANIZATION — each active works burns Coal + Engines to drive machines across the settlement: +20% to EVERY worker’s output while fuelled (−0.5 coal, −0.1 engines /s). Toggle how many run. Costs Engines to build.',
+    blurb: 'Belts and pistons hurry every trade along — while the coal holds out.',
+    category: 'industry',
     cost: { stone: 150, steel: 60, engines: 20 },
     costGrowth: 1.4,
     requiresTech: 'industrialization',
@@ -382,7 +413,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'tannery',
     name: 'Tannery',
-    blurb: 'Cures hides into Parchment — each active tannery converts furs into parchment (−0.4 furs → +0.3 parchment /s). No settlers needed. (Furs spent here are furs not kept for happiness.)',
+    blurb: 'Hides go in; parchment comes out. Nobody asks about the middle part.',
+    category: 'industry',
     cost: { wood: 40, stone: 20 },
     costGrowth: 1.3,
     requiresTech: 'bookbinding',
@@ -391,7 +423,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'scriptorium',
     name: 'Scriptorium',
-    blurb: 'Binds Books from parchment — each active scriptorium, staffed by a Scribe, turns parchment + research into books (−0.3 parchment, −0.5 research → +0.1 books /s). Held books raise research per settler. +1 Scribe slot.',
+    blurb: 'Ink-stained fingers, immaculate letters. Held Books sharpen every settler’s curiosity.',
+    category: 'industry',
     cost: { wood: 60, stone: 40 },
     costGrowth: 1.3,
     requiresTech: 'bookbinding',
@@ -403,7 +436,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'archive',
     name: 'Archive',
-    blurb: 'Compiles Compendiums — each active archive, staffed by a Scribe, turns books + research into compendiums (−0.2 books, −1 research → +0.05 compendiums /s). Held compendiums raise the research cap and yield mana per settler. +1 Scribe slot.',
+    blurb: 'Where books go to become bigger books. Held Compendiums raise the research ceiling.',
+    category: 'industry',
     cost: { wood: 80, stone: 60, tools: 10 },
     costGrowth: 1.3,
     requiresTech: 'compendia',
@@ -415,7 +449,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'workshop',
     name: 'Workshop',
-    blurb: 'Carts, gears, and better technique. +10% to EVERY worker’s output, +20 storage.',
+    blurb: 'Carts, gears, and better technique all round. Every trade moves a little quicker.',
+    category: 'industry',
     cost: { wood: 50, stone: 30 },
     costGrowth: 1.3,
     requiresTech: 'the-wheel',
@@ -424,7 +459,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'forge',
     name: 'Forge',
-    blurb: 'A blacksmith’s hearth. +15% worker output, +20 storage.',
+    blurb: 'Ringing anvils and honest soot. Everyone works a little sharper.',
+    category: 'industry',
     cost: { wood: 50, stone: 40 },
     costGrowth: 1.3,
     requiresTech: 'iron-working',
@@ -433,7 +469,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'amphitheater',
     name: 'Amphitheater',
-    blurb: 'A stage for song and spectacle. +1 Bard slot (Culture), +10 happiness, +20 storage. Cost rises with each.',
+    blurb: 'Song, story, and spectacle — the settlement applauds itself.',
+    category: 'civic',
     cost: { wood: 40, stone: 30 },
     costGrowth: 1.3,
     requiresTech: 'the-arts',
@@ -446,7 +483,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'sacred-grove',
     name: 'Sacred Grove',
-    blurb: 'A tended grove of ancient trees. +5 happiness, +20 storage. Its deep tending is one path to magic.',
+    blurb: 'Old trees, tended well. Something in there tends back.',
+    category: 'civic',
     cost: { wood: 60 },
     costGrowth: 1.3,
     requiresTech: 'naturalism',
@@ -458,7 +496,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'arcane-font',
     name: 'Arcane Font',
-    blurb: 'A wellspring of raw magic. Produces mana passively (+0.5/s).',
+    blurb: 'A wellspring of raw magic. It never runs dry, which worries the sensible.',
+    category: 'arcane',
     cost: { stone: 40 },
     requiresFlag: 'magicDiscovered',
     construct: true,
@@ -467,7 +506,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'animated-tools',
     name: 'Animated Tools',
-    blurb: 'Enchanted axes that fell timber on their own — wood with NO settlers and NO food, only mana upkeep (0.1/s).',
+    blurb: 'Enchanted axes that fell timber on their own. The woodcutters watch, and do not applaud.',
+    category: 'arcane',
     cost: { wood: 30, mana: 10 },
     requiresFlag: 'magicDiscovered',
     requiresBuilding: 'arcane-font',
@@ -481,7 +521,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'ley-grove',
     name: 'Ley Grove',
-    blurb: 'A grove sung along the ley lines — draws mana from the living land (+0.6 mana/s), no settlers.',
+    blurb: 'A grove sung along the ley lines. The land hums, faintly, in tune.',
+    category: 'arcane',
     cost: { wood: 80, stone: 40 },
     costGrowth: 1.3,
     requiresTech: 'druidry',
@@ -491,7 +532,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'standing-stones',
     name: 'Standing Stones',
-    blurb: 'A ring aligned to the seasons — +0.4 mana/s, +0.5 food/s, and +8 happiness.',
+    blurb: 'A ring aligned to the seasons. On solstice nights nobody walks past alone.',
+    category: 'arcane',
     cost: { stone: 150 },
     costGrowth: 1.3,
     requiresTech: 'seasonal-rites',
@@ -506,7 +548,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'golem-works',
     name: 'Golem Works',
-    blurb: 'Crystal-bound golems that mine on their own — iron + stone with NO settlers, only mana upkeep (0.3/s).',
+    blurb: 'Stone that digs stone. The golems do not unionize, so far.',
+    category: 'arcane',
     cost: { stone: 100, manaCrystals: 20 },
     requiresTech: 'enchantment',
     construct: true,
@@ -519,7 +562,8 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'arcane-foundry',
     name: 'Arcane Foundry',
-    blurb: 'Runes forge steel from raw magic — steel with NO coal, NO iron, NO settlers, only mana upkeep (0.5/s).',
+    blurb: 'Steel from nothing but mana and nerve. The smelters have questions.',
+    category: 'arcane',
     cost: { stone: 120, manaCrystals: 40 },
     requiresTech: 'runecraft',
     construct: true,

@@ -4,7 +4,15 @@
 // each tick from the building count (systems/jobs.ts, systems/production.ts). Requirement
 // gates (tech + affordability) are enforced before any resource is spent. Pure engine.
 
-import { BUILDINGS, BUILDING_BY_ID, type BuildingDef, type BuildingEffect, type BuildingId } from '../../content/buildings';
+import {
+  BUILDINGS,
+  BUILDING_BY_ID,
+  type BuildingCategory,
+  type BuildingDef,
+  type BuildingEffect,
+  type BuildingId,
+} from '../../content/buildings';
+import type { JobId } from '../../content/jobs';
 import { MUNDANE_RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
@@ -83,7 +91,7 @@ export function buildingCost(state: GameState, id: BuildingId): Partial<Record<R
 
 /** True once the building's prerequisites (tech + prerequisite building) are satisfied.
  *  The building-prereq keeps the opening board minimal: only the Hut shows at the very
- *  start; Storehouse/workplaces reveal once a Hut exists, the Study once foraging is up. */
+ *  start; Storehouse/workplaces reveal once a Hut exists; the rest gate on tech. */
 export function isUnlocked(state: GameState, def: BuildingDef): boolean {
   if (def.requiresTech && !state.run.tech.includes(def.requiresTech as never)) return false;
   // Discovery-gated buildings (the magic constructs) require a run flag rather than a tech.
@@ -148,14 +156,53 @@ export function build(state: GameState, id: BuildingId): boolean {
     }
   }
 
-  logEvent(state, `Built ${def.name}.`);
-  // Magic-tier milestone: the first construct raised is a story beat.
+  // The FIRST of a building is a story beat, not a receipt; repeats keep the plain line.
+  const quip = count === 0 ? FIRST_BUILD_QUIPS[id] : undefined;
+  if (quip) logEvent(state, quip, 'ev');
+  else logEvent(state, `Built ${def.name}.`);
+  // Magic-tier milestone: the first construct raised is a story beat (skipped when the
+  // building already told its own first-build story above).
   if (def.construct && state.run.flags.firstConstruct !== true) {
     state.run.flags.firstConstruct = true;
-    logEvent(state, `${def.name} stirs to life — labour without hands.`, 'ev');
+    if (!quip) logEvent(state, `${def.name} stirs to life — labour without hands.`, 'ev');
   }
   return true;
 }
+
+/** One-line chronicle beats for the FIRST copy of a building (dry wit + quiet wonder).
+ *  Buildings without an entry fall back to the plain `Built X.` receipt. */
+const FIRST_BUILD_QUIPS: Partial<Record<BuildingId, string>> = {
+  hut: 'The first house stands. It leans, but it stands.',
+  storehouse: 'A storehouse rises. Ownership disputes begin the same afternoon.',
+  'forager-hut': 'The first field is sown. Now comes the waiting.',
+  'hunters-lodge': 'The lodge opens. Dinner improves; the stories inflate.',
+  quarry: 'The quarry opens. The hill begins its long surrender.',
+  granary: 'The granary is sealed. The mice regroup.',
+  library: 'The library opens. Most visitors come for the quiet.',
+  academy: 'The academy opens its doors and raises its fees.',
+  observatory: 'The observatory is finished. The sky, at last, is being watched back.',
+  aqueduct: 'Water arrives on its own. Buckets are quietly retired.',
+  sewers: 'The sewers open, and nobody wishes to discuss it further.',
+  mine: 'The mine strikes iron. The dark, on occasion, strikes back.',
+  'coal-mine': 'The colliery opens. Coal catches — hotter, longer, dirtier.',
+  'charcoal-ground': 'The first charring pit smoulders. Wood goes in; patience comes out.',
+  steelworks: 'The furnace is lit. The blacksmith affects not to be impressed.',
+  toolworks: 'The toolworks starts up. Machines making tools for making machines.',
+  'engine-works': 'The first engine turns over. No two settlers agree on what the noise is.',
+  factory: 'The factory opens. The word "shift" acquires a new and ominous meaning.',
+  'steam-works': 'The steam works thunders on. Every trade moves a little faster, a little louder.',
+  tannery: 'The tannery opens, downwind, by unanimous vote.',
+  scriptorium: 'The scriptorium opens. Silence, punctuated by scratching.',
+  archive: 'The archive opens. Somewhere, at last, to put the arguments.',
+  amphitheater: 'The amphitheater opens. The settlement discovers applause.',
+  'sacred-grove': 'A grove is set aside and tended. The wild takes note.',
+  'arcane-font': 'The font wells up with mana. It never runs dry, which worries the sensible.',
+  'animated-tools': 'The axes fell timber unattended. The woodcutters watch, and do not applaud.',
+  'ley-grove': 'The ley grove is sung awake. The land hums back.',
+  'standing-stones': 'The stones stand. On the next solstice, they are warm to the touch.',
+  'golem-works': 'The golem shoulders its first load. The miners take an unusually long lunch.',
+  'arcane-foundry': 'Steel from nothing but mana and nerve. The smelters have questions.',
+};
 
 export interface BuildingView {
   id: BuildingId;
@@ -167,9 +214,17 @@ export interface BuildingView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
+  category: BuildingCategory; // Build-tab section this building files under
   converter: boolean; // has ≥1 convert effect → toggled per-recipe
   active: number; // total copies switched ON (converters only; else = count)
-  recipes: { label: string; active: number }[]; // per-recipe running counts (converters; else [])
+  /** Per-recipe running counts + per-copy trade rates (converters; else []). */
+  recipes: {
+    label: string;
+    active: number;
+    consume: Partial<Record<ResourceId, number>>;
+    produce: Partial<Record<ResourceId, number>>;
+    requiresWorker?: JobId;
+  }[];
 }
 
 /** Read model: every building's count, current cost, and buildability. */
@@ -180,7 +235,13 @@ export function buildingsView(state: GameState): BuildingView[] {
     const converter = isConverter(def);
     const recipeRuns = converter ? activeRecipes(state, def.id) : [];
     const recipes = converter
-      ? convertEffects(def).map((e, i) => ({ label: e.label ?? 'Active', active: recipeRuns[i] ?? 0 }))
+      ? convertEffects(def).map((e, i) => ({
+          label: e.label ?? 'Active',
+          active: recipeRuns[i] ?? 0,
+          consume: e.consume,
+          produce: e.produce,
+          requiresWorker: e.requiresWorker,
+        }))
       : [];
     return {
       id: def.id,
@@ -192,6 +253,7 @@ export function buildingsView(state: GameState): BuildingView[] {
       affordable: canAfford(state, def.id),
       maxed,
       construct: def.construct === true,
+      category: def.category,
       converter,
       active: converter ? activeCount(state, def.id) : count,
       recipes,

@@ -16,6 +16,7 @@ import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
 import { activeRecipes, activeCount, convertEffects, isConverter } from './buildings';
+import { logEvent } from './chronicle';
 
 const EPS = 1e-9;
 
@@ -108,6 +109,20 @@ function jobEfficiency(state: GameState, jobId: string): number {
   if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
   m *= globalJobMult(state);
   return m;
+}
+
+/** A job's EFFECTIVE per-worker output — base `produces` × the live efficiency multiplier
+ *  (tool techs + Workshop/Forge/Steam Works). The read model for job tooltips, so the
+ *  number on screen matches what a settler actually makes. */
+export function jobEffectiveProduces(state: GameState, jobId: string): Partial<Record<ResourceId, number>> {
+  const def = JOBS.find((j) => j.id === jobId);
+  if (!def) return {};
+  const eff = jobEfficiency(state, jobId);
+  const out: Partial<Record<ResourceId, number>> = {};
+  for (const [res, per] of Object.entries(def.produces)) {
+    out[res as ResourceId] = (per as number) * eff;
+  }
+  return out;
 }
 
 interface Flows {
@@ -322,6 +337,11 @@ export function runProduction(state: GameState, dt: number): void {
   if (nextFood < -EPS) {
     run.resources.food = 0;
     run.flags.starving = true;
+    // The FIRST famine is a story beat (once per run); the repeating loss line lives in population.ts.
+    if (run.flags.firstStarvationBeat !== true && run.population.total > 0) {
+      run.flags.firstStarvationBeat = true;
+      logEvent(state, "Hunger arrives. The granary's emptiness is suddenly very loud.", 'ev');
+    }
   } else {
     run.resources.food = Math.max(0, nextFood);
     run.flags.starving = false;
@@ -352,4 +372,21 @@ export function runProduction(state: GameState, dt: number): void {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }
+
+  // First-of-a-resource story beats (once per run, flag-gated) — the moment a new good exists.
+  for (const [res, flag, line] of RESOURCE_FIRSTS) {
+    if (run.flags[flag] !== true && run.resources[res] > EPS) {
+      run.flags[flag] = true;
+      logEvent(state, line, 'ev');
+    }
+  }
 }
+
+/** Once-per-run chronicle beats for the first unit of a produced good. */
+const RESOURCE_FIRSTS: [ResourceId, string, string][] = [
+  ['coal', 'firstCoal', 'Coal catches. Hotter, longer, dirtier — progress, in a word.'],
+  ['steel', 'firstSteel', 'The first steel cools. It rings when struck, like it knows.'],
+  ['engines', 'firstEngine', 'An engine idles in the yard. Half the settlement calls it "him".'],
+  ['books', 'firstBook', 'The first book is bound. Two settlers can read it.'],
+  ['compendiums', 'firstCompendium', 'A compendium is finished. It settles three arguments and starts five.'],
+];

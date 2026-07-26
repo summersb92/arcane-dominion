@@ -1,8 +1,10 @@
 <script lang="ts">
   import ThemePicker from '../components/ThemePicker.svelte';
-  import { game, systemOpen } from '../stores';
+  import { game, systemOpen, openTip, hideTooltip, happinessTooltip } from '../stores';
+  import { fmtRate } from '../format';
 
-  // Live settlement identity from the game store: settler count + housing cap.
+  // Live settlement VITALS from the game store — always on screen, whatever tab is
+  // active, so a food crash or unhappiness can't hide on the Jobs tab.
   $: pop = $game.population;
   // The date is hidden until the Calendar tech is researched.
   $: cal = $game.calendar;
@@ -16,7 +18,28 @@
         {cal.season} · Day {cal.day} · Year {cal.year}
       </span>
     {/if}
-    <span>{pop.total} settler{pop.total === 1 ? '' : 's'} · cap {pop.cap}</span>
+    <span class="vitals">
+      <span>Pop <strong>{pop.total}</strong>/{pop.cap}</span>
+      {#if pop.idle > 0}<span>Idle <strong>{pop.idle}</strong></span>{/if}
+      <span>
+        Food
+        <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
+          {fmtRate(pop.foodBalance) || '0/s'}
+        </strong>
+      </span>
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <span
+        class="hap"
+        on:mouseenter={(e) => openTip(e, happinessTooltip(pop.happiness))}
+        on:mouseleave={hideTooltip}
+      >
+        😊
+        <strong class:good={pop.happiness.status === 'content'} class:bad={pop.happiness.status === 'unhappy'}>
+          {Math.round(pop.happiness.value)}
+        </strong>
+      </span>
+      {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
+    </span>
     <ThemePicker />
     <button
       type="button"
@@ -32,6 +55,28 @@
   .cal {
     color: var(--dim);
     font-variant-numeric: tabular-nums;
+  }
+  .vitals {
+    display: inline-flex;
+    gap: 12px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .vitals strong {
+    color: var(--ink);
+  }
+  .vitals strong.good {
+    color: var(--ok);
+  }
+  .vitals strong.bad {
+    color: var(--life);
+  }
+  .hap {
+    cursor: help;
+  }
+  .starve {
+    color: var(--life);
+    font-weight: 600;
   }
   .sysbtn {
     font-family: inherit;

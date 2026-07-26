@@ -1,54 +1,59 @@
 <script lang="ts">
-  // Gather — three plain buttons in the right rail (Wood · Stone · Food). No descriptors:
-  // the whole of hand-gathering is these three taps. Order is fixed wood → stone → food.
-  import { game, doGather } from '../stores';
+  // Gather — three buttons at the foot of the resource column (Wood · Stone · Food), right
+  // next to the numbers they change. Retired actions (storage cap ≥ 1000) drop off — by
+  // then production covers them — and the whole section disappears with the last one.
+  import { game, doGather, openTip, hideTooltip, actionTooltip } from '../stores';
   import type { ActionRowView } from '../stores';
 
   const ORDER = ['wood', 'stone', 'food'];
-  // Retired actions (storage cap ≥ 1000) drop off — by then production covers them.
   $: buttons = ORDER
     .map((res) => $game.actions.find((a) => a.resource === res))
     .filter((a): a is ActionRowView => a !== undefined && !a.retired);
 </script>
 
-<div class="gather">
-  <h2>Gather</h2>
-  {#if buttons.length}
+{#if buttons.length}
+  <div class="gather">
+    <h2 class="mt">Gather</h2>
     <div class="gbtns">
       {#each buttons as a (a.id)}
-        <button class="gbtn" disabled={!a.available} on:click={() => doGather(a.id)}>
-          <span class="l">{a.resLabel}</span>
+        <button
+          class="gbtn"
+          disabled={!a.available}
+          on:click={() => doGather(a.id)}
+          on:mouseenter={(e) => openTip(e, actionTooltip(a))}
+          on:focus={(e) => openTip(e, actionTooltip(a))}
+          on:mouseleave={hideTooltip}
+          on:blur={hideTooltip}
+        >
+          {a.resLabel}
         </button>
       {/each}
     </div>
-  {:else}
-    <div class="retired">Hand-gathering retired — your settlement supplies itself now.</div>
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
   .gather {
-    margin-bottom: 14px;
+    margin-top: 10px;
   }
   .gbtns {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   .gbtn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    flex: 1 1 auto;
+    padding: 7px 10px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--ink);
     background: var(--card);
     border: 1px solid var(--edge);
     border-left: 3px solid var(--gold);
     border-radius: 8px;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     transition: border-color 0.12s, transform 0.05s;
   }
   .gbtn:hover {
@@ -64,14 +69,6 @@
   .gbtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-  .gbtn .l {
-    font-weight: 600;
-  }
-  .retired {
-    color: var(--faint);
-    font-size: 12px;
-    line-height: 1.5;
   }
   @media (prefers-reduced-motion: reduce) {
     .gbtn {

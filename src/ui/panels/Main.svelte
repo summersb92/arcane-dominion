@@ -2,39 +2,19 @@
   import {
     game,
     activeTab,
-    build,
-    setRecipeActive,
     assignJob,
     unassignJob,
     research,
     openTip,
     hideTooltip,
-    buildingTooltip,
     jobTooltip,
     techTooltip,
+    happinessTooltip,
+    growthTooltip,
   } from '../stores';
   import type { BuildingRowView, TechRowView } from '../stores';
-  import { fmtRate } from '../format';
-
-  // The whole build card IS the build button: click to raise it (no-op if unbuildable).
-  // Cost + description live in the hover tooltip; red text means "can't afford".
-  function onBuild(b: BuildingRowView): void {
-    if (b.disabled) return;
-    hideTooltip();
-    build(b.id);
-  }
-  function onBuildKey(e: KeyboardEvent, b: BuildingRowView): void {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onBuild(b);
-    }
-  }
-
-  // Converter toggle: allocate a copy to/from a fuel recipe without triggering the card's build click.
-  function toggleRecipe(b: BuildingRowView, r: number, delta: number): void {
-    hideTooltip();
-    setRecipeActive(b.id, r, b.recipes[r].active + delta);
-  }
+  import BuildCard from '../components/BuildCard.svelte';
+  import { fmt, fmtRate } from '../format';
 
   // Research cards mirror the build cards: the whole card is the action. Cost, blurb,
   // unlocks and any reason live in the hover tooltip; a red name means "can't afford".
@@ -50,20 +30,32 @@
     }
   }
 
-  // Only render buildings the player has unlocked (respect the engine's tech gate).
+  // Build tab: unlocked buildings grouped under category headings (the ~30-card wall,
+  // sectioned). Constructs keep their own "Arcane Constructs" section below.
+  const CATEGORIES: { id: BuildingRowView['category']; label: string }[] = [
+    { id: 'housing', label: 'Housing' },
+    { id: 'storage', label: 'Storage' },
+    { id: 'production', label: 'Production' },
+    { id: 'science', label: 'Science' },
+    { id: 'civic', label: 'Civic' },
+    { id: 'industry', label: 'Industry' },
+  ];
   $: visibleBuildings = $game.buildings.filter((b) => b.unlocked);
   $: workshops = visibleBuildings.filter((b) => !b.construct);
+  $: buildSections = CATEGORIES
+    .map((c) => ({ ...c, cards: workshops.filter((b) => b.category === c.id) }))
+    .filter((c) => c.cards.length > 0);
   $: constructs = visibleBuildings.filter((b) => b.construct);
 
   // Jobs open only once a workplace grants capacity.
   $: openJobs = $game.jobs.filter((j) => j.capacity > 0);
 
-  // Research: by default show only what you can research NOW (prereqs met, unresearched);
-  // far-locked nodes stay hidden until their prerequisite lands, and researched ones are
-  // hidden behind a toggle (default off).
+  // Research: available techs sorted cheapest-first (a shopping list), researched ones
+  // in their own dimmed section behind a toggle (default off).
   let showResearched = false;
   $: researchedCount = $game.tech.filter((t) => t.researched).length;
-  $: visibleTech = $game.tech.filter((t) => t.available || (showResearched && t.researched));
+  $: availableTech = $game.tech.filter((t) => t.available).sort((a, b) => a.cost - b.cost);
+  $: researchedTech = showResearched ? $game.tech.filter((t) => t.researched) : [];
 
   $: pop = $game.population;
 
@@ -90,57 +82,17 @@
       <div class="sub">
         Raise structures to house settlers, expand storage, and open workplaces. Costs rise as you build.
       </div>
-      {#if workshops.length === 0}
+      {#if buildSections.length === 0}
         <div class="empty">Nothing to build yet — gather some wood first.</div>
       {:else}
-        <div class="tgrid">
-          {#each workshops as b (b.id)}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div
-              class="tcard bcard"
-              class:cant={!b.affordable && !b.maxed}
-              class:maxed={b.maxed}
-              role="button"
-              tabindex={b.disabled ? -1 : 0}
-              aria-disabled={b.disabled}
-              style="border-left-color:var(--edge)"
-              on:click={() => onBuild(b)}
-              on:keydown={(e) => onBuildKey(e, b)}
-              on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
-              on:focus={(e) => openTip(e, buildingTooltip(b))}
-              on:mouseleave={hideTooltip}
-              on:blur={hideTooltip}
-            >
-              <div class="tt">
-                <span class="nm">{b.name}</span><span class="chip">×{b.count}</span>
-              </div>
-              {#if b.converter && b.count > 0}
-                <!-- svelte-ignore a11y-no-static-element-interactions a11y-click-events-have-key-events -->
-                <div class="conv" on:click|stopPropagation>
-                  {#if b.recipes.length > 1}<span class="convtot">active {b.active}/{b.count}</span>{/if}
-                  {#each b.recipes as rc, r (r)}
-                    <div class="convrow">
-                      {#if b.recipes.length > 1}<span class="convlbl">{rc.label}</span>{/if}
-                      <button
-                        class="btn step"
-                        disabled={rc.active <= 0}
-                        aria-label="Switch off one {b.name} ({rc.label})"
-                        on:click|stopPropagation={() => toggleRecipe(b, r, -1)}
-                      >−</button>
-                      <span class="convn">{b.recipes.length > 1 ? rc.active : `on ${rc.active}/${b.count}`}</span>
-                      <button
-                        class="btn step"
-                        disabled={b.active >= b.count}
-                        aria-label="Switch on one {b.name} ({rc.label})"
-                        on:click|stopPropagation={() => toggleRecipe(b, r, 1)}
-                      >+</button>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          {/each}
-        </div>
+        {#each buildSections as sec (sec.id)}
+          <h3 class="cat">{sec.label}</h3>
+          <div class="tgrid">
+            {#each sec.cards as b (b.id)}
+              <BuildCard {b} />
+            {/each}
+          </div>
+        {/each}
       {/if}
 
       {#if constructs.length}
@@ -148,26 +100,7 @@
         <div class="sub">Magic labour — production with no settlers and no food, only mana upkeep.</div>
         <div class="tgrid">
           {#each constructs as b (b.id)}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div
-              class="tcard bcard"
-              class:cant={!b.affordable && !b.maxed}
-              class:maxed={b.maxed}
-              role="button"
-              tabindex={b.disabled ? -1 : 0}
-              aria-disabled={b.disabled}
-              style="border-left-color:var(--mana)"
-              on:click={() => onBuild(b)}
-              on:keydown={(e) => onBuildKey(e, b)}
-              on:mouseenter={(e) => openTip(e, buildingTooltip(b))}
-              on:focus={(e) => openTip(e, buildingTooltip(b))}
-              on:mouseleave={hideTooltip}
-              on:blur={hideTooltip}
-            >
-              <div class="tt">
-                <span class="nm">{b.name}</span><span class="chip construct">×{b.count} · construct</span>
-              </div>
-            </div>
+            <BuildCard {b} accent="var(--mana)" />
           {/each}
         </div>
       {/if}
@@ -176,92 +109,85 @@
     <section>
       <h2>{$game.population.name}</h2>
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
-      <div class="jobscols">
-        <div class="jobscol">
-          <!-- Prominent, always-present Population readout: the next-settler progress bar
-               fills while growing (with %), or names the paused reason when it can't grow. -->
-          <div
-            class="growth"
-            class:paused={pop.growth.status !== 'growing' && pop.growth.status !== 'starving'}
-            title="Progress toward the next settler"
-          >
-            <div class="ghead">
-              <span class="gtitle">Population</span>
-              <span class="gcount"><strong>{pop.total}</strong> / {pop.cap} settlers</span>
-            </div>
-            <div class="glabel">
-              <span>{growthLabel(pop.growth.status)}</span>
-              {#if pop.growth.status === 'growing' || pop.growth.status === 'starving'}
-                <span class="gpct">{Math.round(pop.growth.progress * 100)}%</span>
-              {/if}
-            </div>
-            <div
-              class="gbar"
-              class:grow={pop.growth.status === 'growing'}
-              class:starve={pop.growth.status === 'starving'}
-            >
-              <i style="width:{Math.round(pop.growth.progress * 100)}%"></i>
-            </div>
-          </div>
 
-          <div class="popbar">
-            <span>Settlers <strong>{pop.total}</strong> / {pop.cap}</span>
-            <span>Idle <strong>{pop.idle}</strong></span>
-            <span>
-              Food
-              <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
-                {fmtRate(pop.foodBalance) || '0/s'}
-              </strong>
-            </span>
-            <span title={pop.happiness.breakdown.map((b) => `${b.label}: ${b.amount >= 0 ? '+' : ''}${b.amount}`).join('\n')}>
-              Happiness
-              <strong class:good={pop.happiness.status === 'content'} class:bad={pop.happiness.status === 'unhappy'}>
-                {Math.round(pop.happiness.value)} · {pop.happiness.status}
-              </strong>
-            </span>
-            {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
-          </div>
-
-          {#if openJobs.length === 0}
-            <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
-          {:else}
-            <div class="jobs">
-              {#each openJobs as j (j.id)}
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <div
-                  class="jrow"
-                  on:mouseenter={(e) => openTip(e, jobTooltip(j))}
-                  on:mouseleave={hideTooltip}
-                >
-                  <span class="nm">{j.name}</span>
-                  <div class="jctl">
-                    <button
-                      class="btn step"
-                      disabled={!j.canUnassign}
-                      aria-label="Unassign a {j.name}"
-                      on:click={() => { hideTooltip(); unassignJob(j.id); }}
-                    >−</button>
-                    <span class="count">{j.assigned} / {j.capacity}</span>
-                    <button
-                      class="btn step"
-                      disabled={!j.canAssign}
-                      aria-label="Assign a {j.name}"
-                      on:click={() => { hideTooltip(); assignJob(j.id); }}
-                    >+</button>
-                  </div>
-                </div>
-              {/each}
-            </div>
+      <!-- Prominent, always-present Population readout: the next-settler progress bar
+           fills while growing (with %), or names the paused reason when it can't grow. -->
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <div
+        class="growth"
+        class:paused={pop.growth.status !== 'growing' && pop.growth.status !== 'starving'}
+        on:mouseenter={(e) => openTip(e, growthTooltip(pop.growth))}
+        on:mouseleave={hideTooltip}
+      >
+        <div class="ghead">
+          <span class="gtitle">Population</span>
+          <span class="gcount"><strong>{pop.total}</strong> / {pop.cap} settlers</span>
+        </div>
+        <div class="glabel">
+          <span>{growthLabel(pop.growth.status)}</span>
+          {#if pop.growth.status === 'growing' || pop.growth.status === 'starving'}
+            <span class="gpct">{Math.round(pop.growth.progress * 100)}%</span>
           {/if}
         </div>
-
-        <div class="jobscol">
-          <div class="card govcard">
-            <h2>Government</h2>
-            <div class="govnote">Policies &amp; decrees — coming soon.</div>
-          </div>
+        <div
+          class="gbar"
+          class:grow={pop.growth.status === 'growing'}
+          class:starve={pop.growth.status === 'starving'}
+        >
+          <i style="width:{Math.round(pop.growth.progress * 100)}%"></i>
         </div>
       </div>
+
+      <div class="popbar">
+        <span>Population <strong>{pop.total}</strong> / {pop.cap}</span>
+        <span>Idle <strong>{pop.idle}</strong></span>
+        <span>
+          Food
+          <strong class:good={pop.foodBalance >= 0} class:bad={pop.foodBalance < 0}>
+            {fmtRate(pop.foodBalance) || '0/s'}
+          </strong>
+        </span>
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <span class="hap" on:mouseenter={(e) => openTip(e, happinessTooltip(pop.happiness))} on:mouseleave={hideTooltip}>
+          Happiness
+          <strong class:good={pop.happiness.status === 'content'} class:bad={pop.happiness.status === 'unhappy'}>
+            {Math.round(pop.happiness.value)} · {pop.happiness.status}
+          </strong>
+        </span>
+        {#if pop.starving}<span class="starve">⚠ Starving</span>{/if}
+      </div>
+
+      {#if openJobs.length === 0}
+        <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
+      {:else}
+        <div class="jobs">
+          {#each openJobs as j (j.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="jrow"
+              on:mouseenter={(e) => openTip(e, jobTooltip(j))}
+              on:mouseleave={hideTooltip}
+            >
+              <span class="nm">{j.name}</span>
+              <div class="jctl">
+                <button
+                  class="btn step"
+                  disabled={!j.canUnassign}
+                  aria-label="Unassign a {j.name}"
+                  on:click={() => { hideTooltip(); unassignJob(j.id); }}
+                >−</button>
+                <span class="count">{j.assigned} / {j.capacity}</span>
+                <button
+                  class="btn step"
+                  disabled={!j.canAssign}
+                  aria-label="Assign a {j.name}"
+                  on:click={() => { hideTooltip(); assignJob(j.id); }}
+                >+</button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </section>
   {:else if $activeTab === 'research'}
     <section>
@@ -276,21 +202,16 @@
           >{showResearched ? 'Hide' : 'Show'} researched ({researchedCount})</button>
         {/if}
       </div>
-      <div class="sub">Spend research to unlock efficiency, new work, and magic. Only what you can research now is shown.</div>
-      {#if visibleTech.length === 0}
-        <div class="empty">
-          {researchedCount > 0 && !showResearched
-            ? 'Nothing new to research right now.'
-            : 'No research available yet.'}
-        </div>
+      <div class="sub">Spend research to unlock efficiency, new work, and magic. Cheapest first.</div>
+      {#if availableTech.length === 0}
+        <div class="empty">Nothing new to research right now.</div>
       {:else}
         <div class="tgrid">
-          {#each visibleTech as t (t.id)}
+          {#each availableTech as t (t.id)}
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
               class="tcard bcard"
-              class:cant={!t.affordable && !t.researched}
-              class:done={t.researched}
+              class:cant={!t.affordable}
               role="button"
               tabindex={t.disabled ? -1 : 0}
               aria-disabled={t.disabled}
@@ -304,7 +225,26 @@
             >
               <div class="tt">
                 <span class="nm">{t.name}</span>
-                {#if t.researched}<span class="chip">✓</span>{/if}
+                <span class="chip">{fmt(t.cost)}</span>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+      {#if researchedTech.length}
+        <h3 class="cat">Researched</h3>
+        <div class="tgrid done-grid">
+          {#each researchedTech as t (t.id)}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="tcard bcard done"
+              style="border-left-color:var(--insight)"
+              on:mouseenter={(e) => openTip(e, techTooltip(t))}
+              on:mouseleave={hideTooltip}
+            >
+              <div class="tt">
+                <span class="nm">{t.name}</span>
+                <span class="chip">✓</span>
               </div>
             </div>
           {/each}
@@ -319,6 +259,14 @@
     color: var(--faint);
     font-size: 12.5px;
     padding: 8px 0;
+  }
+  .cat {
+    margin: 14px 0 2px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--label);
   }
   .rhead {
     display: flex;
@@ -348,10 +296,7 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
-  .bcard {
-    cursor: help;
-  }
-  /* Build cards ARE the button: click to build. Cost + description are in the tooltip. */
+  /* Research cards ARE the action: click to research. Details live in the tooltip. */
   .bcard[role='button'] {
     cursor: pointer;
     transition: border-color 0.12s, transform 0.05s;
@@ -366,88 +311,21 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
-  /* Can't afford → red name (the affordability signal); maxed → dimmed. Both un-clickable. */
+  /* Can't afford → red name; researched → dimmed. */
   .bcard.cant .nm {
     color: var(--life);
   }
-  .bcard.cant,
-  .bcard.maxed {
+  .bcard.cant {
     cursor: not-allowed;
-  }
-  .bcard.maxed {
-    opacity: 0.55;
   }
   .bcard.done {
     opacity: 0.7;
+    cursor: help;
   }
   @media (prefers-reduced-motion: reduce) {
     .bcard[role='button'] {
       transition: none;
     }
-  }
-  .chip.construct {
-    color: var(--mana);
-    border-color: var(--mana);
-  }
-  /* Converter toggle inside a build card — its own controls, not the build click. */
-  .conv {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
-    margin-top: 8px;
-    cursor: default;
-  }
-  .convrow {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-  .convtot {
-    color: var(--label);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    text-align: right;
-  }
-  .convlbl {
-    color: var(--dim);
-    font-size: 12px;
-    margin-right: auto;
-  }
-  .convn {
-    color: var(--dim);
-    font-variant-numeric: tabular-nums;
-    font-size: 12px;
-    min-width: 56px;
-    text-align: center;
-  }
-  /* Jobs tab: assignment list on the left, Government scaffold on the right.
-     Stacks to one column on narrow widths (matches the app's 860px feel). */
-  .jobscols {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 16px;
-    align-items: start;
-  }
-  @media (max-width: 720px) {
-    .jobscols {
-      grid-template-columns: 1fr;
-    }
-  }
-  .jobscol {
-    min-width: 0;
-  }
-  .govcard {
-    margin-top: 0;
-  }
-  .govcard h2 {
-    margin-bottom: 6px;
-  }
-  .govnote {
-    color: var(--faint);
-    font-size: 12.5px;
   }
   /* Next-settler progress — a prominent, always-present Population readout at the top of
      the settlement tab. */
@@ -458,6 +336,7 @@
     border-left: 3px solid var(--accent);
     border-radius: 8px;
     background: var(--card);
+    cursor: help;
   }
   .growth.paused {
     border-left-color: var(--faint);
@@ -541,15 +420,19 @@
   .popbar strong.bad {
     color: var(--life);
   }
+  .popbar .hap {
+    cursor: help;
+  }
   .starve {
     color: var(--life);
     font-weight: 600;
   }
-  /* Job rows */
+  /* Job rows — full width now (the Government stub no longer takes half the pane). */
   .jobs {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-width: 560px;
   }
   .jrow {
     display: flex;

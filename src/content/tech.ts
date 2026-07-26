@@ -90,7 +90,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'stone-axe',
     name: 'Stone Axe',
-    blurb: 'A knapped hand-axe for felling. Woodcutters produce +25%.',
+    blurb: 'A knapped edge for felling. The trees stop winning.',
     cost: 300,
     resourceCost: { stone: 10 },
     unlocks: ['+25% Woodcutter output'],
@@ -98,7 +98,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'stone-hoe',
     name: 'Stone Hoe',
-    blurb: 'A stone-bladed hoe to work the soil. Farmers produce +25%.',
+    blurb: 'A stone blade for the soil. The soil comes around.',
     cost: 300,
     resourceCost: { stone: 10 },
     unlocks: ['+25% Farmer output'],
@@ -106,7 +106,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'stone-pick',
     name: 'Stone Pick',
-    blurb: 'A hafted stone pick for breaking rock. Stonecutters produce +25%.',
+    blurb: 'A hafted pick for breaking rock, and the patience to use it.',
     cost: 300,
     resourceCost: { stone: 10 },
     unlocks: ['+25% Stonecutter output'],
@@ -114,21 +114,21 @@ export const TECHS: TechDef[] = [
   {
     id: 'archery',
     name: 'Archery',
-    blurb: 'Bow and arrow — the hunt begins. Unlocks the Hunter’s Lodge (food + furs).',
+    blurb: 'Bow and arrow — the hunt begins.',
     cost: 350,
     unlocks: ["Hunter's Lodge (building)"],
   },
   {
     id: 'pottery',
     name: 'Pottery',
-    blurb: 'Fired clay to store the harvest. Unlocks the Granary (raises the Food cap).',
+    blurb: 'Fired clay to store the harvest. The mice file a complaint.',
     cost: 300,
     unlocks: ['Granary (building)'],
   },
   {
     id: 'agriculture',
     name: 'Agriculture',
-    blurb: 'Tend the land instead of scavenging it. Farmers produce +50% food.',
+    blurb: 'Tend the land instead of scavenging it. The land, eventually, agrees.',
     cost: 500,
     requires: ['stone-hoe'],
     unlocks: ['+50% Farmer output'],
@@ -136,7 +136,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'naturalism',
     name: 'Naturalism',
-    blurb: 'Read the living land and tend it as one. Unlocks the Sacred Grove — a haven whose deep tending is one path to magic.',
+    blurb: 'Read the living land and tend it as one. Something may notice the kindness.',
     cost: 800,
     requires: ['agriculture'],
     unlocks: ['Sacred Grove (building)'],
@@ -145,27 +145,27 @@ export const TECHS: TechDef[] = [
   {
     id: 'druidry',
     name: 'Druidry',
-    blurb: 'Draw mana from root, leaf, and turning season. Unlocks the Ley Grove (passive mana from the living land). Requires magic to have been discovered.',
+    blurb: 'Draw mana from root, leaf, and turning season.',
     cost: 1500,
     resourceCost: { mana: 120 },
     requires: ['naturalism', 'mysticism'],
     requiresFlag: 'magicDiscovered',
-    unlocks: ['Ley Grove (building)'],
+    unlocks: ['Ley Grove (construct)'],
   },
   {
     id: 'seasonal-rites',
     name: 'Seasonal Rites',
-    blurb: 'Bind the calendar to the craft — solstice and harvest rites. Unlocks the Standing Stones (mana, food, and happiness).',
+    blurb: 'Bind the calendar to the craft — solstice and harvest rites.',
     cost: 2800,
     resourceCost: { mana: 150, culture: 100 },
     requires: ['druidry', 'calendar'],
     requiresFlag: 'magicDiscovered',
-    unlocks: ['Standing Stones (building)'],
+    unlocks: ['Standing Stones (construct)'],
   },
   {
     id: 'masonry',
     name: 'Masonry',
-    blurb: 'Shape stone at scale. Unlocks the Quarry and the Stonecutter job.',
+    blurb: 'Shape stone at scale. Walls follow; so do arguments about walls.',
     cost: 550,
     requires: ['stone-pick'],
     unlocks: ['Quarry (building)', 'Stonecutter (job)'],
@@ -173,24 +173,24 @@ export const TECHS: TechDef[] = [
   {
     id: 'writing',
     name: 'Writing',
-    blurb: 'Set knowledge down in ink. Unlocks the Library and the Academy (Scholar slots + passive research + research cap).',
+    blurb: 'Set knowledge down in ink, where it cannot wander off.',
     cost: 500,
     requires: ['pottery'],
-    unlocks: ['Library (building)'],
+    unlocks: ['Library (building)', 'Academy (building)'],
   },
   {
     id: 'bookbinding',
     name: 'Bookbinding',
-    blurb: 'Cure hides into parchment and bind books. Unlocks the Tannery (furs → parchment) and the Scriptorium (parchment + research → Books). HELD books raise research gained per settler.',
+    blurb: 'Cure hides into parchment and bind the pages. Held Books sharpen every settler’s curiosity.',
     cost: 900,
     resourceCost: { culture: 50 }, // a literate culture underwrites the craft
     requires: ['writing'],
-    unlocks: ['Tannery + Scriptorium (buildings)', 'Parchment & Books (goods)', 'Scribe (job)'],
+    unlocks: ['Tannery (building)', 'Scriptorium (building)', 'Parchment (good)', 'Books (good)', 'Scribe (job)'],
   },
   {
     id: 'compendia',
     name: 'Compendia',
-    blurb: 'Compile great reference works. Unlocks the Archive (books + research → Compendiums). HELD compendiums raise the research cap and yield a little mana per settler.',
+    blurb: 'Compile the great reference works. Held Compendiums raise the research ceiling — and stir a little mana.',
     cost: 2000,
     resourceCost: { culture: 150 },
     requires: ['bookbinding'],
@@ -199,7 +199,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'mathematics',
     name: 'Mathematics',
-    blurb: 'Number, proof, and measure. Unlocks the Observatory — a science building (research cap + Scholar + passive research).',
+    blurb: 'Number, proof, and measure. The heavens are next.',
     cost: 700,
     requires: ['writing', 'masonry'], // a classic combination tech
     unlocks: ['Observatory (building)'],
@@ -207,7 +207,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'construction',
     name: 'Construction',
-    blurb: 'Arches, aqueducts, and load-bearing works. Unlocks the Aqueduct (more housing + happiness).',
+    blurb: 'Arches and aqueducts — stone that holds itself up.',
     cost: 800,
     resourceCost: { stone: 50 },
     requires: ['masonry', 'the-wheel'],
@@ -216,7 +216,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'philosophy',
     name: 'Philosophy',
-    blurb: 'Reasoned inquiry and civic thought. Unlocks the Forum — Culture, happiness, and Bard slots.',
+    blurb: 'Reasoned inquiry and civic thought. Everyone has opinions now.',
     cost: 1000,
     resourceCost: { culture: 100 },
     requires: ['writing', 'the-arts'],
@@ -225,7 +225,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'mysticism',
     name: 'Mysticism',
-    blurb: 'Rites, omens, and the unseen. Unlocks the Shrine (Culture + happiness) and opens the road to nature magic.',
+    blurb: 'Rites, omens, and the unseen. The road to nature magic opens.',
     cost: 700,
     resourceCost: { culture: 80 },
     requires: ['the-arts'],
@@ -234,7 +234,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'calendar',
     name: 'Calendar',
-    blurb: 'Track the turning of the seasons. Reveals the current day, season, and year.',
+    blurb: 'Track the turning of the seasons. Time was passing anyway; now it has a name.',
     cost: 450,
     requires: ['pottery'],
     unlocks: ['The date (day · season · year)'],
@@ -242,7 +242,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'the-arts',
     name: 'The Arts',
-    blurb: 'Song, story, and spectacle. Unlocks the Amphitheater — Culture (Bards) and happiness.',
+    blurb: 'Song, story, and spectacle. The settlement learns to applaud.',
     cost: 550,
     requires: ['pottery'],
     unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Bard (job)'],
@@ -252,7 +252,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'mining',
     name: 'Mining',
-    blurb: 'Sink shafts for ore. Unlocks the Mine (Miner job + passive iron).',
+    blurb: 'Sink shafts for ore. Down is the new frontier.',
     cost: 900,
     requires: ['masonry'],
     unlocks: ['Mine (building)', 'Iron (resource)'],
@@ -260,7 +260,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'coal-mining',
     name: 'Coal Mining',
-    blurb: 'Dig coal seams and char wood for fuel. Unlocks the Coal Mine (Coal Miner job) and the Charcoal Ground (burns wood into coal).',
+    blurb: 'Dig the black seams and char the surplus wood. Fuel, either way.',
     cost: 1400,
     requires: ['mining'],
     unlocks: ['Coal Mine (building)', 'Charcoal Ground (building)', 'Coal (resource)'],
@@ -268,7 +268,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'the-wheel',
     name: 'The Wheel',
-    blurb: 'Carts, gears, and leverage. Unlocks the Workshop (boosts all worker output).',
+    blurb: 'Carts, gears, and leverage. Suddenly everything rolls.',
     cost: 750,
     requires: ['pottery'],
     unlocks: ['Workshop (building)'],
@@ -278,7 +278,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'iron-working',
     name: 'Iron Working',
-    blurb: 'Forge iron tools — the finest yet. Consumes iron ore. The one global +50% to every gather job; unlocks the Forge.',
+    blurb: 'Iron takes an edge that stone never dreamt of. Every trade feels it.',
     cost: 1800,
     resourceCost: { iron: 25 }, // iron ore is smelted into the new tools
     requires: ['mining'], // Bronze Working retired — Iron follows Mining directly
@@ -287,7 +287,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'crystallurgy',
     name: 'Crystallurgy',
-    blurb: 'Learn to read the glimmer in the deep rock. Mines also trickle Mana Crystals (+0.05/s) — the iron-age path to discovering magic.',
+    blurb: 'Learn to read the glimmer in the deep rock — one path toward magic.',
     cost: 1300,
     requires: ['mining'],
     unlocks: ['Mana Crystals from Mines', 'A path toward magic'],
@@ -296,7 +296,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'enchantment',
     name: 'Enchantment',
-    blurb: 'Bind mana into crystal and metal. Unlocks the Golem Works — a construct that mines iron + stone with no settlers, on mana upkeep.',
+    blurb: 'Bind mana into crystal and metal, and set it to work.',
     cost: 2200,
     resourceCost: { mana: 120, manaCrystals: 30 },
     requires: ['crystallurgy'],
@@ -306,7 +306,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'runecraft',
     name: 'Runecraft',
-    blurb: 'Inscribe runes that work metal by themselves. Unlocks the Arcane Foundry — steel from raw mana, no coal or iron.',
+    blurb: 'Inscribe runes that work metal by themselves.',
     cost: 4200,
     resourceCost: { mana: 250, manaCrystals: 60 },
     requires: ['enchantment'],
@@ -316,7 +316,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'steelmaking',
     name: 'Steelmaking',
-    blurb: 'Refine iron and timber into steel. Unlocks the Steelworks (Smelter job) — a converter that turns wood + iron into steel.',
+    blurb: 'Refine iron into steel — stronger than the sum of its fires.',
     cost: 3000,
     requires: ['iron-working'],
     unlocks: ['Steelworks (building)', 'Steel (resource)'],
@@ -326,7 +326,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'steel-axe',
     name: 'Steel Axe',
-    blurb: 'A keen steel axe head. Woodcutters produce +65% (atop iron). Consumes steel.',
+    blurb: 'A keen steel axe head. The forest learns respect.',
     cost: 3500,
     resourceCost: { steel: 40 },
     requires: ['steelmaking'],
@@ -335,7 +335,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'steel-hoe',
     name: 'Steel Hoe',
-    blurb: 'A steel-bladed hoe. Farmers produce +65% (atop iron). Consumes steel.',
+    blurb: 'A steel-bladed hoe, sharper than the soil deserves.',
     cost: 3500,
     resourceCost: { steel: 40 },
     requires: ['steelmaking'],
@@ -344,7 +344,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'steel-pick',
     name: 'Steel Pick',
-    blurb: 'A tempered steel pick. Stonecutters produce +65% (atop iron). Consumes steel.',
+    blurb: 'A tempered steel pick. The rock loses the argument.',
     cost: 3500,
     resourceCost: { steel: 40 },
     requires: ['steelmaking'],
@@ -353,7 +353,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'sanitation',
     name: 'Sanitation',
-    blurb: 'Clean water and sewers for a crowded settlement. Unlocks the Sewers — a big lift to housing and happiness.',
+    blurb: 'Clean water in, everything else out. The settlement exhales.',
     cost: 4000,
     resourceCost: { culture: 200 },
     requires: ['construction', 'compendia'],
@@ -364,7 +364,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'steam-power',
     name: 'Steam Power',
-    blurb: 'Harness the boiler and piston. Unlocks the Toolworks (Machinist job) — iron + coal into Tools, the first industrial good.',
+    blurb: 'Harness the boiler and piston. The first industrial good follows.',
     cost: 4000,
     requires: ['steelmaking'],
     unlocks: ['Toolworks (building)', 'Tools (good)', 'Machinist (job)'],
@@ -372,7 +372,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'precision-engineering',
     name: 'Precision Engineering',
-    blurb: 'Machined parts to fine tolerances. Consumes Tools. Unlocks the Engine Works (Engineer job) — steel + coal into Engines.',
+    blurb: 'Machined parts to tolerances the eye cannot argue with.',
     cost: 5500,
     resourceCost: { tools: 50 }, // research sink: precision work spends tools
     requires: ['steam-power'],
@@ -381,7 +381,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'industrialization',
     name: 'Industrialization',
-    blurb: 'The factory system arrives. Consumes Engines. Unlocks the Factory (consumer Furniture) and the Steam Works (mechanization — spend goods for global output).',
+    blurb: 'The factory system arrives. The settlement will never be quiet again.',
     cost: 7500,
     resourceCost: { engines: 40 }, // research sink: retooling the economy spends engines
     requires: ['precision-engineering'],

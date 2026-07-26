@@ -44,52 +44,49 @@ export type MundaneResourceId =
   | 'furs'
   | 'manaCrystals';
 
+/** Display group for the resource column — each renders under its own heading, in
+ *  RESOURCES order: raw Materials, refined Goods, Knowledge (chain goods + currencies),
+ *  and Magic. Purely presentational; the cap machinery keys off MundaneResourceId. */
+export type ResourceGroup = 'materials' | 'goods' | 'knowledge' | 'magic';
+
 export interface ResourceDef {
   id: ResourceId;
   label: string;
   glyph: string; // retained in data; the UI no longer renders resource icons
   tier: 'mundane' | 'knowledge' | 'magic';
+  group: ResourceGroup;
 }
 
 export const RESOURCES: ResourceDef[] = [
-  { id: 'wood', label: 'Wood', glyph: '🪵', tier: 'mundane' },
-  { id: 'food', label: 'Food', glyph: '🍞', tier: 'mundane' },
-  { id: 'stone', label: 'Stone', glyph: '🪨', tier: 'mundane' },
-  // Iron — ore dug from the Mine (Miner job + the Mine's passive). Capped like the other
-  // mundane materials (base 200, raised by the same `cap` effect). Stone comes from the
-  // Quarry; the Mine is the iron source. Hidden in the UI until the first ore is mined.
-  { id: 'iron', label: 'Iron', glyph: '🔩', tier: 'mundane' },
-  // Coal — fuel dug at the Coal Mine (Coal Miner + passive) or burned from wood at a Charcoal
-  // Ground. Capped like the other mundane materials; hidden until the first is produced.
-  { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane' },
-  // Steel — refined at the Steelworks, which converts wood + iron into it (needs Smelters).
-  // Capped like the other mundane materials; hidden until the first is produced.
-  { id: 'steel', label: 'Steel', glyph: '⚙️', tier: 'mundane' },
-  // ---- Industrial goods (Age of Steam). Each capped like the mundane materials; hidden until produced. ----
-  // Tools — forged at the Toolworks (iron + coal). Feed factories, construction, and research.
-  { id: 'tools', label: 'Tools', glyph: '🛠️', tier: 'mundane' },
-  // Engines — built at the Engine Works (steel + coal). Feed mechanization, construction, and research.
-  { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane' },
-  // Furniture — a consumer/luxury good from the Factory (wood + tools). Held furniture raises happiness.
-  { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane' },
-  // ---- Knowledge chain (furs → parchment → books → compendiums). Each capped like a material; hidden until produced. ----
-  // Parchment — cured from furs at the Tannery. The raw stock for books.
-  { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane' },
-  // Books — bound at the Scriptorium (parchment + research). HELD books raise research gained per settler.
-  { id: 'books', label: 'Books', glyph: '📖', tier: 'mundane' },
-  // Compendiums — compiled at the Archive (books + research). HELD compendiums raise the research cap
-  // AND yield a little mana per settler.
-  { id: 'compendiums', label: 'Compendiums', glyph: '📚', tier: 'mundane' },
-  // Furs — a luxury good hunters bring in. Capped like the mundane materials and listed
-  // with the main resources (tier 'mundane' groups it there, not under Magic).
-  { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane' },
-  // Mana Crystals — a proto-magic material the Mines yield as a slow trickle. Capped like the
-  // mundane materials (base 200, raised by Storehouses) so it rides the existing cap machinery.
+  // ---- MATERIALS — raw stock gathered, grown, hunted, or dug. ----
+  { id: 'wood', label: 'Wood', glyph: '🪵', tier: 'mundane', group: 'materials' },
+  { id: 'food', label: 'Food', glyph: '🍞', tier: 'mundane', group: 'materials' },
+  { id: 'stone', label: 'Stone', glyph: '🪨', tier: 'mundane', group: 'materials' },
+  // Iron — ore dug from the Mine (Miner job + the Mine's passive). Hidden until first mined.
+  { id: 'iron', label: 'Iron', glyph: '🔩', tier: 'mundane', group: 'materials' },
+  // Coal — fuel dug at the Coal Mine or charred from wood at a Charcoal Ground.
+  { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane', group: 'materials' },
+  // Furs — a luxury good hunters bring in; held furs raise happiness, or feed the Tannery.
+  { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'materials' },
+  // ---- GOODS — refined and manufactured (Steelworks + the Age of Steam chains). ----
+  { id: 'steel', label: 'Steel', glyph: '⚙️', tier: 'mundane', group: 'goods' },
+  { id: 'tools', label: 'Tools', glyph: '🛠️', tier: 'mundane', group: 'goods' },
+  { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane', group: 'goods' },
+  // Furniture — a consumer luxury from the Factory; held furniture raises happiness.
+  { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane', group: 'goods' },
+  // ---- KNOWLEDGE — the chain goods (furs → parchment → books → compendiums) + currencies. ----
+  { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane', group: 'knowledge' },
+  // Held BOOKS raise research gained per settler.
+  { id: 'books', label: 'Books', glyph: '📖', tier: 'mundane', group: 'knowledge' },
+  // Held COMPENDIUMS raise the research cap and yield a little mana per settler.
+  { id: 'compendiums', label: 'Compendiums', glyph: '📚', tier: 'mundane', group: 'knowledge' },
+  { id: 'research', label: 'Research', glyph: '📜', tier: 'knowledge', group: 'knowledge' },
+  { id: 'culture', label: 'Culture', glyph: '🎭', tier: 'knowledge', group: 'knowledge' },
+  // ---- MAGIC — the proto-material and the currency itself. ----
+  // Mana Crystals — a proto-magic material the Mines yield once Crystallurgy is known.
   // Reaching a threshold is one of the three paths that discovers magic (systems/magic.ts).
-  { id: 'manaCrystals', label: 'Mana Crystals', glyph: '💎', tier: 'mundane' },
-  { id: 'research', label: 'Research', glyph: '📜', tier: 'knowledge' },
-  { id: 'culture', label: 'Culture', glyph: '🎭', tier: 'knowledge' },
-  { id: 'mana', label: 'Mana', glyph: '✦', tier: 'magic' },
+  { id: 'manaCrystals', label: 'Mana Crystals', glyph: '💎', tier: 'mundane', group: 'magic' },
+  { id: 'mana', label: 'Mana', glyph: '✦', tier: 'magic', group: 'magic' },
 ];
 
 /** Every resource id, in display order. */

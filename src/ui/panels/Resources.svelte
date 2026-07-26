@@ -1,6 +1,7 @@
 <script lang="ts">
   import { game, openTip, hideTooltip, resourceTooltip } from '../stores';
   import type { ResourceView } from '../stores';
+  import Gather from './Gather.svelte';
   import { fmt, fmtRate } from '../format';
 
   // amber when at/above 90% of a finite cap
@@ -8,47 +9,49 @@
     return r.capped && r.amount >= r.cap * 0.9;
   }
 
-  // Main resources (mundane materials + Research) always in the primary list; Mana is the
-  // one "magic" currency, shown under its own heading once revealed.
+  // The column renders one section per resource GROUP (Materials / Goods / Knowledge /
+  // Magic), each under its own heading; sections with nothing revealed stay hidden.
+  const GROUPS: { id: string; label: string }[] = [
+    { id: 'materials', label: 'Materials' },
+    { id: 'goods', label: 'Goods' },
+    { id: 'knowledge', label: 'Knowledge' },
+    { id: 'magic', label: 'Magic' },
+  ];
   $: shown = $game.resources.filter((r) => r.show);
-  $: main = shown.filter((r) => !r.magic);
-  $: magic = shown.filter((r) => r.magic);
+  $: sections = GROUPS
+    .map((g) => ({ ...g, rows: shown.filter((r) => r.group === g.id) }))
+    .filter((g) => g.rows.length > 0);
 </script>
 
 <div class="left">
-  <h2>Resources</h2>
-  {#each main as r (r.id)}
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="row" on:mouseenter={(e) => openTip(e, resourceTooltip(r))} on:mouseleave={hideTooltip}>
-      <span class="nm">{r.label}</span>
-      <span>
-        <span class="vl" class:amber={nearCap(r)}>
-          {fmt(r.amount)}{#if r.capped}<span class="lockt"> / {fmt(r.cap)}</span>{/if}
-        </span>
-        <span class="rt">{fmtRate(r.rate)}</span>
-      </span>
-    </div>
-  {/each}
-
-  {#if magic.length}
-    <h2 class="mt">Magic</h2>
-    {#each magic as r (r.id)}
+  {#each sections as g, i (g.id)}
+    <h2 class:mt={i > 0}>{g.label}</h2>
+    {#each g.rows as r (r.id)}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div class="row" on:mouseenter={(e) => openTip(e, resourceTooltip(r))} on:mouseleave={hideTooltip}>
-        <span class="nm mana">{r.label}</span>
-        <span>
-          <span class="vl">
+        <span class="nm" class:mana={r.magic}>{r.label}</span>
+        <span class="val">
+          <span class="vl" class:amber={nearCap(r)}>
             {fmt(r.amount)}{#if r.capped}<span class="lockt"> / {fmt(r.cap)}</span>{/if}
           </span>
           <span class="rt">{fmtRate(r.rate)}</span>
         </span>
       </div>
     {/each}
-  {/if}
+  {/each}
+
+  <!-- Hand-gathering lives at the foot of the column, next to the numbers it changes. -->
+  <Gather />
 </div>
 
 <style>
+  /* Grid row: name | value+rate. The name ellipsizes instead of pushing the value
+     off the edge, so a narrow column clips the LABEL, never the number. */
   .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: baseline;
     cursor: help;
     padding: 2px 6px;
     margin: 0 -6px; /* bleed the highlight to the column edges */
@@ -57,6 +60,14 @@
   }
   .row:hover {
     background: var(--hover);
+  }
+  .row .nm {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .val {
+    white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
     .row {

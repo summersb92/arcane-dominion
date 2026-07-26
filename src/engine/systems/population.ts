@@ -14,6 +14,13 @@ import { idleSettlers, removeSettler } from './jobs';
 
 const EPS = 1e-9;
 
+/** Once-per-run chronicle beats for milestone populations (keyed by the new total). */
+const POP_MILESTONES: Record<number, string> = {
+  10: 'Ten settlers. The camp has started calling itself a village.',
+  25: "Twenty-five souls. Someone proposes a committee. It's that kind of place now.",
+  50: 'Fifty settlers, and the founders no longer know every face.',
+};
+
 /** Move `v` toward 0 by at most `dt`, without overshooting. */
 function decayToZero(v: number, dt: number): number {
   if (v > 0) return Math.max(0, v - dt);
@@ -52,7 +59,13 @@ export function runPopulation(state: GameState, dt: number): void {
       run.growthProgress -= POPULATION.growthIntervalSec;
       const wasEmpty = run.population.total === 0;
       run.population.total += 1;
-      logEvent(state, wasEmpty ? 'The first settler joins the camp.' : 'A new settler arrives.');
+      // Milestone populations get a story beat; ordinary arrivals keep the plain line.
+      const milestone = POP_MILESTONES[run.population.total];
+      if (wasEmpty) logEvent(state, 'The first settler joins the camp.');
+      else if (milestone && run.flags[`popBeat${run.population.total}`] !== true) {
+        run.flags[`popBeat${run.population.total}`] = true;
+        logEvent(state, milestone, 'ev');
+      } else logEvent(state, 'A new settler arrives.');
     }
   } else {
     run.growthProgress = decayToZero(run.growthProgress, dt);

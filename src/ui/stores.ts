@@ -9,12 +9,13 @@ import { newGame, type GameState } from '../engine/state';
 import {
   RESOURCES,
   RESOURCE_BY_ID,
+  type ResourceGroup,
   type ResourceId,
 } from '../content/resources';
 import { JOB_BY_ID, type JobId } from '../content/jobs';
-import type { BuildingId } from '../content/buildings';
-import type { TechId } from '../content/tech';
-import { productionRates, foodBalance, resourceBreakdown } from '../engine/systems/production';
+import { BUILDING_BY_ID, type BuildingCategory, type BuildingEffect, type BuildingId } from '../content/buildings';
+import { TECH_BY_ID, type TechId } from '../content/tech';
+import { productionRates, foodBalance, resourceBreakdown, jobEffectiveProduces } from '../engine/systems/production';
 import { growthStatus, type GrowthInfo } from '../engine/systems/population';
 import { happiness, type HappinessInfo } from '../engine/systems/happiness';
 import { calendar, type CalendarInfo } from '../engine/systems/calendar';
@@ -36,7 +37,7 @@ import { actionsView, doGather as engineDoGather } from '../engine/systems/actio
 import type { OfflineSummary } from '../engine/offline';
 import { serialize, LOCALSTORAGE_KEY } from '../engine/save';
 import type { Notation } from '../engine/format';
-import { setNotation } from './format';
+import { setNotation, fmt } from './format';
 import { applyFont } from './font';
 
 const EPS = 1e-9;
@@ -52,6 +53,7 @@ export interface ResourceView {
   capped: boolean; // this resource has a finite storage cap (mundane)
   atCap: boolean; // amount is at/over the cap → gains are wasted
   magic: boolean;
+  group: ResourceGroup; // display section in the resource column
   show: boolean; // progressive reveal — hide magic rows until discovered
 }
 export interface PopulationView {
@@ -96,9 +98,11 @@ export interface BuildingRowView {
   affordable: boolean;
   maxed: boolean;
   construct: boolean;
+  category: BuildingCategory; // Build-tab section this card files under
   converter: boolean; // has ≥1 convert effect → per-recipe toggle
   active: number; // total active copies (converters); else = count
-  recipes: { label: string; active: number }[]; // per-recipe running counts (converters; else [])
+  /** Per-recipe running counts + a derived rate hint for the toggle row's tooltip. */
+  recipes: { label: string; active: number; hint: string }[];
   disabled: boolean; // build button disabled
   reason: string; // why disabled ("maxed" / "can't afford"), else ''
 }
@@ -139,7 +143,7 @@ export interface UiState {
   buildings: BuildingRowView[];
   tech: TechRowView[];
   actions: ActionRowView[];
-  tabs: { id: string; label: string; visible: boolean; locked: boolean }[];
+  tabs: { id: string; label: string; visible: boolean; locked: boolean; badge?: number }[];
   chronicle: ChronicleView[];
   calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
 }
@@ -175,7 +179,9 @@ export interface TooltipState {
 }
 
 // ---- display helpers ----
-const numStr = (x: number): string => String(+x.toFixed(2));
+// All tooltip numbers route through the notation-aware fmt/fmtRate so tooltips agree
+// with the resource rows (suffix/full/scientific setting included).
+const numStr = (x: number): string => fmt(+x.toFixed(2));
 const signStr = (x: number): string => (x < 0 ? '-' : '+');
 function signedRate(x: number): string {
   return `${signStr(x)}${numStr(Math.abs(x))}/s`;
@@ -212,12 +218,79 @@ function costText(cost: Partial<Record<ResourceId, number>>): string {
     .map(([id, amt]) => `${RESOURCE_BY_ID[id].label} ${numStr(amt)}`)
     .join(' · ');
 }
-/** A job's per-worker gross output as "Wood +0.5/s" — named, no icons. */
-function jobProduceText(id: JobId): string {
-  const def = JOB_BY_ID[id];
-  return (Object.entries(def.produces) as [ResourceId, number][])
+/** A job's EFFECTIVE per-worker output as "Wood +0.63/s" — after tool techs and the
+ *  Workshop/Forge/Steam Works multipliers, so the tooltip matches real production. */
+function jobProduceText(st: GameState, id: JobId): string {
+  return (Object.entries(jobEffectiveProduces(st, id)) as [ResourceId, number][])
     .map(([res, per]) => `${RESOURCE_BY_ID[res].label} +${numStr(per)}/s`)
     .join(' · ');
+}
+
+/** A converter recipe's per-copy trade as "-0.3 Wood/s, -0.3 Iron/s → +0.2 Steel/s". */
+function recipeText(
+  consume: Partial<Record<ResourceId, number>>,
+  produce: Partial<Record<ResourceId, number>>,
+  requiresWorker?: JobId,
+): string {
+  const side = (m: Partial<Record<ResourceId, number>>, sign: string): string =>
+    (Object.entries(m) as [ResourceId, number][])
+      .map(([res, per]) => `${sign}${numStr(per)} ${RESOURCE_BY_ID[res].label}/s`)
+      .join(', ');
+  const inputs = side(consume, '-');
+  const outputs = side(produce, '+');
+  const trade = outputs ? `${inputs} → ${outputs}` : `${inputs} (fuel)`;
+  const worker = requiresWorker ? ` · needs a ${JOB_BY_ID[requiresWorker].name}` : '';
+  return `${trade} per active copy${worker}`;
+}
+
+/** Derive the tooltip "Effects" lines for a building from its data — the single source
+ *  of truth, so blurbs stay flavor-only and numbers can never drift from the engine. */
+function effectLines(id: BuildingId): TooltipLine[] {
+  const def = BUILDING_BY_ID[id];
+  if (!def) return [];
+  const lines: TooltipLine[] = [];
+  const push = (e: BuildingEffect): void => {
+    switch (e.kind) {
+      case 'popCap':
+        lines.push({ text: `+${e.amount} housing`, cls: 'ok' });
+        break;
+      case 'cap':
+        lines.push({ text: `+${e.amount} to every material cap` });
+        break;
+      case 'capExceptFood':
+        lines.push({ text: `+${e.amount} to every material cap except Food` });
+        break;
+      case 'foodCap':
+        lines.push({ text: `+${e.amount} Food cap` });
+        break;
+      case 'jobCapacity':
+        lines.push({ text: `+${e.slots} ${JOB_BY_ID[e.job].name} slot${e.slots > 1 ? 's' : ''}`, cls: 'ok' });
+        break;
+      case 'jobOutputMult':
+        lines.push({ text: `+${Math.round(e.amount * 100)}% to every worker's output`, cls: 'ok' });
+        break;
+      case 'produce': {
+        const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
+        lines.push({ text: `+${numStr(e.perSec)} ${RESOURCE_BY_ID[e.resource].label}/s${gate}`, cls: 'ok' });
+        break;
+      }
+      case 'convert':
+        lines.push({ text: `${e.label ? `${e.label}: ` : ''}${recipeText(e.consume, e.produce, e.requiresWorker)}` });
+        break;
+      case 'manaUpkeep':
+        lines.push({ text: `-${numStr(e.perSec)} Mana/s upkeep`, cls: 'life' });
+        break;
+      case 'researchCap':
+        lines.push({ text: `+${e.amount} Research cap`, cls: 'ok' });
+        break;
+      case 'happiness':
+        lines.push({ text: `+${e.amount} happiness`, cls: 'ok' });
+        break;
+    }
+  };
+  for (const e of def.effects) push(e);
+  if ((def.costGrowth ?? 1) > 1) lines.push({ text: 'Cost rises with each copy' });
+  return lines;
 }
 function mmss(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
@@ -230,8 +303,8 @@ export function toView(state: GameState): UiState {
   const run = state.run;
   const rates = productionRates(state);
 
-  // Progressive reveal: wood/food/stone always; mana once Awakening lands (or held);
-  // research once a Scholar's Study exists (or held / producing).
+  // Progressive reveal: wood/food/stone always; everything else appears once it is held,
+  // produced, or (mana) once magic is discovered.
   const resources: ResourceView[] = RESOURCES.map((def) => {
     const amount = run.resources[def.id];
     // "magic" here is a DISPLAY group (only Mana). Research is uncapped like magic but
@@ -286,6 +359,7 @@ export function toView(state: GameState): UiState {
       capped,
       atCap,
       magic,
+      group: def.group,
       show,
     };
   });
@@ -298,7 +372,7 @@ export function toView(state: GameState): UiState {
     blurb: JOB_BY_ID[j.id].blurb,
     assigned: j.assigned,
     capacity: j.capacity,
-    produceText: jobProduceText(j.id),
+    produceText: jobProduceText(state, j.id),
     canAssign: idle > 0 && j.assigned < j.capacity,
     canUnassign: j.assigned > 0,
   }));
@@ -316,9 +390,14 @@ export function toView(state: GameState): UiState {
       affordable: b.affordable,
       maxed: b.maxed,
       construct: b.construct,
+      category: b.category,
       converter: b.converter,
       active: b.active,
-      recipes: b.recipes,
+      recipes: b.recipes.map((r) => ({
+        label: r.label,
+        active: r.active,
+        hint: recipeText(r.consume, r.produce, r.requiresWorker),
+      })),
       disabled,
       reason,
     };
@@ -360,7 +439,7 @@ export function toView(state: GameState): UiState {
       resLabel: meta.label,
       amount: a.amount,
       glyph: meta.glyph,
-      gainText: `+${numStr(a.amount)} ${meta.glyph}`,
+      gainText: `+${numStr(a.amount)} ${meta.label}`,
       available: a.available,
       retired: a.retired,
     };
@@ -383,10 +462,11 @@ export function toView(state: GameState): UiState {
     tech,
     actions,
     tabs: [
-      // Gather moved to the right rail (3 buttons); Build is the main view.
+      // Gather lives in the side rail (3 buttons); Build is the main view.
       { id: 'build', label: 'Build', visible: true, locked: false },
-      // The settlement tab is named for its size and grows with the population.
-      { id: 'jobs', label: settlementName(run.population.total), visible: true, locked: false },
+      // The settlement tab is named for its size and grows with the population. The badge
+      // shows IDLE settlers, so you know when to visit without leaving Build/Research.
+      { id: 'jobs', label: settlementName(run.population.total), visible: true, locked: false, badge: idle > 0 ? idle : undefined },
       { id: 'research', label: 'Research', visible: true, locked: false },
     ],
     chronicle: run.chronicle
@@ -462,12 +542,15 @@ export function actionTooltip(a: ActionRowView): TooltipContent {
   };
 }
 
-/** Building card tooltip: cost, count, effect blurb. */
+/** Building card tooltip: cost, count, and DERIVED effect lines (from the data, so the
+ *  numbers can never drift from the engine). The blurb stays pure flavor. */
 export function buildingTooltip(b: BuildingRowView): TooltipContent {
   const sections: TooltipSection[] = [
     { label: 'Cost', lines: [{ text: b.costText || '—', cls: b.affordable ? undefined : 'life' }] },
-    { label: 'Built', lines: [{ text: String(b.count) }] },
   ];
+  const fx = effectLines(b.id);
+  if (fx.length) sections.push({ label: 'Effects', lines: fx });
+  sections.push({ label: 'Built', lines: [{ text: String(b.count) }] });
   const note = b.maxed ? 'Built to its maximum.' : !b.affordable ? "You can't afford this yet." : undefined;
   return {
     title: b.construct ? `${b.name} · construct` : b.name,
@@ -490,7 +573,7 @@ export function jobTooltip(j: JobRowView): TooltipContent {
   };
 }
 
-/** Tech card tooltip: cost, unlocks, blurb. */
+/** Tech card tooltip: cost, unlocks, prerequisites BY NAME when unmet, blurb. */
 export function techTooltip(t: TechRowView): TooltipContent {
   const sections: TooltipSection[] = [
     { label: 'Cost', lines: [{ text: t.costText, cls: t.affordable || t.researched ? undefined : 'life' }] },
@@ -498,8 +581,54 @@ export function techTooltip(t: TechRowView): TooltipContent {
   if (t.unlocks.length) {
     sections.push({ label: 'Unlocks', lines: t.unlocks.map((u) => ({ text: u, cls: 'ok' })) });
   }
+  // Name the prerequisites when they're the blocker, so "needs prerequisites" isn't a riddle.
+  if (!t.researched && !t.available) {
+    const req = TECH_BY_ID[t.id]?.requires ?? [];
+    if (req.length) {
+      sections.push({
+        label: 'Requires',
+        lines: req.map((r) => ({
+          text: TECH_BY_ID[r]?.name ?? r,
+          cls: getState().run.tech.includes(r) ? 'ok' : 'life',
+        })),
+      });
+    }
+  }
   const note = t.researched ? 'Already researched.' : t.reason || undefined;
   return { title: t.name, titleCls: t.researched ? 'ok' : undefined, sections, note, blurb: t.blurb };
+}
+
+/** Happiness readout tooltip — the full signed breakdown, themed (replaces the native title). */
+export function happinessTooltip(h: HappinessInfo): TooltipContent {
+  return {
+    title: 'Happiness',
+    titleCls: h.status === 'content' ? 'ok' : 'life',
+    sections: [
+      {
+        label: 'Breakdown',
+        lines: h.breakdown.map((b) => ({
+          text: `${b.label}  ${b.amount >= 0 ? '+' : ''}${Math.round(b.amount * 10) / 10}`,
+          cls: b.amount >= 0 ? 'ok' : 'life',
+        })),
+      },
+    ],
+    note: h.status === 'unhappy' ? 'Below the growth threshold — the settlement will not grow.' : undefined,
+  };
+}
+
+/** Growth card tooltip — what the bar is filling toward, or why it is paused. */
+export function growthTooltip(g: GrowthInfo): TooltipContent {
+  const why: Record<string, string> = {
+    growing: 'A sustainable food surplus and free housing — a settler is on the way.',
+    starving: 'Food has run out. Settlers will be lost until the balance recovers.',
+    full: 'Housing is full. Build more homes to grow.',
+    unhappy: 'The settlement is unhappy. Raise happiness to resume growth.',
+    stalled: 'Growth needs a food surplus in stock and free housing.',
+  };
+  return {
+    title: 'Population growth',
+    sections: [{ label: 'Status', lines: [{ text: why[g.status] ?? g.status }] }],
+  };
 }
 
 // ---- live state + stores ----
