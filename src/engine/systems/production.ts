@@ -18,6 +18,7 @@ import { effectiveCap } from './caps';
 import { activeRecipes, activeCount, convertEffects, isConverter } from './buildings';
 import { logEvent } from './chronicle';
 import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
+import { magicYieldMult, oppositionFactor } from './education';
 
 const EPS = 1e-9;
 
@@ -120,7 +121,10 @@ function essenceBoost(state: GameState, jobId: string): number {
   if (!res) return 1;
   const held = state.run.resources[res] ?? 0;
   if (held <= 0) return 1;
-  return 1 + Math.min(PRISMATIC.essenceBoostMax, held * PRISMATIC.essenceBoostPerUnit);
+  const raw = Math.min(PRISMATIC.essenceBoostMax, held * PRISMATIC.essenceBoostPerUnit);
+  // A stronger OPPOSING element drowns this one out — asymptotically, never fully
+  // (systems/education.ts oppositionFactor).
+  return 1 + raw * oppositionFactor(state, res);
 }
 
 /** Tech-driven output multiplier for a job. The STONE and STEEL tools are PER-JOB (Axe →
@@ -250,6 +254,13 @@ function flows(state: GameState): Flows {
   gross.mana *= gov.mana;
   gross.culture *= formBonuses(state).cultureMult;
 
+  // EDUCATION: the Arcanum's yield boost + the curriculum's focus/penalty, on every
+  // magical stream (elemental essences + Prismatic Mana).
+  for (const id of ['airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'prismatic'] as ResourceId[]) {
+    const mult = magicYieldMult(state, id);
+    if (mult !== 1) gross[id] *= mult;
+  }
+
   return { gross, foodUpkeep, manaUpkeep };
 }
 
@@ -264,7 +275,9 @@ export function productionRates(state: GameState): Record<ResourceId, number> {
   // Converters: add each running copy's net trade (best-effort — assumes inputs are available;
   // actual per-tick output is input-limited in runProduction).
   for (const c of converterRuns(state)) {
-    for (const [res, per] of Object.entries(c.produce)) rates[res as ResourceId] += c.copies * (per as number);
+    for (const [res, per] of Object.entries(c.produce)) {
+      rates[res as ResourceId] += c.copies * (per as number) * magicYieldMult(state, res as ResourceId);
+    }
     for (const [res, per] of Object.entries(c.consume)) rates[res as ResourceId] -= c.copies * (per as number);
   }
   return rates;
@@ -320,7 +333,7 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (count <= 0) continue;
     for (const e of b.effects) {
       if (e.kind === 'produce' && e.resource === id && (!e.requiresTech || run.tech.includes(e.requiresTech as never))) {
-        producers.push({ label: `${b.name}${times(count)}`, amount: count * e.perSec });
+        producers.push({ label: `${b.name}${times(count)}`, amount: count * e.perSec * magicYieldMult(state, id) });
       }
     }
   }
@@ -334,7 +347,7 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   // Converters both produce (outputs) and consume (inputs) this resource.
   for (const c of converterRuns(state)) {
     const outPer = c.produce[id];
-    if (outPer) producers.push({ label: `${c.name} (converts)`, amount: c.copies * outPer });
+    if (outPer) producers.push({ label: `${c.name} (converts)`, amount: c.copies * outPer * magicYieldMult(state, id) });
     const inPer = c.consume[id];
     if (inPer) consumers.push({ label: `${c.name} (converts)`, amount: -(c.copies * inPer) });
   }
@@ -438,7 +451,7 @@ export function runProduction(state: GameState, dt: number): void {
       run.resources[res as ResourceId] = Math.max(0, run.resources[res as ResourceId] - (per as number) * units);
     }
     for (const [res, per] of Object.entries(c.produce)) {
-      run.resources[res as ResourceId] += (per as number) * units;
+      run.resources[res as ResourceId] += (per as number) * units * magicYieldMult(state, res as ResourceId);
     }
   }
 

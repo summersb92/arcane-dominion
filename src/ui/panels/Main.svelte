@@ -7,6 +7,7 @@
     research,
     enactPolicy,
     revokePolicy,
+    setCurriculum,
     openTip,
     hideTooltip,
     jobTooltip,
@@ -61,6 +62,7 @@
 
   $: pop = $game.population;
   $: gov = $game.government;
+  $: edu = $game.education;
 
   function growthLabel(status: string): string {
     switch (status) {
@@ -257,6 +259,53 @@
         {/if}
       </div>
       <div class="sub">Spend research to unlock efficiency, new work, and magic. Cheapest first.</div>
+
+      {#if edu.unlocked}
+        <!-- The Arcanum: general magical yield + a curriculum that rewards specializing. -->
+        <div class="educard">
+          <div class="eduhead">
+            <span class="gtitle">Arcanum</span>
+            <span class="edumeta">
+              <span>×{edu.arcanums}</span>
+              <span class="good">+{edu.essenceYieldPct}% essence</span>
+              <span class="good">+{edu.prismaticYieldPct}% prismatic</span>
+            </span>
+          </div>
+          <div class="edunote">
+            Teaching <strong>{edu.currentName}</strong> — the focused discipline yields
+            <span class="good">+{edu.focusPct}%</span>, every other
+            <span class="bad">−{edu.unfocusedPct}%</span>.
+          </div>
+          <div class="curricula">
+            <button class="btn cbtn" class:on={edu.current === null} on:click={() => setCurriculum(null)}>General</button>
+            {#each edu.curricula as c (c.id)}
+              <button
+                class="btn cbtn"
+                class:on={c.active}
+                disabled={!c.available}
+                title="{c.blurb} Specializes in {c.resourceLabel}."
+                on:click={() => setCurriculum(c.id)}
+              >{c.name}</button>
+            {/each}
+          </div>
+          {#if edu.opposition.length}
+            <div class="oppo">
+              <span class="gtitle">Opposition</span>
+              {#each edu.opposition as o (o.id)}
+                <span
+                  class="orow"
+                  title="{o.label} {fmt(o.own)} vs its opposite {fmt(o.opposing)} — empowerment at {Math.round(o.factor * 100)}%"
+                >
+                  {o.label}
+                  <strong class:good={o.factor > 0.85} class:bad={o.factor < 0.6}>
+                    {Math.round(o.factor * 100)}%
+                  </strong>
+                </span>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
       {#if availableTech.length === 0}
         <div class="empty">Nothing new to research right now.</div>
       {:else}
@@ -327,6 +376,70 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
+  }
+  /* The Arcanum card — magical yield + the curriculum specialization dial. */
+  .educard {
+    margin: 10px 0 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--mana);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .eduhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .edumeta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .edunote {
+    color: var(--dim);
+    font-size: 12.5px;
+    margin: 5px 0 7px;
+  }
+  .edunote strong {
+    color: var(--ink);
+  }
+  .curricula {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cbtn {
+    padding: 3px 9px;
+    font-size: 12px;
+  }
+  .cbtn.on {
+    border-color: var(--mana);
+    color: var(--ink);
+    background: var(--card-active);
+  }
+  .cbtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .oppo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 7px;
+    border-top: 1px solid var(--edge);
+    font-size: 12px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .orow {
+    cursor: help;
   }
   .toggle {
     font-family: inherit;

@@ -191,7 +191,7 @@ describe('governance techs + save migration', () => {
     const res = safeLoad(JSON.stringify(v9));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(9);
-    expect(res.state!.version).toBe(11);
+    expect(res.state!.version).toBe(12);
     expect(res.state!.run.policies).toEqual([]);
   });
 });

@@ -7,9 +7,10 @@ import type { JobId } from '../content/jobs';
 import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../content/resources';
 import type { TechId } from '../content/tech';
 import type { PolicyId } from '../content/policies';
+import type { CurriculumId } from '../content/education';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 11; // v11: added the prismatic essences + Prismatic Mana (migrate/normalize backfill → 0, essence caps → 100)
+export const SAVE_VERSION = 12; // v12: added `curriculum` (the Arcanum's chosen discipline; backfills → null)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -45,6 +46,9 @@ export interface RunState {
   /** Active governance POLICIES (systems/government.ts). Each drains culture upkeep per
    *  second; all suspend while the culture jar is empty. Limited by policy slots. */
   policies: PolicyId[];
+  /** The Arcanum's chosen DISCIPLINE (systems/education.ts). null = a general curriculum:
+   *  no specialization bonus and no penalty. */
+  curriculum: CurriculumId | null;
   /** Signed accumulator (seconds) driving deterministic pop growth (+) / starvation (−). */
   growthProgress: number;
   flags: Record<string, boolean>;
@@ -148,6 +152,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       active: {},
       tech: [],
       policies: [],
+      curriculum: null,
       growthProgress: 0,
       flags: {},
       chronicle: [{ at: 0, text: OPENINGS[(seed >>> 0) % OPENINGS.length] }],

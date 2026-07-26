@@ -30,6 +30,7 @@ export type BuildingId =
   | 'library'
   | 'academy'
   | 'observatory'
+  | 'arcanum'
   | 'aqueduct'
   | 'windmill'
   | 'forum'
@@ -81,6 +82,9 @@ export type BuildingEffect =
   | { kind: 'jobCapacity'; job: JobId; slots: number } // +slots assignable to a job
   | { kind: 'jobOutputMult'; amount: number } // +fraction to EVERY worker's output (Workshop/Forge)
   | { kind: 'jobBoost'; job: JobId; amount: number } // +fraction to ONE job's output per copy (Aqueduct → Farmer)
+  // +fraction to MAGICAL yield per copy — elemental essences and/or Prismatic Mana, whatever
+  // produced them (attunement, converter, or nexus). The Arcanum's whole purpose.
+  | { kind: 'yieldBoost'; target: 'essence' | 'prismatic'; amount: number }
   // Passive construct output. An optional `requiresTech` gates the output: production only
   // flows once that tech is researched (e.g. the Mine's mana-crystal trickle behind Crystallurgy).
   | { kind: 'produce'; resource: ResourceId; perSec: number; requiresTech?: string }
@@ -297,6 +301,22 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobCapacity', job: 'scholar', slots: 1 },
       { kind: 'produce', resource: 'research', perSec: 0.3 },
       { kind: 'researchCap', amount: 400 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
+    id: 'arcanum',
+    name: 'Arcanum',
+    blurb: 'A school for the four tempers. Its faculty argues in four directions at once.',
+    category: 'science',
+    cost: { wood: 180, stone: 160, manaCrystals: 30 },
+    costGrowth: 1.4,
+    requiresTech: 'prismatic-theory',
+    effects: [
+      { kind: 'yieldBoost', target: 'essence', amount: 0.15 },
+      { kind: 'yieldBoost', target: 'prismatic', amount: 0.1 },
+      { kind: 'jobCapacity', job: 'scholar', slots: 1 },
+      { kind: 'researchCap', amount: 300 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },

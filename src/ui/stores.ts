@@ -39,6 +39,12 @@ import {
   type GovernmentView,
 } from '../engine/systems/government';
 import type { PolicyId } from '../content/policies';
+import {
+  educationView,
+  setCurriculum as engineSetCurriculum,
+  type EducationView,
+} from '../engine/systems/education';
+import type { CurriculumId } from '../content/education';
 import { techView, research as engineResearch } from '../engine/systems/tech';
 import { actionsView, doGather as engineDoGather } from '../engine/systems/actions';
 import type { OfflineSummary } from '../engine/offline';
@@ -154,6 +160,7 @@ export interface UiState {
   chronicle: ChronicleView[];
   calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
   government: GovernmentView; // forms + policies (systems/government.ts)
+  education: EducationView; // Arcanum yield, curriculum focus, opposition (systems/education.ts)
 }
 
 // ---- Tooltip system: ONE reusable, styled, themed hover tooltip ----
@@ -281,6 +288,12 @@ function effectLines(id: BuildingId): TooltipLine[] {
         break;
       case 'jobOutputMult':
         lines.push({ text: `+${Math.round(e.amount * 100)}% to every worker's output`, cls: 'ok' });
+        break;
+      case 'yieldBoost':
+        lines.push({
+          text: `+${Math.round(e.amount * 100)}% ${e.target === 'prismatic' ? 'Prismatic Mana' : 'elemental essence'} yield (per copy)`,
+          cls: 'ok',
+        });
         break;
       case 'jobBoost':
         lines.push({ text: `+${Math.round(e.amount * 100)}% ${JOB_BY_ID[e.job].name} output (per copy)`, cls: 'ok' });
@@ -500,6 +513,7 @@ export function toView(state: GameState): UiState {
       .map((c) => ({ t: mmss(c.at), text: c.text, kind: c.kind })),
     calendar: calendar(state),
     government: governmentView(state),
+    education: educationView(state, (id) => RESOURCE_BY_ID[id].label),
   };
 }
 
@@ -760,6 +774,11 @@ export function enactPolicy(id: PolicyId): void {
 }
 export function revokePolicy(id: PolicyId): void {
   engineRevokePolicy(state, id);
+  publish();
+}
+/** Teach a discipline at the Arcanum (null = general studies). */
+export function setCurriculum(id: CurriculumId | null): void {
+  engineSetCurriculum(state, id);
   publish();
 }
 

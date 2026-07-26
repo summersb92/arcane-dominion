@@ -133,6 +133,28 @@ export const PRISMATIC = {
   essenceBoostMax: 0.5,
 };
 
+/** Education (systems/education.ts). An Arcanum raises ALL magical yield; a CURRICULUM
+ *  commits the faculty to one discipline — that element gains a lot while the rest give a
+ *  little back, so specializing is the point. */
+export const EDUCATION = {
+  /** × to the FOCUSED discipline's yield. */
+  focusBonus: 0.5,
+  /** × to every UNFOCUSED discipline's yield (a real cost — you must choose). */
+  unfocusedPenalty: 0.85,
+};
+
+/** Elemental OPPOSITION (systems/education.ts). Air opposes Earth; Fire opposes Water. A
+ *  stronger opposing element drowns out the weaker one's empowerment — but ASYMPTOTICALLY:
+ *  the factor is 1 − maxSuppression × diff/(diff + scale), where diff is how far the
+ *  opposing essence EXCEEDS this one. Equal or ahead → no penalty at all (specialists are
+ *  safe); far behind → approaches (1 − maxSuppression) without ever reaching zero. */
+export const OPPOSITION = {
+  /** The deepest possible suppression — 0.9 leaves a 10% floor, so it never fully cancels. */
+  maxSuppression: 0.9,
+  /** How many units of DIFFERENCE cost half the maximum suppression. */
+  scale: 60,
+};
+
 /** Efficiency multipliers granted by tech (systems/production.ts).
  *  STONE and STEEL tools are split into THREE per-tool techs each, boosting ONLY their own gather
  *  job: (Stone/Steel) Axe → Woodcutter, Hoe → Farmer, Pick → Stonecutter. Iron Working is the one

@@ -95,22 +95,29 @@ describe('attunements — each element earns its essence differently', () => {
 });
 
 describe('sink 1 — held essence empowers its matching job', () => {
+  // Each element is tested ALONE (its opposite at zero) so this covers the raw scaling and
+  // its ceiling; the opposition damping has its own coverage in education.test.ts.
   it('each essence boosts one job, capped at +50%', () => {
-    const s = newGame(1);
     const base = { wood: 0.5, iron: 0.4, stone: 0.4, food: 0.5 };
-    s.run.resources.airEssence = 50; // 50 × 0.004 = +20%
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(base.wood * 1.2, 6);
-    s.run.resources.earthEssence = 25; // +10%
-    expect(jobEffectiveProduces(s, 'miner').iron).toBeCloseTo(base.iron * 1.1, 6);
-    s.run.resources.fireEssence = 100; // capped at +50% (125 would be the exact cap)
-    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(base.stone * 1.4, 6);
-    s.run.resources.fireEssence = 1000; // hard ceiling
-    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(base.stone * 1.5, 6);
-    s.run.resources.waterEssence = 50; // +20% Farmer
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base.food * 1.2, 6);
-    // Cross-checks: air does not touch the Farmer.
-    s.run.resources.airEssence = 0;
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base.food * 1.2, 6);
+
+    const air = newGame(1);
+    air.run.resources.airEssence = 50; // 50 × 0.004 = +20%
+    expect(jobEffectiveProduces(air, 'woodcutter').wood).toBeCloseTo(base.wood * 1.2, 6);
+    expect(jobEffectiveProduces(air, 'forager').food).toBeCloseTo(base.food, 6); // air ≠ Farmer
+
+    const earth = newGame(1);
+    earth.run.resources.earthEssence = 25; // +10%
+    expect(jobEffectiveProduces(earth, 'miner').iron).toBeCloseTo(base.iron * 1.1, 6);
+
+    const fire = newGame(1);
+    fire.run.resources.fireEssence = 100; // +40%
+    expect(jobEffectiveProduces(fire, 'quarry-worker').stone).toBeCloseTo(base.stone * 1.4, 6);
+    fire.run.resources.fireEssence = 1000; // hard ceiling at +50%
+    expect(jobEffectiveProduces(fire, 'quarry-worker').stone).toBeCloseTo(base.stone * 1.5, 6);
+
+    const water = newGame(1);
+    water.run.resources.waterEssence = 50; // +20% Farmer
+    expect(jobEffectiveProduces(water, 'forager').food).toBeCloseTo(base.food * 1.2, 6);
   });
 });
 
@@ -251,7 +258,7 @@ describe('save migration v10 → v11', () => {
     const res = safeLoad(JSON.stringify(v10));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(10);
-    expect(res.state!.version).toBe(11);
+    expect(res.state!.version).toBe(12);
     expect(res.state!.run.resources.airEssence).toBe(0);
     expect(res.state!.run.resources.prismatic).toBe(0);
     expect(res.state!.run.resources.mana).toBe(7); // preserved
