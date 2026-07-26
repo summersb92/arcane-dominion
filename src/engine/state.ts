@@ -9,7 +9,7 @@ import type { TechId } from '../content/tech';
 import type { PolicyId } from '../content/policies';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 10; // v10: added `policies` (active governance edicts; migrate/normalize backfill → [])
+export const SAVE_VERSION = 11; // v11: added the prismatic essences + Prismatic Mana (migrate/normalize backfill → 0, essence caps → 100)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -87,6 +87,11 @@ export function freshResources(): Record<ResourceId, number> {
   r.furs = STARTING.furs;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
+  r.airEssence = STARTING.airEssence;
+  r.earthEssence = STARTING.earthEssence;
+  r.fireEssence = STARTING.fireEssence;
+  r.waterEssence = STARTING.waterEssence;
+  r.prismatic = STARTING.prismatic;
   r.research = STARTING.research;
   r.culture = STARTING.culture;
   return r;
@@ -109,6 +114,10 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     compendiums: STARTING.compendiumsCap,
     furs: STARTING.fursCap,
     manaCrystals: STARTING.manaCrystalsCap,
+    airEssence: STARTING.essenceCap,
+    earthEssence: STARTING.essenceCap,
+    fireEssence: STARTING.essenceCap,
+    waterEssence: STARTING.essenceCap,
   };
 }
 

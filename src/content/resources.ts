@@ -21,6 +21,11 @@ export type ResourceId =
   | 'furs'
   | 'manaCrystals'
   | 'mana'
+  | 'airEssence'
+  | 'earthEssence'
+  | 'fireEssence'
+  | 'waterEssence'
+  | 'prismatic'
   | 'research'
   | 'culture';
 
@@ -42,12 +47,16 @@ export type MundaneResourceId =
   | 'books'
   | 'compendiums'
   | 'furs'
-  | 'manaCrystals';
+  | 'manaCrystals'
+  | 'airEssence'
+  | 'earthEssence'
+  | 'fireEssence'
+  | 'waterEssence';
 
 /** Display group for the resource column — each renders under its own heading, in
  *  RESOURCES order: raw Materials, refined Goods, Knowledge (chain goods + currencies),
  *  and Magic. Purely presentational; the cap machinery keys off MundaneResourceId. */
-export type ResourceGroup = 'materials' | 'goods' | 'knowledge' | 'magic';
+export type ResourceGroup = 'materials' | 'goods' | 'knowledge' | 'magic' | 'prismatic';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -87,6 +96,16 @@ export const RESOURCES: ResourceDef[] = [
   // Reaching a threshold is one of the three paths that discovers magic (systems/magic.ts).
   { id: 'manaCrystals', label: 'Mana Crystals', glyph: '💎', tier: 'mundane', group: 'magic' },
   { id: 'mana', label: 'Mana', glyph: '✦', tier: 'magic', group: 'magic' },
+  // ---- PRISMATIC — the four elemental essences and the light they combine into. ----
+  // Each essence has its OWN income mechanic (an Attunement construct) and its own sinks:
+  // held essence empowers a matching job, elemental constructs burn it for mundane goods,
+  // advanced techs cost it, and the Prism Nexus fuses all four into Prismatic Mana.
+  { id: 'airEssence', label: 'Air', glyph: '🌬️', tier: 'magic', group: 'prismatic' },
+  { id: 'earthEssence', label: 'Earth', glyph: '⛰️', tier: 'magic', group: 'prismatic' },
+  { id: 'fireEssence', label: 'Fire', glyph: '🔥', tier: 'magic', group: 'prismatic' },
+  { id: 'waterEssence', label: 'Water', glyph: '💧', tier: 'magic', group: 'prismatic' },
+  // Prismatic Mana — the fused light of all four. Uncapped, like Mana.
+  { id: 'prismatic', label: 'Prismatic Mana', glyph: '🌈', tier: 'magic', group: 'prismatic' },
 ];
 
 /** Every resource id, in display order. */
@@ -108,6 +127,10 @@ export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = [
   'compendiums',
   'furs',
   'manaCrystals',
+  'airEssence',
+  'earthEssence',
+  'fireEssence',
+  'waterEssence',
 ];
 
 export const RESOURCE_BY_ID: Record<ResourceId, ResourceDef> = Object.fromEntries(
@@ -117,5 +140,5 @@ export const RESOURCE_BY_ID: Record<ResourceId, ResourceDef> = Object.fromEntrie
 /** True for the currencies with NO finite storage cap (effectiveCap returns Infinity):
  *  mana and culture. Research is now capped by science buildings, so it is NOT included. */
 export function isUncappedResource(id: ResourceId): boolean {
-  return id === 'mana' || id === 'culture';
+  return id === 'mana' || id === 'culture' || id === 'prismatic';
 }

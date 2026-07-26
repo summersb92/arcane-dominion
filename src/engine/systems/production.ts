@@ -9,7 +9,7 @@
 // It also exposes the per-second NET rate read model (productionRates / foodBalance)
 // the CLI and UI show. Pure engine, no DOM.
 
-import { POPULATION, TECH_BONUS, KNOWLEDGE } from '../../content/config';
+import { POPULATION, TECH_BONUS, KNOWLEDGE, PRISMATIC } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
 import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
@@ -104,6 +104,25 @@ function globalJobMult(state: GameState): number {
   return m;
 }
 
+/** Which HELD elemental essence empowers which job. Air fells timber, Earth opens the deep,
+ *  Fire cracks rock (fire-setting is real quarry craft), Water waters the fields. */
+const ESSENCE_JOB: Record<string, ResourceId> = {
+  woodcutter: 'airEssence',
+  miner: 'earthEssence',
+  'quarry-worker': 'fireEssence',
+  forager: 'waterEssence',
+};
+
+/** Held-essence boost for a job: 1 + min(cap, held × perUnit). Spending essence spends the
+ *  bonus too — the tension that makes the elemental constructs a real trade-off. */
+function essenceBoost(state: GameState, jobId: string): number {
+  const res = ESSENCE_JOB[jobId];
+  if (!res) return 1;
+  const held = state.run.resources[res] ?? 0;
+  if (held <= 0) return 1;
+  return 1 + Math.min(PRISMATIC.essenceBoostMax, held * PRISMATIC.essenceBoostPerUnit);
+}
+
 /** Tech-driven output multiplier for a job. The STONE and STEEL tools are PER-JOB (Axe →
  *  Woodcutter, Hoe → Farmer, Pick → Stonecutter — each +25% (stone) / +65% (steel) to only that
  *  job); Iron Working is the one GLOBAL tool tier, stacking on all gather jobs (incl. Miners).
@@ -129,7 +148,8 @@ function jobEfficiency(state: GameState, jobId: string): number {
   if (jobId === 'miner' && tech.includes('bloomery')) m *= TECH_BONUS.bloomery;
   if (jobId === 'scholar' && tech.includes('optics')) m *= TECH_BONUS.optics;
   if (GATHER_JOBS.has(jobId) && tech.includes('wheelbarrows')) m *= TECH_BONUS.wheelbarrows;
-  m *= jobBoostMult(state, jobId); // per-job infrastructure (Aqueduct → Farmer)
+  m *= jobBoostMult(state, jobId); // per-job infrastructure (Aqueduct/Windmill → Farmer)
+  m *= essenceBoost(state, jobId); // held elemental essence empowers its matching job
   m *= globalJobMult(state);
   // Governance: the form's passive and any live worker policies apply to every job.
   m *= formBonuses(state).workerMult * policyMults(state).worker;
@@ -367,6 +387,12 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.books += f.gross.books * dt;
   run.resources.compendiums += f.gross.compendiums * dt;
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
+  // Prismatic: the four essences (capped) and the fused light (uncapped).
+  run.resources.airEssence += f.gross.airEssence * dt;
+  run.resources.earthEssence += f.gross.earthEssence * dt;
+  run.resources.fireEssence += f.gross.fireEssence * dt;
+  run.resources.waterEssence += f.gross.waterEssence * dt;
+  run.resources.prismatic += f.gross.prismatic * dt;
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
   // Culture accumulates (uncapped) — then LIVE policies draw their upkeep from it. The
@@ -419,7 +445,7 @@ export function runProduction(state: GameState, dt: number): void {
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
   // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
   // Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'research'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }
@@ -440,4 +466,5 @@ const RESOURCE_FIRSTS: [ResourceId, string, string][] = [
   ['engines', 'firstEngine', 'An engine idles in the yard. Half the settlement calls it "him".'],
   ['books', 'firstBook', 'The first book is bound. Two settlers can read it.'],
   ['compendiums', 'firstCompendium', 'A compendium is finished. It settles three arguments and starts five.'],
+  ['prismatic', 'firstPrismatic', 'The lens holds. Prismatic light pools like water that forgot to fall.'],
 ];

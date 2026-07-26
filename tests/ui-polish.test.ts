@@ -26,7 +26,7 @@ describe('build-tab categories', () => {
 
 describe('resource display groups', () => {
   it('every resource carries a display group', () => {
-    const valid = ['materials', 'goods', 'knowledge', 'magic'];
+    const valid = ['materials', 'goods', 'knowledge', 'magic', 'prismatic'];
     for (const r of RESOURCES) expect(valid, `${r.id} has an unknown group`).toContain(r.group);
   });
 });

@@ -31,8 +31,8 @@ export type BuildingId =
   | 'academy'
   | 'observatory'
   | 'aqueduct'
+  | 'windmill'
   | 'forum'
-  | 'sewers'
   | 'shrine'
   | 'ley-grove'
   | 'standing-stones'
@@ -57,7 +57,19 @@ export type BuildingId =
   | 'amphitheater'
   | 'sacred-grove'
   | 'arcane-font'
-  | 'animated-tools';
+  | 'animated-tools'
+  // Prismatic: four ATTUNEMENTS (income, one mechanic each) + four ELEMENTAL constructs
+  // (sinks) + the two convergence works.
+  | 'wind-spire'
+  | 'deep-cairn'
+  | 'ember-forge'
+  | 'tide-basin'
+  | 'storm-sails'
+  | 'stone-titan'
+  | 'flame-wardens'
+  | 'rain-engine'
+  | 'prism-nexus'
+  | 'prismatic-spire';
 
 export type BuildingEffect =
   // IMMEDIATE (applied at build time, permanent):
@@ -302,6 +314,19 @@ export const BUILDINGS: BuildingDef[] = [
     ],
   },
   {
+    id: 'windmill',
+    name: 'Windmill',
+    blurb: 'Sails turn, stones grind, and the wind works for free.',
+    category: 'production',
+    cost: { wood: 100, stone: 60, tools: 5 },
+    costGrowth: 1.4,
+    requiresTech: 'milling',
+    effects: [
+      { kind: 'jobBoost', job: 'forager', amount: 0.15 },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
+  },
+  {
     id: 'forum',
     name: 'Forum',
     blurb: 'A public square where everyone is briefly a philosopher.',
@@ -313,20 +338,6 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobCapacity', job: 'bard', slots: 1 },
       { kind: 'produce', resource: 'culture', perSec: 0.3 },
       { kind: 'happiness', amount: 5 },
-      { kind: 'cap', amount: STRUCT_CAP },
-    ],
-  },
-  {
-    id: 'sewers',
-    name: 'Sewers',
-    blurb: 'Out of sight and downhill. The whole settlement breathes easier.',
-    category: 'housing',
-    cost: { stone: 200, iron: 40 },
-    costGrowth: 1.4,
-    requiresTech: 'sanitation',
-    effects: [
-      { kind: 'popCap', amount: 12 },
-      { kind: 'happiness', amount: 6 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -635,6 +646,146 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'produce', resource: 'iron', perSec: 0.4 },
       { kind: 'produce', resource: 'stone', perSec: 0.4 },
       { kind: 'manaUpkeep', perSec: 0.3 },
+    ],
+  },
+  // ---- PRISMATIC ATTUNEMENTS (income) — each element earns its essence a DIFFERENT way. ----
+  // AIR is coaxed, not fed: a Wind Spire needs a Windmill's turning sails to catch.
+  {
+    id: 'wind-spire',
+    name: 'Wind Spire',
+    blurb: 'A hollow tower that sings when the sails turn. Air gathers where it is invited.',
+    category: 'arcane',
+    cost: { stone: 80, wood: 60 },
+    costGrowth: 1.3,
+    requiresTech: 'aeromancy',
+    requiresBuilding: 'windmill',
+    construct: true,
+    effects: [
+      { kind: 'produce', resource: 'airEssence', perSec: 0.08 },
+      { kind: 'manaUpkeep', perSec: 0.2 },
+    ],
+  },
+  // EARTH is quarried: the Deep Cairn eats raw stone and gives back the hill's temper.
+  {
+    id: 'deep-cairn',
+    name: 'Deep Cairn',
+    blurb: 'Stones stacked in an older pattern. The ground answers in kind.',
+    category: 'arcane',
+    cost: { stone: 140 },
+    costGrowth: 1.3,
+    requiresTech: 'geomancy',
+    construct: true,
+    effects: [
+      { kind: 'convert', consume: { stone: 0.5 }, produce: { earthEssence: 0.08 } },
+      { kind: 'manaUpkeep', perSec: 0.2 },
+    ],
+  },
+  // FIRE is fuelled: the Ember Forge burns coal outright.
+  {
+    id: 'ember-forge',
+    name: 'Ember Forge',
+    blurb: 'A hearth kept deliberately hungry. Fire pays only those who feed it.',
+    category: 'arcane',
+    cost: { stone: 100, iron: 40 },
+    costGrowth: 1.3,
+    requiresTech: 'pyromancy',
+    construct: true,
+    effects: [
+      { kind: 'convert', consume: { coal: 0.4 }, produce: { fireEssence: 0.1 } },
+      { kind: 'manaUpkeep', perSec: 0.2 },
+    ],
+  },
+  // WATER is channelled: a Tide Basin needs an Aqueduct's flow to fill.
+  {
+    id: 'tide-basin',
+    name: 'Tide Basin',
+    blurb: 'A still pool that keeps a tide of its own, politely ignoring the moon.',
+    category: 'arcane',
+    cost: { stone: 120, wood: 40 },
+    costGrowth: 1.3,
+    requiresTech: 'hydromancy',
+    requiresBuilding: 'aqueduct',
+    construct: true,
+    effects: [
+      { kind: 'produce', resource: 'waterEssence', perSec: 0.08 },
+      { kind: 'manaUpkeep', perSec: 0.2 },
+    ],
+  },
+  // ---- ELEMENTAL CONSTRUCTS (sinks) — burn one essence for settler-free labour. ----
+  {
+    id: 'storm-sails',
+    name: 'Storm Sails',
+    blurb: 'Canvas that fells timber on a wind of its own making.',
+    category: 'arcane',
+    cost: { wood: 80, airEssence: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'aeromancy',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { airEssence: 0.05 }, produce: { wood: 1.2 } }],
+  },
+  {
+    id: 'stone-titan',
+    name: 'Stone Titan',
+    blurb: 'It works the quarry it was quarried from, and does not tire.',
+    category: 'arcane',
+    cost: { stone: 150, earthEssence: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'geomancy',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { earthEssence: 0.05 }, produce: { stone: 0.8, iron: 0.5 } }],
+  },
+  {
+    id: 'flame-wardens',
+    name: 'Flame Wardens',
+    blurb: 'Living furnaces that smelt without ore carts, coal, or complaint.',
+    category: 'arcane',
+    cost: { iron: 60, fireEssence: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'pyromancy',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { fireEssence: 0.05, iron: 0.2 }, produce: { steel: 0.35 } }],
+  },
+  {
+    id: 'rain-engine',
+    name: 'Rain Engine',
+    blurb: 'It rains on the fields at the hour the fields prefer.',
+    category: 'arcane',
+    cost: { stone: 100, waterEssence: 10 },
+    costGrowth: 1.3,
+    requiresTech: 'hydromancy',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { waterEssence: 0.05 }, produce: { food: 1.5 } }],
+  },
+  // ---- CONVERGENCE — fuse the four, then spend the light. ----
+  {
+    id: 'prism-nexus',
+    name: 'Prism Nexus',
+    blurb: 'Four tempers meet in one lens and agree, briefly, to be light.',
+    category: 'arcane',
+    cost: { stone: 200, manaCrystals: 60 },
+    costGrowth: 1.3,
+    requiresTech: 'prismatic-convergence',
+    construct: true,
+    effects: [
+      {
+        kind: 'convert',
+        consume: { airEssence: 0.05, earthEssence: 0.05, fireEssence: 0.05, waterEssence: 0.05 },
+        produce: { prismatic: 0.1 },
+      },
+    ],
+  },
+  {
+    id: 'prismatic-spire',
+    name: 'Prismatic Spire',
+    blurb: 'It sheds a light that makes every hand quicker — while the light lasts.',
+    category: 'arcane',
+    cost: { stone: 250, steel: 100, manaCrystals: 80 },
+    costGrowth: 1.4,
+    requiresTech: 'prismatic-convergence',
+    construct: true,
+    effects: [
+      { kind: 'jobOutputMult', amount: 0.25 },
+      { kind: 'convert', consume: { prismatic: 0.05 }, produce: {} },
     ],
   },
   {

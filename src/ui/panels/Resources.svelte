@@ -16,6 +16,7 @@
     { id: 'goods', label: 'Goods' },
     { id: 'knowledge', label: 'Knowledge' },
     { id: 'magic', label: 'Magic' },
+    { id: 'prismatic', label: 'Prismatic' },
   ];
   $: shown = $game.resources.filter((r) => r.show);
   $: sections = GROUPS

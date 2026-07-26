@@ -185,7 +185,7 @@ const FIRST_BUILD_QUIPS: Partial<Record<BuildingId, string>> = {
   academy: 'The academy opens its doors and raises its fees.',
   observatory: 'The observatory is finished. The sky, at last, is being watched back.',
   aqueduct: 'Water arrives on its own. Buckets are quietly retired.',
-  sewers: 'The sewers open, and nobody wishes to discuss it further.',
+  windmill: 'The sails catch and the millstones turn. Bread gets easier.',
   mine: 'The mine strikes iron. The dark, on occasion, strikes back.',
   'coal-mine': 'The colliery opens. Coal catches — hotter, longer, dirtier.',
   'charcoal-ground': 'The first charring pit smoulders. Wood goes in; patience comes out.',
@@ -205,6 +205,16 @@ const FIRST_BUILD_QUIPS: Partial<Record<BuildingId, string>> = {
   'standing-stones': 'The stones stand. On the next solstice, they are warm to the touch.',
   'golem-works': 'The golem shoulders its first load. The miners take an unusually long lunch.',
   'arcane-foundry': 'Steel from nothing but mana and nerve. The smelters have questions.',
+  'wind-spire': 'The spire hums, and the air leaves something behind.',
+  'deep-cairn': 'The cairn settles. Something under the hill settles with it.',
+  'ember-forge': 'The ember forge takes its first breath of coal and asks for another.',
+  'tide-basin': 'The basin fills, then keeps a tide nobody scheduled.',
+  'storm-sails': 'The sails fell a tree with no hand on the rope.',
+  'stone-titan': 'The titan stands, considers the quarry, and gets to work.',
+  'flame-wardens': 'The wardens kindle. Steel now arrives without the coal cart.',
+  'rain-engine': 'It rains on the fields, precisely, at four in the afternoon.',
+  'prism-nexus': 'Four tempers enter the lens. Light comes out the other side.',
+  'prismatic-spire': 'The spire lights, and every trade in the valley quickens.',
 };
 
 export interface BuildingView {

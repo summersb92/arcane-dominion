@@ -20,6 +20,11 @@ export const STARTING = {
   compendiums: 0,
   furs: 0,
   manaCrystals: 0,
+  airEssence: 0,
+  earthEssence: 0,
+  fireEssence: 0,
+  waterEssence: 0,
+  prismatic: 0,
   mana: 0,
   research: 0,
   culture: 0,
@@ -38,6 +43,8 @@ export const STARTING = {
   compendiumsCap: 200,
   fursCap: 200,
   manaCrystalsCap: 200,
+  /** The four elemental essences are SCARCE — a smaller base cap than the materials. */
+  essenceCap: 100,
   /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
    *  techs require science buildings (Library +100, Academy +600 each) to raise the ceiling
    *  toward the ~3000 needed by Steelmaking. See systems/caps.ts effectiveCap. */
@@ -112,6 +119,18 @@ export const KNOWLEDGE = {
   compendiumManaPerPop: 0.003,
   /** …capped at this much extra mana/settler/s (reached at 100 compendiums). */
   compendiumManaPerPopMax: 0.3,
+};
+
+/** Prismatic magic (the four elemental essences + the light they fuse into).
+ *  Each HELD essence empowers one matching job — Air → Woodcutter, Earth → Miner,
+ *  Fire → Stonecutter (fire-setting cracks rock), Water → Farmer — scaling with the amount
+ *  held, up to a ceiling. The essences are also burned by elemental constructs, spent on
+ *  advanced techs, and fused into Prismatic Mana at the Prism Nexus. */
+export const PRISMATIC = {
+  /** + fraction to the matching job's output per unit of essence HELD… */
+  essenceBoostPerUnit: 0.004,
+  /** …capped at this much (reached at 125 essence held). */
+  essenceBoostMax: 0.5,
 };
 
 /** Efficiency multipliers granted by tech (systems/production.ts).

@@ -213,6 +213,11 @@ function resToken(id: ResourceId): string {
       return 'insight';
     case 'mana':
     case 'manaCrystals':
+    case 'airEssence':
+    case 'earthEssence':
+    case 'fireEssence':
+    case 'waterEssence':
+    case 'prismatic':
       return 'mana';
     case 'research':
       return 'insight';
@@ -343,6 +348,15 @@ export function toView(state: GameState): UiState {
       show = amount > EPS || rates[def.id] > EPS;
     } else if (def.id === 'parchment' || def.id === 'books' || def.id === 'compendiums') {
       // Knowledge-chain goods — revealed once the first is produced (Tannery / Scriptorium / Archive).
+      show = amount > EPS || rates[def.id] > EPS;
+    } else if (
+      def.id === 'airEssence' ||
+      def.id === 'earthEssence' ||
+      def.id === 'fireEssence' ||
+      def.id === 'waterEssence' ||
+      def.id === 'prismatic'
+    ) {
+      // Prismatic essences — revealed once the discipline yields its first drop.
       show = amount > EPS || rates[def.id] > EPS;
     } else if (def.id === 'manaCrystals') {
       // Mined proto-magic material — revealed only once discovered (held or being produced).

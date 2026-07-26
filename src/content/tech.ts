@@ -46,6 +46,7 @@ export type TechId =
   | 'animal-husbandry'
   | 'irrigation'
   | 'wheelbarrows'
+  | 'milling'
   // Governance (forms + policy slots — systems/government.ts)
   | 'code-of-laws'
   | 'monarchy'
@@ -63,6 +64,13 @@ export type TechId =
   | 'crystallurgy'
   | 'enchantment'
   | 'runecraft'
+  // Prismatic magic (the four elemental essences — systems/production.ts, content/resources.ts)
+  | 'prismatic-theory'
+  | 'aeromancy'
+  | 'geomancy'
+  | 'pyromancy'
+  | 'hydromancy'
+  | 'prismatic-convergence'
   | 'bloomery'
   | 'paper-making'
   | 'guild-charters'
@@ -286,6 +294,14 @@ export const TECHS: TechDef[] = [
     unlocks: ['+10% to every gather job'],
   },
   {
+    id: 'milling',
+    name: 'Milling',
+    blurb: 'Gears, sails, and grinding stones — the wind is put on the payroll.',
+    cost: 1100,
+    requires: ['the-wheel', 'agriculture'],
+    unlocks: ['Windmill (building) — +15% Farmer output per copy'],
+  },
+  {
     id: 'code-of-laws',
     name: 'Code of Laws',
     blurb: 'Rules written down, where everyone can argue about them properly.',
@@ -384,6 +400,67 @@ export const TECHS: TechDef[] = [
     requires: ['mining'], // Bronze Working retired — Iron follows Mining directly
     unlocks: ['+50% to every gather job', 'Forge (building)'],
   },
+  // ---- PRISMATIC MAGIC — split light into four elements, each with its own economy. ----
+  {
+    id: 'prismatic-theory',
+    name: 'Prismatic Theory',
+    blurb: 'Raw magic, split through a crystal, resolves into four stubborn tempers.',
+    cost: 3000,
+    resourceCost: { mana: 200, manaCrystals: 50 },
+    requires: ['enchantment'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['The four elemental disciplines'],
+  },
+  {
+    id: 'aeromancy',
+    name: 'Aeromancy',
+    blurb: 'Coax the restless air. It agrees, on its own schedule.',
+    cost: 3400,
+    resourceCost: { mana: 150 },
+    requires: ['prismatic-theory'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Wind Spire (construct)', 'Storm Sails (construct)', 'Air empowers Woodcutters'],
+  },
+  {
+    id: 'geomancy',
+    name: 'Geomancy',
+    blurb: 'The bones of the hill keep patient time. Learn to ask politely.',
+    cost: 3400,
+    resourceCost: { mana: 150 },
+    requires: ['prismatic-theory'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Deep Cairn (construct)', 'Stone Titan (construct)', 'Earth empowers Miners'],
+  },
+  {
+    id: 'pyromancy',
+    name: 'Pyromancy',
+    blurb: 'Fire is the most willing element and the least careful.',
+    cost: 3400,
+    resourceCost: { mana: 150 },
+    requires: ['prismatic-theory'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Ember Forge (construct)', 'Flame Wardens (construct)', 'Fire empowers Stonecutters'],
+  },
+  {
+    id: 'hydromancy',
+    name: 'Hydromancy',
+    blurb: 'Water remembers every shape it has been asked to hold.',
+    cost: 3400,
+    resourceCost: { mana: 150 },
+    requires: ['prismatic-theory'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Tide Basin (construct)', 'Rain Engine (construct)', 'Water empowers Farmers'],
+  },
+  {
+    id: 'prismatic-convergence',
+    name: 'Prismatic Convergence',
+    blurb: 'Four tempers, one light. The prism is finally read backwards.',
+    cost: 8000,
+    resourceCost: { airEssence: 40, earthEssence: 40, fireEssence: 40, waterEssence: 40 },
+    requires: ['aeromancy', 'geomancy', 'pyromancy', 'hydromancy'],
+    requiresFlag: 'magicDiscovered',
+    unlocks: ['Prism Nexus (construct)', 'Prismatic Spire (construct)', 'Prismatic Mana'],
+  },
   {
     id: 'bloomery',
     name: 'Bloomery',
@@ -473,7 +550,7 @@ export const TECHS: TechDef[] = [
     cost: 4000,
     resourceCost: { culture: 200 },
     requires: ['construction', 'compendia'],
-    unlocks: ['Sewers (building)', 'Mansion (building)'],
+    unlocks: ['Mansion (building)'],
   },
 
   // ---- INDUSTRIAL ERA (Age of Steam) ----
