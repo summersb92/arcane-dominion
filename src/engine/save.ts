@@ -3,7 +3,7 @@
 // load-from-file (.adsave). The browser and the CLI reuse these exact functions.
 // No DOM, no Svelte — the DOM download/upload is a thin UI adapter over this.
 //
-// SAVE_VERSION is 9. `migrate` brings an older save's shape up to current (v1 → v2 added
+// SAVE_VERSION is 10. `migrate` brings an older save's shape up to current (v1 → v2 added
 // the `culture` resource; v2 → v3 added the `furs` luxury resource; v3 → v4 added the
 // `manaCrystals` mined resource; v4 → v5 added the `iron` mined resource; v5 → v6 added the
 // `coal`/`steel` materials + the converter `active` toggle map; v6 → v7 made `active` per-recipe
@@ -118,6 +118,7 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *            to 0 and its cap to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
  *   v8 → v9: added the knowledge-chain goods `parchment`/`books`/`compendiums`. Each defaults to 0 and
  *            its cap to 200 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
+ *   v9 → v10: added `policies` (active governance edicts). Backfills to [] (normalize). Documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -179,6 +180,10 @@ function migrate(state: GameState, fromVersion: number): void {
       state.run.resources.books ??= 0;
       state.run.resources.compendiums ??= 0;
     }
+  }
+  if (fromVersion < 10) {
+    // Active policies backfilled to [] by normalize. Nothing else to rewrite.
+    if (state.run && typeof state.run === 'object') state.run.policies ??= [];
   }
 }
 
@@ -260,6 +265,9 @@ export function normalize(state: GameState): void {
   // Converter activation map — backfill the container. Absent per-building entries mean "all on"
   // (activeCount defaults missing → count), so old saves keep their converters running.
   if (!run.active || typeof run.active !== 'object') run.active = {};
+
+  // Active policies — backfill the list (absent → none enacted).
+  if (!Array.isArray(run.policies)) run.policies = [];
 }
 
 /** Structural + finiteness check — guards against NaN/garbage silently loading. */

@@ -17,6 +17,7 @@ import type { GameState } from '../state';
 import { effectiveCap } from './caps';
 import { activeRecipes, activeCount, convertEffects, isConverter } from './buildings';
 import { logEvent } from './chronicle';
+import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
 
 const EPS = 1e-9;
 
@@ -107,7 +108,16 @@ function jobEfficiency(state: GameState, jobId: string): number {
   // Iron Working — the one GLOBAL tool tier, on all gather jobs (incl. Miners).
   if (GATHER_JOBS.has(jobId) && tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
   if (jobId === 'forager' && tech.includes('agriculture')) m *= TECH_BONUS.agriculture;
+  // Mini-step boosts — small per-job wins between the big tiers.
+  if (jobId === 'hunter' && tech.includes('animal-husbandry')) m *= TECH_BONUS.animalHusbandry;
+  if (jobId === 'forager' && tech.includes('irrigation')) m *= TECH_BONUS.irrigation;
+  if (jobId === 'forager' && tech.includes('fertilizer')) m *= TECH_BONUS.fertilizer;
+  if (jobId === 'miner' && tech.includes('bloomery')) m *= TECH_BONUS.bloomery;
+  if (jobId === 'scholar' && tech.includes('optics')) m *= TECH_BONUS.optics;
+  if (GATHER_JOBS.has(jobId) && tech.includes('wheelbarrows')) m *= TECH_BONUS.wheelbarrows;
   m *= globalJobMult(state);
+  // Governance: the form's passive and any live worker policies apply to every job.
+  m *= formBonuses(state).workerMult * policyMults(state).worker;
   return m;
 }
 
@@ -159,13 +169,17 @@ function flows(state: GameState): Flows {
   for (const id of RESOURCE_IDS) gross[id] = 0;
 
   const run = state.run;
+  const gov = policyMults(state);
   // Food's ONLY consumer is the base per-settler upkeep — jobs no longer eat food.
-  const foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total;
+  // Rationing (policy) trims it while live.
+  const foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total * gov.foodUpkeep;
   let manaUpkeep = 0;
 
   // Curiosity trickle: every settler passively yields a little Research (the tech currency),
-  // starting with the first settler. HELD books raise the per-settler yield (knowledge chain).
-  gross.research += (POPULATION.researchPerSettler + booksResearchPerPop(state)) * run.population.total;
+  // starting with the first settler. HELD books raise the per-settler yield (knowledge chain);
+  // Scholarly Patronage (policy) multiplies the whole trickle.
+  gross.research +=
+    (POPULATION.researchPerSettler + booksResearchPerPop(state)) * run.population.total * gov.researchPerPop;
   // HELD compendiums yield a little mana per settler.
   gross.mana += compendiumManaPerPop(state) * run.population.total;
 
@@ -196,6 +210,11 @@ function flows(state: GameState): Flows {
     }
   }
 
+  // Governance multipliers on the whole streams: Arcane Sanction lifts mana production;
+  // the Republic's assembly lifts Culture production.
+  gross.mana *= gov.mana;
+  gross.culture *= formBonuses(state).cultureMult;
+
   return { gross, foodUpkeep, manaUpkeep };
 }
 
@@ -205,6 +224,8 @@ export function productionRates(state: GameState): Record<ResourceId, number> {
   const rates = { ...f.gross };
   rates.food -= f.foodUpkeep;
   rates.mana -= f.manaUpkeep;
+  // Live policies pay their culture upkeep (suspended policies pay nothing).
+  if (!policiesSuspended(state)) rates.culture -= policyUpkeep(state);
   // Converters: add each running copy's net trade (best-effort — assumes inputs are available;
   // actual per-tick output is input-limited in runProduction).
   for (const c of converterRuns(state)) {
@@ -283,11 +304,19 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (inPer) consumers.push({ label: `${c.name} (converts)`, amount: -(c.copies * inPer) });
   }
 
-  // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs.
+  // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs;
+  // culture by live policy upkeep.
   if (id === 'food') {
     if (run.population.total > 0) {
-      consumers.push({ label: `Settler upkeep${times(run.population.total)}`, amount: -(POPULATION.baseFoodUpkeep * run.population.total) });
+      consumers.push({
+        label: `Settler upkeep${times(run.population.total)}`,
+        amount: -(POPULATION.baseFoodUpkeep * run.population.total * policyMults(state).foodUpkeep),
+      });
     }
+  }
+  if (id === 'culture' && !policiesSuspended(state)) {
+    const up = policyUpkeep(state);
+    if (up > 0) consumers.push({ label: 'Policy upkeep', amount: -up });
   }
   if (id === 'mana') {
     for (const b of BUILDINGS) {
@@ -325,7 +354,14 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
   run.resources.manaCrystals += f.gross.manaCrystals * dt; // mined; clamped below like the mundane materials
   run.resources.research += f.gross.research * dt;
-  run.resources.culture += f.gross.culture * dt; // uncapped, accumulates
+  // Culture accumulates (uncapped) — then LIVE policies draw their upkeep from it. The
+  // suspension check uses the tick-start stock, so a dry jar pays nothing (and stays dry
+  // until production refills it past the upkeep).
+  const wasSuspended = policiesSuspended(state);
+  run.resources.culture += f.gross.culture * dt;
+  if (!wasSuspended) {
+    run.resources.culture = Math.max(0, run.resources.culture - policyUpkeep(state) * dt);
+  }
 
   // Mana: production − construct upkeep, clamped at 0 (constructs still run gently when dry).
   run.resources.mana += (f.gross.mana - f.manaUpkeep) * dt;

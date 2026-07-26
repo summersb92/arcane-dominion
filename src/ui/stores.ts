@@ -32,6 +32,13 @@ import {
   build as engineBuild,
   setRecipeActive as engineSetRecipeActive,
 } from '../engine/systems/buildings';
+import {
+  governmentView,
+  enactPolicy as engineEnactPolicy,
+  revokePolicy as engineRevokePolicy,
+  type GovernmentView,
+} from '../engine/systems/government';
+import type { PolicyId } from '../content/policies';
 import { techView, research as engineResearch } from '../engine/systems/tech';
 import { actionsView, doGather as engineDoGather } from '../engine/systems/actions';
 import type { OfflineSummary } from '../engine/offline';
@@ -146,6 +153,7 @@ export interface UiState {
   tabs: { id: string; label: string; visible: boolean; locked: boolean; badge?: number }[];
   chronicle: ChronicleView[];
   calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
+  government: GovernmentView; // forms + policies (systems/government.ts)
 }
 
 // ---- Tooltip system: ONE reusable, styled, themed hover tooltip ----
@@ -474,6 +482,7 @@ export function toView(state: GameState): UiState {
       .reverse()
       .map((c) => ({ t: mmss(c.at), text: c.text, kind: c.kind })),
     calendar: calendar(state),
+    government: governmentView(state),
   };
 }
 
@@ -726,6 +735,14 @@ export function unassignJob(id: JobId, n = 1): void {
 }
 export function research(id: TechId): void {
   engineResearch(state, id);
+  publish();
+}
+export function enactPolicy(id: PolicyId): void {
+  engineEnactPolicy(state, id);
+  publish();
+}
+export function revokePolicy(id: PolicyId): void {
+  engineRevokePolicy(state, id);
   publish();
 }
 

@@ -7,7 +7,7 @@ import { RESOURCE_IDS } from '../src/content/resources';
 describe('newGame shape', () => {
   it('bootstraps a fresh settlement with the documented starting values', () => {
     const s = newGame(42);
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.run.resources.food).toBe(20);
     expect(s.run.resources.wood).toBe(0);
     expect(s.run.resources.stone).toBe(0);
@@ -73,7 +73,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v1));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(1);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.culture).toBe(0);
     expect(res.state!.run.resources.furs).toBe(0); // furs backfilled on the way up
     expect(res.state!.run.resources.manaCrystals).toBe(0); // manaCrystals backfilled too
@@ -110,7 +110,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v2));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(2);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.furs).toBe(0);
     expect(res.state!.run.resources.culture).toBe(3); // preserved
     expect(res.state!.run.caps.furs).toBe(200);
@@ -144,7 +144,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v3));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(3);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.manaCrystals).toBe(0);
     expect(res.state!.run.resources.furs).toBe(2); // preserved
     expect(res.state!.run.caps.manaCrystals).toBe(200);
@@ -178,7 +178,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v4));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(4);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.iron).toBe(0);
     expect(res.state!.run.resources.stone).toBe(7); // preserved (old stone is NOT converted)
     expect(res.state!.run.caps.iron).toBe(200);
@@ -213,7 +213,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v5));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(5);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.coal).toBe(0);
     expect(res.state!.run.resources.steel).toBe(0);
     expect(res.state!.run.resources.iron).toBe(4); // preserved
@@ -251,7 +251,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v6));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(6);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     // Each scalar count becomes a one-element array (copies keep running recipe 0).
     expect(res.state!.run.active['charcoal-ground']).toEqual([2]);
     expect(res.state!.run.active.steelworks).toEqual([3]);
@@ -285,7 +285,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v7));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(7);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.tools).toBe(0);
     expect(res.state!.run.resources.engines).toBe(0);
     expect(res.state!.run.resources.furniture).toBe(0);
@@ -323,7 +323,7 @@ describe('save round-trip', () => {
     const res = safeLoad(JSON.stringify(v8));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(8);
-    expect(res.state!.version).toBe(9);
+    expect(res.state!.version).toBe(10);
     expect(res.state!.run.resources.parchment).toBe(0);
     expect(res.state!.run.resources.books).toBe(0);
     expect(res.state!.run.resources.compendiums).toBe(0);

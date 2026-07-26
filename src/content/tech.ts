@@ -43,6 +43,14 @@ export type TechId =
   | 'construction'
   | 'philosophy'
   | 'mysticism'
+  | 'animal-husbandry'
+  | 'irrigation'
+  | 'wheelbarrows'
+  // Governance (forms + policy slots — systems/government.ts)
+  | 'code-of-laws'
+  | 'monarchy'
+  | 'civil-service'
+  | 'republic'
   // Bronze Age (early metal + first NATURE mana)
   | 'mining'
   | 'coal-mining'
@@ -55,6 +63,11 @@ export type TechId =
   | 'crystallurgy'
   | 'enchantment'
   | 'runecraft'
+  | 'bloomery'
+  | 'paper-making'
+  | 'guild-charters'
+  | 'optics'
+  | 'blast-furnace'
   | 'steelmaking'
   | 'steel-axe'
   | 'steel-hoe'
@@ -63,7 +76,8 @@ export type TechId =
   // Industrial Era (Age of Steam)
   | 'steam-power'
   | 'precision-engineering'
-  | 'industrialization';
+  | 'industrialization'
+  | 'fertilizer';
 
 export interface TechDef {
   id: TechId;
@@ -119,6 +133,14 @@ export const TECHS: TechDef[] = [
     unlocks: ["Hunter's Lodge (building)"],
   },
   {
+    id: 'animal-husbandry',
+    name: 'Animal Husbandry',
+    blurb: 'Keep the beasts instead of chasing them. Hunters return heavier-laden.',
+    cost: 450,
+    requires: ['archery'],
+    unlocks: ['+25% Hunter output'],
+  },
+  {
     id: 'pottery',
     name: 'Pottery',
     blurb: 'Fired clay to store the harvest. The mice file a complaint.',
@@ -132,6 +154,14 @@ export const TECHS: TechDef[] = [
     cost: 500,
     requires: ['stone-hoe'],
     unlocks: ['+50% Farmer output'],
+  },
+  {
+    id: 'irrigation',
+    name: 'Irrigation',
+    blurb: 'Ditches and channels — the river is put to work.',
+    cost: 700,
+    requires: ['agriculture'],
+    unlocks: ['+25% Farmer output'],
   },
   {
     id: 'naturalism',
@@ -247,6 +277,76 @@ export const TECHS: TechDef[] = [
     requires: ['pottery'],
     unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Bard (job)'],
   },
+  {
+    id: 'wheelbarrows',
+    name: 'Wheelbarrows',
+    blurb: 'One wheel, two handles, half the trips.',
+    cost: 650,
+    requires: ['the-wheel'],
+    unlocks: ['+10% to every gather job'],
+  },
+  {
+    id: 'code-of-laws',
+    name: 'Code of Laws',
+    blurb: 'Rules written down, where everyone can argue about them properly.',
+    cost: 1200,
+    resourceCost: { culture: 100 },
+    requires: ['philosophy'],
+    unlocks: ['Government — enact policies', 'Council of Elders (form)', '+1 policy slot'],
+  },
+  {
+    id: 'monarchy',
+    name: 'Monarchy',
+    blurb: 'One crown to settle every argument, mostly by ending it.',
+    cost: 2000,
+    resourceCost: { culture: 200 },
+    requires: ['code-of-laws'],
+    unlocks: ['Monarchy (form) — +5% worker output', '+1 policy slot'],
+  },
+  {
+    id: 'civil-service',
+    name: 'Civil Service',
+    blurb: 'Clerks, ledgers, and stamps. The realm runs on paperwork now.',
+    cost: 3200,
+    resourceCost: { culture: 250 },
+    requires: ['monarchy'],
+    unlocks: ['+1 policy slot'],
+  },
+  {
+    id: 'republic',
+    name: 'Republic',
+    blurb: 'The crown yields to the assembly. The arguing resumes, productively.',
+    cost: 4500,
+    resourceCost: { culture: 500 },
+    requires: ['monarchy'],
+    unlocks: ['Republic (form) — +25% Culture, +5 happiness', '+1 policy slot'],
+  },
+  {
+    id: 'guild-charters',
+    name: 'Guild Charters',
+    blurb: 'The trades organize, print rules, and collect dues.',
+    cost: 1600,
+    resourceCost: { culture: 120 },
+    requires: ['philosophy'],
+    unlocks: ['Guild Hall (building)'],
+  },
+  {
+    id: 'paper-making',
+    name: 'Paper Making',
+    blurb: 'Pulp, press, and patience — pages without the pasture.',
+    cost: 1400,
+    resourceCost: { culture: 60 },
+    requires: ['bookbinding'],
+    unlocks: ['Paper Mill (building)'],
+  },
+  {
+    id: 'optics',
+    name: 'Optics',
+    blurb: 'Ground glass that makes the far near. Scholars see further.',
+    cost: 2400,
+    requires: ['mathematics'],
+    unlocks: ['+25% Scholar output'],
+  },
 
   // ---- BRONZE AGE (early metal; NATURE mana arrives via Naturalism → Druidry) ----
   {
@@ -283,6 +383,22 @@ export const TECHS: TechDef[] = [
     resourceCost: { iron: 25 }, // iron ore is smelted into the new tools
     requires: ['mining'], // Bronze Working retired — Iron follows Mining directly
     unlocks: ['+50% to every gather job', 'Forge (building)'],
+  },
+  {
+    id: 'bloomery',
+    name: 'Bloomery',
+    blurb: 'A clay furnace that coaxes the ore. It gives up its iron more willingly.',
+    cost: 1250,
+    requires: ['mining'],
+    unlocks: ['+25% Miner output'],
+  },
+  {
+    id: 'blast-furnace',
+    name: 'Blast Furnace',
+    blurb: 'A furnace that never sleeps and barely needs minding.',
+    cost: 2400,
+    requires: ['iron-working', 'coal-mining'],
+    unlocks: ['Blast Furnace (building)'],
   },
   {
     id: 'crystallurgy',
@@ -386,6 +502,14 @@ export const TECHS: TechDef[] = [
     resourceCost: { engines: 40 }, // research sink: retooling the economy spends engines
     requires: ['precision-engineering'],
     unlocks: ['Factory (building)', 'Furniture (good)', 'Steam Works (building)'],
+  },
+  {
+    id: 'fertilizer',
+    name: 'Fertilizer',
+    blurb: 'Chemistry meets the field. The field yields.',
+    cost: 5000,
+    requires: ['industrialization'],
+    unlocks: ['+50% Farmer output'],
   },
 ];
 

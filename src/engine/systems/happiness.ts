@@ -8,6 +8,7 @@
 import { HAPPINESS } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
 import type { GameState } from '../state';
+import { FORM_LABELS, currentForm, formBonuses, effectivePolicies } from './government';
 
 /** One signed contribution to the happiness total (for the UI readout). */
 export interface HappinessLine {
@@ -66,7 +67,22 @@ export function happiness(state: GameState): HappinessInfo {
   );
   if (furnitureBonus > 0) breakdown.push({ label: `Furniture (${Math.floor(furniture)})`, amount: furnitureBonus });
 
-  const raw = HAPPINESS.base - crowding + bardBonus + luxury + furBonus + furnitureBonus;
+  // Governance: the form's passive and each LIVE policy's happiness effect (suspended
+  // policies contribute nothing).
+  let governance = 0;
+  const fb = formBonuses(state);
+  if (fb.happiness !== 0) {
+    governance += fb.happiness;
+    breakdown.push({ label: FORM_LABELS[currentForm(state)], amount: fb.happiness });
+  }
+  for (const p of effectivePolicies(state)) {
+    if (p.happiness) {
+      governance += p.happiness;
+      breakdown.push({ label: `${p.name} (policy)`, amount: p.happiness });
+    }
+  }
+
+  const raw = HAPPINESS.base - crowding + bardBonus + luxury + furBonus + furnitureBonus + governance;
   const value = Math.max(0, Math.min(100, raw));
   return {
     value,

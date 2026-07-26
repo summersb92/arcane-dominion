@@ -5,6 +5,8 @@
     assignJob,
     unassignJob,
     research,
+    enactPolicy,
+    revokePolicy,
     openTip,
     hideTooltip,
     jobTooltip,
@@ -58,6 +60,7 @@
   $: researchedTech = showResearched ? $game.tech.filter((t) => t.researched) : [];
 
   $: pop = $game.population;
+  $: gov = $game.government;
 
   function growthLabel(status: string): string {
     switch (status) {
@@ -110,6 +113,8 @@
       <h2>{$game.population.name}</h2>
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
 
+      <div class="jobscols" class:single={!gov.unlocked}>
+      <div class="jobscol">
       <!-- Prominent, always-present Population readout: the next-settler progress bar
            fills while growing (with %), or names the paused reason when it can't grow. -->
       <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -188,6 +193,55 @@
           {/each}
         </div>
       {/if}
+      </div>
+
+      {#if gov.unlocked}
+        <div class="jobscol">
+          <div class="govcard">
+            <h2>Government</h2>
+            <div class="govmeta">
+              <span>Form <strong>{gov.formLabel}</strong></span>
+              <span>Policies <strong>{gov.used}</strong> / {gov.slots}</span>
+              {#if gov.upkeep > 0}<span>Upkeep <strong>-{gov.upkeep.toFixed(2)} Culture/s</strong></span>{/if}
+            </div>
+            {#if gov.formBonusText.length}
+              <div class="formbonus">
+                {#each gov.formBonusText as line}<span class="good">{line}</span>{/each}
+              </div>
+            {/if}
+            {#if gov.suspended}
+              <div class="suspended">⚠ Culture has run dry — every policy is suspended until it flows again.</div>
+            {/if}
+            <div class="policies">
+              {#each gov.policies as p (p.id)}
+                <div class="prow" class:on={p.active} class:dormant={p.active && gov.suspended}>
+                  <div class="pmain">
+                    <div class="phead">
+                      <span class="pname">{p.name}</span>
+                      <span class="pupkeep">-{p.upkeep}/s Culture</span>
+                    </div>
+                    <div class="peffects">
+                      {#each p.effects as fx}
+                        <span class:good={fx.good} class:bad={!fx.good}>{fx.text}</span>
+                      {/each}
+                    </div>
+                    <div class="pblurb">{p.blurb}</div>
+                  </div>
+                  {#if p.active}
+                    <button class="btn pbtn" on:click={() => revokePolicy(p.id)}>Repeal</button>
+                  {:else}
+                    <button class="btn pbtn" disabled={!p.canEnact} on:click={() => enactPolicy(p.id)}>Enact</button>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+            {#if gov.used >= gov.slots && gov.policies.some((p) => !p.active)}
+              <div class="govnote">All policy slots are in use — repeal one, or research further governance.</div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+      </div>
     </section>
   {:else if $activeTab === 'research'}
     <section>
@@ -427,12 +481,137 @@
     color: var(--life);
     font-weight: 600;
   }
-  /* Job rows — full width now (the Government stub no longer takes half the pane). */
+  /* Settlement tab: jobs on the left; the Government panel (once Code of Laws lands)
+     on the right. Single column until governance unlocks, and on narrow widths. */
+  .jobscols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .jobscols.single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (max-width: 720px) {
+    .jobscols {
+      grid-template-columns: 1fr;
+    }
+  }
+  .jobscol {
+    min-width: 0;
+  }
+  .govcard {
+    padding: 10px 12px;
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .govcard h2 {
+    margin-bottom: 6px;
+  }
+  .govmeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12.5px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .govmeta strong {
+    color: var(--ink);
+  }
+  .formbonus {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .suspended {
+    color: var(--life);
+    font-size: 12.5px;
+    font-weight: 600;
+    margin: 6px 0;
+  }
+  .policies {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .prow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    background: var(--panel2);
+  }
+  .prow.on {
+    border-left: 3px solid var(--ok);
+  }
+  .prow.dormant {
+    border-left-color: var(--life);
+    opacity: 0.75;
+  }
+  .pmain {
+    min-width: 0;
+    flex: 1;
+  }
+  .phead {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .pname {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .pupkeep {
+    color: var(--faint);
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  .peffects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .pblurb {
+    color: var(--faint);
+    font-size: 11.5px;
+    margin-top: 2px;
+  }
+  .pbtn {
+    flex: none;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .pbtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .good {
+    color: var(--ok);
+  }
+  .bad {
+    color: var(--life);
+  }
+  .govnote {
+    color: var(--faint);
+    font-size: 11.5px;
+    margin-top: 8px;
+  }
   .jobs {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 560px;
   }
   .jrow {
     display: flex;

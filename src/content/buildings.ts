@@ -46,6 +46,9 @@ export type BuildingId =
   | 'tannery'
   | 'scriptorium'
   | 'archive'
+  | 'paper-mill'
+  | 'guild-hall'
+  | 'blast-furnace'
   | 'workshop'
   | 'forge'
   | 'amphitheater'
@@ -444,6 +447,40 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'jobCapacity', job: 'scribe', slots: 1 },
       { kind: 'convert', consume: { books: 0.2, research: 1 }, produce: { compendiums: 0.05 }, requiresWorker: 'scribe' },
+    ],
+  },
+  {
+    id: 'paper-mill',
+    name: 'Paper Mill',
+    blurb: 'Pulped timber pressed into pages. The forest, repurposed for arguments.',
+    category: 'industry',
+    cost: { wood: 80, stone: 40 },
+    costGrowth: 1.3,
+    requiresTech: 'paper-making',
+    effects: [{ kind: 'convert', consume: { wood: 0.6 }, produce: { parchment: 0.25 } }],
+  },
+  {
+    id: 'blast-furnace',
+    name: 'Blast Furnace',
+    blurb: 'It runs day and night and asks for nothing but fuel.',
+    category: 'industry',
+    cost: { stone: 120, iron: 60 },
+    costGrowth: 1.4,
+    requiresTech: 'blast-furnace',
+    effects: [{ kind: 'convert', consume: { coal: 0.4, iron: 0.4 }, produce: { steel: 0.15 } }],
+  },
+  {
+    id: 'guild-hall',
+    name: 'Guild Hall',
+    blurb: 'Dues are collected, standards enforced, apprentices mildly terrorized.',
+    category: 'civic',
+    cost: { wood: 120, stone: 80 },
+    costGrowth: 1.5,
+    requiresTech: 'guild-charters',
+    effects: [
+      { kind: 'jobOutputMult', amount: 0.05 },
+      { kind: 'produce', resource: 'culture', perSec: 0.2 },
+      { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
   {

@@ -6,9 +6,10 @@ import type { BuildingId } from '../content/buildings';
 import type { JobId } from '../content/jobs';
 import { RESOURCE_IDS, type MundaneResourceId, type ResourceId } from '../content/resources';
 import type { TechId } from '../content/tech';
+import type { PolicyId } from '../content/policies';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 9; // v9: added knowledge-chain goods `parchment`/`books`/`compendiums` (migrate/normalize backfill → 0, cap → 200)
+export const SAVE_VERSION = 10; // v10: added `policies` (active governance edicts; migrate/normalize backfill → [])
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -41,6 +42,9 @@ export interface RunState {
    *  Absent → all copies on the first recipe (see systems/buildings.ts activeRecipes). */
   active: Partial<Record<BuildingId, number[]>>;
   tech: TechId[]; // unlocked tech ids
+  /** Active governance POLICIES (systems/government.ts). Each drains culture upkeep per
+   *  second; all suspend while the culture jar is empty. Limited by policy slots. */
+  policies: PolicyId[];
   /** Signed accumulator (seconds) driving deterministic pop growth (+) / starvation (−). */
   growthProgress: number;
   flags: Record<string, boolean>;
@@ -134,6 +138,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       buildings: {},
       active: {},
       tech: [],
+      policies: [],
       growthProgress: 0,
       flags: {},
       chronicle: [{ at: 0, text: OPENINGS[(seed >>> 0) % OPENINGS.length] }],
