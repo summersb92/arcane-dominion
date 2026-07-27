@@ -181,10 +181,10 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 30 },
     costGrowth: 1.4,
     requiresTech: 'agriculture',
+    // Housing and a Farm slot only — a farmhouse is somewhere to live and work, not a store.
     effects: [
       { kind: 'popCap', amount: 1 },
       { kind: 'jobCapacity', job: 'forager', slots: 1 },
-      { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
   {

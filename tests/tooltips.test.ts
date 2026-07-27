@@ -38,4 +38,17 @@ describe('building tooltips hide effects still behind a tech gate', () => {
   it('the House advertises the treasury it underwrites', () => {
     expect(effectsFor(newGame(1), 'hut')).toContain('+100 Gold cap (with Currency)');
   });
+
+  it('the Farm House is housing and a Farm slot — no storage at all', () => {
+    const s = newGame(1);
+    s.run.tech.push('agriculture');
+    const fx = effectsFor(s, 'farm-house');
+    expect(fx).toContain('+1 housing');
+    expect(fx.some((l) => /storage|cap/i.test(l))).toBe(false);
+    // And building one leaves every material ceiling exactly where it was.
+    s.run.resources.wood = 500;
+    const before = { ...s.run.caps };
+    expect(build(s, 'farm-house')).toBe(true);
+    expect(s.run.caps).toEqual(before);
+  });
 });
