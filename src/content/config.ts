@@ -90,8 +90,10 @@ export const MANUAL_GATHER_RETIRE_CAP = 1000;
 
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
 export const POPULATION = {
-  /** Food each settler consumes per second, regardless of job. */
-  baseFoodUpkeep: 0.05,
+  /** Food each settler consumes per second, regardless of job. Deliberately close to what an
+   *  idle settler forages (4.2) and to a Farmer's output (6): an unemployed settler barely
+   *  feeds themself, and only Farmers build a real surplus. */
+  baseFoodUpkeep: 4,
   /** Research each settler passively generates per second — a curiosity trickle that
    *  begins with your very first settler, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */

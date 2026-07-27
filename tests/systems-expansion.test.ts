@@ -127,16 +127,15 @@ describe('happiness gates growth', () => {
 
   it('growth pauses below the threshold and resumes once happiness recovers', () => {
     const s = newGame(1);
-    // Room + a sustainable food surplus, but too many settlers → unhappy.
+    // Room + a sustainable food surplus, but too many settlers → unhappy. At 4 food upkeep
+    // per settler an unhappy settlement only stays fed if EVERYONE farms with the full tool
+    // chain — otherwise it starves and growthStatus reports 'stalled' instead of 'unhappy'.
     s.run.buildings.hut = 1;
-    s.run.tech.push('agriculture'); // the Farm is gated behind Agriculture
-    s.run.resources.wood = 500;
-    build(s, 'forager-hut'); // 1 Farmer slot
-    build(s, 'forager-hut'); // 2
-    build(s, 'forager-hut'); // 3 slots (one job per building)
+    s.run.tech.push('agriculture', 'stone-hoe', 'irrigation', 'fertilizer');
+    s.run.buildings['forager-hut'] = 31; // a Farm slot for every settler
     s.run.popCap = 100;
     s.run.population.total = 31; // crowding 2×(31−5) = 52 → happiness 48 (< 50)
-    assignJob(s, 'forager', 3); // 3 farmers (agri ×1.5) + idle trickle > upkeep → net positive
+    assignJob(s, 'forager', 31); // 31 × 6 × 2.34 tools × 0.48 contentment ≈ 209/s vs 124 upkeep
     s.run.resources.food = 500;
 
     expect(happiness(s).status).toBe('unhappy');
@@ -146,7 +145,8 @@ describe('happiness gates growth', () => {
 
     // Build an Amphitheater (+10) → happiness 58, content → growth resumes.
     s.run.tech.push('the-arts');
-    s.run.resources.stone = 100;
+    s.run.resources.wood = 200;
+    s.run.resources.stone = 200;
     expect(build(s, 'amphitheater')).toBe(true);
     expect(happiness(s).status).toBe('content');
     expect(growthStatus(s).status).toBe('growing');
@@ -164,7 +164,7 @@ describe('furs luxury resource + Hunter', () => {
     s.run.population.total = 1;
     expect(assignJob(s, 'hunter', 1)).toBe(1);
     const r = productionRates(s);
-    expect(r.food).toBeCloseTo(0.3 - 0.05, 6); // +0.3 hunter food − 0.05 settler upkeep
+    expect(r.food).toBeCloseTo(0.3 - 4, 6); // +0.3 hunter food − 4 settler upkeep
     expect(r.furs).toBeCloseTo(0.15, 6); // +0.15 furs
   });
 

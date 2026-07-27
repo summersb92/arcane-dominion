@@ -125,7 +125,7 @@ describe('policies — enact, revoke, slots, and effects', () => {
     // contentment, so derive the expectation from the live happiness rather than a constant.
     s.run.population.total = 10;
     const hap = happiness(s).value / 100;
-    expect(productionRates(s).food).toBeCloseTo(-(10 * 0.05 * 0.75) + 10 * 4.2 * hap, 6);
+    expect(productionRates(s).food).toBeCloseTo(-(10 * 4 * 0.75) + 10 * 4.2 * hap, 6);
   });
 
   it('policies drain culture upkeep and SUSPEND when the jar runs dry', () => {

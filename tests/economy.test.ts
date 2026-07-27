@@ -107,7 +107,7 @@ describe('jobs', () => {
 
     const rates = productionRates(s);
     expect(rates.wood).toBeCloseTo(0.5, 6); // 1 worker × 0.5/s
-    expect(rates.food).toBeCloseTo(-0.05, 6); // base settler upkeep only — jobs no longer eat food
+    expect(rates.food).toBeCloseTo(-4, 6); // base settler upkeep only — jobs no longer eat food
 
     const woodBefore = s.run.resources.wood;
     const foodBefore = s.run.resources.food;

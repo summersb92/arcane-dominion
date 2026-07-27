@@ -116,8 +116,8 @@ describe('per-job food upkeep removed', () => {
     build(s, 'woodcutters-lodge'); // a 2nd lodge → 2 slots total
     s.run.population.total = 2;
     assignJob(s, 'woodcutter', 2); // both working → no idle settlers
-    // 2 settlers × 0.05 base upkeep = -0.1/s; workers add nothing (and none are idle).
-    expect(productionRates(s).food).toBeCloseTo(-0.1, 6);
+    // 2 settlers × 4 base upkeep = -8/s; workers add nothing (and none are idle).
+    expect(productionRates(s).food).toBeCloseTo(-8, 6);
   });
 });
 
