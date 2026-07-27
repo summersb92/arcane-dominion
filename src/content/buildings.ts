@@ -205,7 +205,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Ward Stone',
     blurb: 'A carved stone that drinks the ambient magic and gives back a quiet, steady calm.',
     category: 'civic',
-    cost: { stone: 60 },
+    cost: { stone: 100 },
     costGrowth: 1.2,
     requiresTech: 'warding',
     effects: [
