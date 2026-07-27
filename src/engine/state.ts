@@ -10,7 +10,7 @@ import type { PolicyId } from '../content/policies';
 import type { CurriculumId } from '../content/education';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 15; // v15: added `seasonTally` (per-season birth/death chronicle roll-up)
+export const SAVE_VERSION = 16; // v16: added `vacancies` (posts emptied by death, refilled on rebirth)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -21,6 +21,12 @@ export interface Population {
   total: number;
   jobs: Record<JobId, number>;
 }
+
+/** Posts left EMPTY by death — the settlement remembers the work that was being done and
+ *  puts the next arrivals back to it, rather than making the player re-staff a famine by
+ *  hand. Only starvation adds to this; deliberately unassigning someone does not (that was
+ *  a decision, not a loss). Food work is refilled first (systems/jobs.ts REFILL_ORDER). */
+export type Vacancies = Partial<Record<JobId, number>>;
 
 export interface ChronicleEntry {
   at: number; // simulated-playtime seconds
@@ -48,6 +54,8 @@ export interface RunState {
    *  culture are uncapped). */
   caps: Record<MundaneResourceId, number>;
   population: Population;
+  /** Work left undone by the dead, waiting for the next settlers (see Vacancies). */
+  vacancies: Vacancies;
   popCap: number; // housing capacity
   buildings: Partial<Record<BuildingId, number>>; // count built per building
   /** Per-RECIPE running copy counts for CONVERTER buildings (aligned to the building's convert
@@ -165,6 +173,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       resources: freshResources(),
       caps: freshCaps(),
       population: { total: 0, jobs: {} as Record<JobId, number> },
+      vacancies: {},
       popCap: STARTING.popCap,
       buildings: {},
       active: {},

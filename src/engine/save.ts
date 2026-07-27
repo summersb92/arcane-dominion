@@ -130,6 +130,9 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v14 → v15: added `seasonTally` (the per-season birth/death roll-up the chronicle reports).
  *            Backfilled by normalize to the season the save's playtime actually falls in, so a
  *            loaded save doesn't immediately flush a phantom "season turned" line.
+ *   v15 → v16: added `vacancies` (posts emptied by starvation, refilled as settlers return).
+ *            Backfills to {} — an older save simply has no remembered posts, which is exactly
+ *            right: nothing was recorded while it was being played.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -299,6 +302,12 @@ export function normalize(state: GameState): void {
     run.population.jobs = {} as GameState['run']['population']['jobs'];
   }
   for (const id of JOB_IDS) run.population.jobs[id] ??= 0;
+
+  // Remembered posts — absent (or garbage) means the settlement is holding none open.
+  if (!run.vacancies || typeof run.vacancies !== 'object') run.vacancies = {};
+  for (const [id, n] of Object.entries(run.vacancies)) {
+    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) delete run.vacancies[id as never];
+  }
 
   // Buildings map — backfill the container (individual counts stay sparse/optional).
   if (!run.buildings || typeof run.buildings !== 'object') run.buildings = {};

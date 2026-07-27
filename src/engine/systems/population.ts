@@ -10,7 +10,7 @@ import type { GameState } from '../state';
 import { logEvent, tallyBirth, tallyDeath } from './chronicle';
 import { foodBalance } from './production';
 import { happiness } from './happiness';
-import { idleSettlers, removeSettler } from './jobs';
+import { idleSettlers, refillVacancy, removeSettler } from './jobs';
 import { effectiveCap } from './caps';
 
 const EPS = 1e-9;
@@ -22,6 +22,11 @@ const EPS = 1e-9;
  * merely sit there while growth stalls on a rate technicality.
  */
 export function foodAllowsGrowth(state: GameState): boolean {
+  // An EMPTY camp is never held back by food: there is nobody to feed, nobody to farm, and
+  // no way back from zero if the larder happens to be bare too. A settlement that starves to
+  // the last settler must always be able to draw a first one again, or the run is simply over
+  // with no way to say so.
+  if (state.run.population.total <= 0) return true;
   const food = state.run.resources.food;
   if (food <= EPS) return false;
   if (foodBalance(state) >= -EPS) return true;
@@ -76,6 +81,9 @@ export function runPopulation(state: GameState, dt: number): void {
       // Ordinary arrivals are counted, not narrated — the season reports them in one line.
       // Only the FIRST settler and the milestone populations earn their own beat.
       tallyBirth(state);
+      // Put them straight back to work a famine interrupted, food first — the settlement
+      // remembers what it was doing (systems/jobs.ts refillVacancy).
+      refillVacancy(state);
       const milestone = POP_MILESTONES[run.population.total];
       if (wasEmpty) logEvent(state, 'The first settler joins the camp.', 'ev');
       else if (milestone && run.flags[`popBeat${run.population.total}`] !== true) {
