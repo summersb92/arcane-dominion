@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
-import { build, setRecipeActive, activeCount } from '../src/engine/systems/buildings';
+import { build, setRecipeActive, setActive, activeCount } from '../src/engine/systems/buildings';
 import { happiness } from '../src/engine/systems/happiness';
 import { effectiveCap } from '../src/engine/systems/caps';
 import { assignJob } from '../src/engine/systems/jobs';
@@ -368,7 +368,32 @@ describe('mana finds early uses: the Ward Stone and the elemental attunements', 
     expect(build(s, 'ward-stone')).toBe(true);
     expect(happiness(s).value).toBe(before + 3);
     expect(productionRates(s).mana).toBeCloseTo(-0.2, 6);
-    expect(effectsFor(s, 'ward-stone')).toContain('-0.20 Mana/s upkeep');
+    expect(effectsFor(s, 'ward-stone')).toEqual(['-0.20 Mana/s (fuel) per active copy', '+3 happiness']);
+  });
+
+  it('Ward Stones can be stood down, and a stood-down stone is just a rock', () => {
+    const s = attuned('warding');
+    s.run.population.total = 20;
+    const before = happiness(s).value;
+    for (let i = 0; i < 3; i++) expect(build(s, 'ward-stone')).toBe(true);
+    // All three start switched on (it is an ungated recipe).
+    expect(activeCount(s, 'ward-stone')).toBe(3);
+    expect(happiness(s).value).toBe(before + 9);
+    expect(productionRates(s).mana).toBeCloseTo(-0.6, 6);
+
+    setActive(s, 'ward-stone', 1); // stand two down to save the pool
+    expect(happiness(s).value).toBe(before + 3);
+    expect(productionRates(s).mana).toBeCloseTo(-0.2, 6);
+
+    setActive(s, 'ward-stone', 0);
+    expect(happiness(s).value).toBe(before);
+    expect(productionRates(s).mana).toBeCloseTo(0, 6);
+
+    // And the toggle is exposed to the UI.
+    const row = toView(s).buildings.find((b) => b.id === 'ward-stone')!;
+    expect(row.converter).toBe(true);
+    expect(row.count).toBe(3);
+    expect(row.active).toBe(0);
   });
 
   it('Meditation gives every settler a mana trickle', () => {

@@ -208,8 +208,11 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { stone: 100 },
     costGrowth: 1.2,
     requiresTech: 'warding',
+    // A converter with no output: the mana IS the cost and the calm IS the product. Being a
+    // converter is what gives it the active-copies toggle — a settlement should be able to
+    // stand its wards down when the pool runs low.
     effects: [
-      { kind: 'manaUpkeep', perSec: 0.2 },
+      { kind: 'convert', consume: { mana: 0.2 }, produce: {} },
       { kind: 'happiness', amount: 3 },
     ],
   },

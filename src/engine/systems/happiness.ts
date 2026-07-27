@@ -7,6 +7,7 @@
 
 import { HAPPINESS } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
+import { activeCount, isConverter } from './buildings';
 import type { GameState } from '../state';
 import { FORM_LABELS, currentForm, formBonuses, effectivePolicies } from './government';
 
@@ -41,7 +42,11 @@ export function happiness(state: GameState): HappinessInfo {
   // Luxury buildings: sum every `happiness` building effect × its count (e.g. Amphitheater).
   let luxury = 0;
   for (const b of BUILDINGS) {
-    const count = run.buildings[b.id] ?? 0;
+    const built = run.buildings[b.id] ?? 0;
+    if (built <= 0) continue;
+    // A CONVERTER only lifts spirits while it is switched on — a Ward Stone stood down is
+    // just a rock. Everything else counts every copy raised.
+    const count = isConverter(b) ? activeCount(state, b.id) : built;
     if (count <= 0) continue;
     for (const eff of b.effects) {
       if (eff.kind === 'happiness') {
