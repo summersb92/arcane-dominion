@@ -43,6 +43,7 @@ export type BuildingId =
   | 'theatre'
   | 'forum'
   | 'wayside-shrine'
+  | 'ward-stone'
   | 'shrine'
   | 'ley-grove'
   | 'standing-stones'
@@ -109,6 +110,9 @@ export type BuildingEffect =
       consume: Partial<Record<ResourceId, number>>;
       produce: Partial<Record<ResourceId, number>>;
       requiresWorker?: JobId;
+      /** Recipe hidden until this tech is researched — the elemental ATTUNEMENTS. A gated
+       *  recipe also defaults to OFF, so unlocking one never silently starts draining mana. */
+      requiresTech?: string;
     }
   | { kind: 'manaUpkeep'; perSec: number } // mana drained per second
   // +N to the RESEARCH cap (science buildings; caps.ts). An optional `requiresTech` gates the
@@ -186,6 +190,19 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'produce', resource: 'culture', perSec: 0.01 },
       { kind: 'produce', resource: 'mana', perSec: 0.1, requiresTech: 'folk-lore' },
+    ],
+  },
+  {
+    id: 'ward-stone',
+    name: 'Ward Stone',
+    blurb: 'A carved stone that drinks the ambient magic and gives back a quiet, steady calm.',
+    category: 'civic',
+    cost: { stone: 60 },
+    costGrowth: 1.2,
+    requiresTech: 'warding',
+    effects: [
+      { kind: 'manaUpkeep', perSec: 0.2 },
+      { kind: 'happiness', amount: 3 },
     ],
   },
   {
@@ -316,6 +333,13 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'jobCapacity', job: 'quarry-worker', slots: 1 },
       { kind: 'resourceCap', resource: 'stone', amount: BASE_WORKPLACE_CAP },
       { kind: 'jobBoost', job: 'quarry-worker', amount: 0.02 },
+      {
+        kind: 'convert',
+        label: 'Attune',
+        consume: { mana: 0.2 },
+        produce: { earthEssence: 0.05 },
+        requiresTech: 'earth-attunement',
+      },
     ],
   },
   {
@@ -414,6 +438,13 @@ export const BUILDINGS: BuildingDef[] = [
     requiresTech: 'milling',
     effects: [
       { kind: 'jobBoost', job: 'forager', amount: 0.15 },
+      {
+        kind: 'convert',
+        label: 'Attune',
+        consume: { mana: 0.2 },
+        produce: { airEssence: 0.05 },
+        requiresTech: 'air-attunement',
+      },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -428,6 +459,13 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'produce', resource: 'food', perSec: 0.3 },
       { kind: 'produce', resource: 'gold', perSec: 0.15 },
+      {
+        kind: 'convert',
+        label: 'Attune',
+        consume: { mana: 0.2 },
+        produce: { waterEssence: 0.05 },
+        requiresTech: 'water-attunement',
+      },
       // A harbour handles money as well as fish — it holds far more coin than a House.
       { kind: 'coinCap', amount: 250 },
       { kind: 'cap', amount: 40 },
@@ -746,7 +784,17 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 50, stone: 40 },
     costGrowth: 1.3,
     requiresTech: 'iron-working',
-    effects: [{ kind: 'jobOutputMult', amount: 0.15 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'jobOutputMult', amount: 0.15 },
+      {
+        kind: 'convert',
+        label: 'Attune',
+        consume: { mana: 0.2 },
+        produce: { fireEssence: 0.05 },
+        requiresTech: 'fire-attunement',
+      },
+      { kind: 'cap', amount: STRUCT_CAP },
+    ],
   },
   {
     id: 'amphitheater',

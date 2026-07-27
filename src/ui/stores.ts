@@ -118,8 +118,10 @@ export interface BuildingRowView {
   category: BuildingCategory; // Build-tab section this card files under
   converter: boolean; // has ≥1 convert effect → per-recipe toggle
   active: number; // total active copies (converters); else = count
-  /** Per-recipe running counts + a derived rate hint for the toggle row's tooltip. */
-  recipes: { label: string; active: number; hint: string }[];
+  /** Per-recipe running counts + a derived rate hint for the toggle row's tooltip.
+   *  `index` is the recipe's real position in the building's convert effects — locked
+   *  recipes are filtered out, so the array position is NOT it. */
+  recipes: { index: number; label: string; active: number; hint: string }[];
   disabled: boolean; // build button disabled
   reason: string; // why disabled ("maxed" / "can't afford"), else ''
   /** Tech ids researched so far, so the tooltip can hide effects still behind a gate. */
@@ -480,6 +482,7 @@ export function toView(state: GameState): UiState {
       converter: b.converter,
       active: b.active,
       recipes: b.recipes.map((r) => ({
+        index: r.index,
         label: r.label,
         active: r.active,
         hint: recipeText(r.consume, r.produce, r.requiresWorker),

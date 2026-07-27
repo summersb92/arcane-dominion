@@ -17,9 +17,10 @@
     hideTooltip();
     build(b.id);
   }
+  /** `r` is the position in b.recipes; the engine wants the recipe's REAL index. */
   function toggleRecipe(r: number, delta: number): void {
     hideTooltip();
-    setRecipeActive(b.id, r, b.recipes[r].active + delta);
+    setRecipeActive(b.id, b.recipes[r].index, b.recipes[r].active + delta);
   }
 </script>
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
-import { build } from '../src/engine/systems/buildings';
+import { build, setRecipeActive, activeCount } from '../src/engine/systems/buildings';
+import { happiness } from '../src/engine/systems/happiness';
 import { assignJob } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, productionRates, runProduction } from '../src/engine/systems/production';
 import { TECH_BY_ID } from '../src/content/tech';
@@ -328,5 +329,82 @@ describe('the Shrine — the first building, and the first culture', () => {
     expect(s.run.resources.culture).toBeCloseTo(10, 6);
     expect(research(s, 'folk-lore')).toBe(true);
     expect(productionRates(s).mana).toBeCloseTo(0.5, 6);
+  });
+});
+
+describe('mana finds early uses: the Ward Stone and the elemental attunements', () => {
+  /** A settlement with Folk Lore, Shrines running, and mana in hand. */
+  function attuned(...techs: string[]) {
+    const s = newGame(1);
+    s.run.tech.push('folk-lore', ...(techs as never[]));
+    s.run.resources.stone = 5000;
+    s.run.resources.wood = 5000;
+    s.run.resources.mana = 500;
+    s.run.resources.tools = 100;
+    return s;
+  }
+
+  it('the Ward Stone burns mana for morale', () => {
+    const s = attuned('warding');
+    s.run.population.total = 20; // below the 100 clamp so the gain is visible
+    const before = happiness(s).value;
+    expect(build(s, 'ward-stone')).toBe(true);
+    expect(happiness(s).value).toBe(before + 3);
+    expect(productionRates(s).mana).toBeCloseTo(-0.2, 6);
+    expect(effectsFor(s, 'ward-stone')).toContain('-0.20 Mana/s upkeep');
+  });
+
+  it('Meditation gives every settler a mana trickle', () => {
+    const s = newGame(1);
+    s.run.population.total = 40;
+    expect(productionRates(s).mana).toBeCloseTo(0, 6);
+    s.run.tech.push('meditation');
+    expect(productionRates(s).mana).toBeCloseTo(0.2, 6); // 40 × 0.005
+  });
+
+  it('an attunement recipe does not exist until its tech is in', () => {
+    const s = attuned();
+    s.run.tech.push('masonry');
+    expect(build(s, 'quarry')).toBe(true);
+    let row = toView(s).buildings.find((b) => b.id === 'quarry')!;
+    expect(row.converter).toBe(false); // no toggle at all
+    expect(row.recipes).toEqual([]);
+    expect(productionRates(s).earthEssence).toBeCloseTo(0, 6);
+
+    s.run.tech.push('earth-attunement');
+    row = toView(s).buildings.find((b) => b.id === 'quarry')!;
+    expect(row.converter).toBe(true);
+    expect(row.recipes.map((r) => r.label)).toEqual(['Attune']);
+  });
+
+  it('unlocking an attunement starts it OFF — it can never crash the economy on its own', () => {
+    const s = attuned('masonry', 'earth-attunement');
+    expect(build(s, 'quarry')).toBe(true);
+    expect(build(s, 'quarry')).toBe(true);
+    // Nothing running yet, so no mana is being spent.
+    expect(activeCount(s, 'quarry')).toBe(0);
+    expect(productionRates(s).mana).toBeCloseTo(0, 6);
+    expect(productionRates(s).earthEssence).toBeCloseTo(0, 6);
+
+    setRecipeActive(s, 'quarry', 0, 2); // the player opts in
+    expect(productionRates(s).mana).toBeCloseTo(-0.4, 6);
+    expect(productionRates(s).earthEssence).toBeCloseTo(0.1, 6);
+  });
+
+  it('each element comes from its own building', () => {
+    const pairs = [
+      ['quarry', 'earth-attunement', 'masonry', 'earthEssence'],
+      ['harbor', 'water-attunement', 'sailing', 'waterEssence'],
+      ['windmill', 'air-attunement', 'milling', 'airEssence'],
+      ['forge', 'fire-attunement', 'iron-working', 'fireEssence'],
+    ] as const;
+    for (const [building, attune, gate, essence] of pairs) {
+      const s = attuned(attune, gate, 'construction', 'engineering');
+      expect(build(s, building), `${building} should build`).toBe(true);
+      setRecipeActive(s, building, 0, 1);
+      const r = productionRates(s);
+      expect(r[essence], `${building} → ${essence}`).toBeCloseTo(0.05, 6);
+      expect(r.mana).toBeCloseTo(-0.2, 6);
+    }
   });
 });

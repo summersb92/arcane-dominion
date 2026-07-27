@@ -15,7 +15,7 @@ import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
-import { activeRecipes, activeCount, convertEffects, isConverter } from './buildings';
+import { activeRecipes, activeCount, convertEffects, isConverter, recipeUnlocked } from './buildings';
 import { logEvent } from './chronicle';
 import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
 import { magicYieldMult, oppositionFactor } from './education';
@@ -51,6 +51,7 @@ function converterRuns(state: GameState): ConverterRun[] {
     let workersLeft = workerJob ? (run.population.jobs[workerJob] ?? 0) : Infinity;
     for (let i = 0; i < recipes.length; i++) {
       const r = recipes[i];
+      if (!recipeUnlocked(state, r)) continue; // attunement not researched — recipe doesn't exist
       let copies = running[i] ?? 0;
       if (r.requiresWorker) {
         copies = Math.min(copies, workersLeft);
@@ -243,6 +244,10 @@ function flows(state: GameState): Flows {
     (POPULATION.researchPerSettler + booksResearchPerPop(state)) * run.population.total * gov.researchPerPop;
   // HELD compendiums yield a little mana per settler.
   gross.mana += compendiumManaPerPop(state) * run.population.total;
+  // Meditation: every settler draws their own small trickle, building or no building.
+  if (run.tech.includes('meditation' as never)) {
+    gross.mana += POPULATION.manaPerSettler * run.population.total;
+  }
 
   // Jobs: Σ workers × per-worker output × efficiency. No food upkeep per worker.
   for (const job of JOBS) {
@@ -347,6 +352,9 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   if (id === 'mana' && run.population.total > 0) {
     const compMana = compendiumManaPerPop(state) * run.population.total;
     if (compMana > 0) producers.push({ label: `Compendiums (per settler)`, amount: compMana });
+    if (run.tech.includes('meditation' as never)) {
+      producers.push({ label: 'Meditation (per settler)', amount: POPULATION.manaPerSettler * run.population.total });
+    }
   }
   // Jobs that produce this resource (workers × per-worker × tech efficiency).
   for (const job of JOBS) {

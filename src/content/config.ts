@@ -101,6 +101,9 @@ export const POPULATION = {
    *  begins with your very first settler, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */
   researchPerSettler: 0.02,
+  /** Mana each settler draws per second ONCE the Meditation tech is researched — the first
+   *  mana income that doesn't depend on a building. Small on purpose; Shrines still carry it. */
+  manaPerSettler: 0.005,
   /** Food each IDLE (unassigned) settler forages per second AT FULL HAPPINESS. The actual
    *  yield scales with contentment — a settlement at 50 happiness forages at half rate — so
    *  keeping people happy is itself a food policy (systems/production.ts idleFoodPerSettler

@@ -35,6 +35,17 @@ export function isConverter(def: BuildingDef): boolean {
   return def.effects.some((e) => e.kind === 'convert');
 }
 
+/** Is this recipe available yet? A tech-gated recipe (the elemental attunements) does not
+ *  exist for the player until its tech is in — it neither runs nor shows a toggle. */
+export function recipeUnlocked(state: GameState, c: ConvertEffect): boolean {
+  return !c.requiresTech || state.run.tech.includes(c.requiresTech as never);
+}
+
+/** True once a building has at least one recipe the player can actually run. */
+export function isLiveConverter(state: GameState, def: BuildingDef): boolean {
+  return convertEffects(def).some((c) => recipeUnlocked(state, c));
+}
+
 /** How many copies run EACH recipe, aligned to convertEffects order. The sum never exceeds the
  *  built count. Absent from run.active → all copies on the FIRST recipe (a fresh converter runs
  *  its basic recipe; also the backwards-compat default for old saves). */
@@ -46,7 +57,12 @@ export function activeRecipes(state: GameState, id: BuildingId): number[] {
   if (recipes === 0) return arr;
   const raw = state.run.active?.[id];
   if (!Array.isArray(raw)) {
-    arr[0] = count; // absent → all copies on the first (basic) recipe
+    // Absent → all copies on the first recipe the player can actually run. A TECH-GATED
+    // recipe is skipped here, so unlocking an attunement never silently switches every
+    // Quarry over to burning mana — you have to turn it on yourself.
+    const effects = convertEffects(def!);
+    const first = effects.findIndex((c) => recipeUnlocked(state, c) && !c.requiresTech);
+    if (first >= 0) arr[first] = count;
     return arr;
   }
   let sum = 0;
@@ -131,12 +147,15 @@ export function build(state: GameState, id: BuildingId): boolean {
     state.run.resources[res as ResourceId] -= amt as number;
   }
 
-  // Converter buildings track how many copies run each recipe. Snapshot the pre-build allocation,
-  // then start the freshly raised copy on the FIRST (basic) recipe — the player can re-allocate it.
+  // Converter buildings track how many copies run each recipe. Snapshot the pre-build
+  // allocation, then start the freshly raised copy on the first BASIC recipe — the player can
+  // re-allocate it. A tech-gated attunement is never auto-started: opting in to spending mana
+  // is always a deliberate act, so a new Quarry doesn't quietly begin draining the pool.
   const preRecipes = isConverter(def) ? activeRecipes(state, id) : null;
+  const startOn = preRecipes ? convertEffects(def).findIndex((c) => !c.requiresTech) : -1;
   state.run.buildings[id] = count + 1;
   if (preRecipes) {
-    preRecipes[0] += 1;
+    if (startOn >= 0) preRecipes[startOn] += 1;
     state.run.active ??= {};
     state.run.active[id] = preRecipes;
   }
@@ -246,6 +265,9 @@ export interface BuildingView {
   active: number; // total copies switched ON (converters only; else = count)
   /** Per-recipe running counts + per-copy trade rates (converters; else []). */
   recipes: {
+    /** Index into the building's convert effects — NOT the array position, since locked
+     *  recipes are filtered out. setRecipeActive keys off this. */
+    index: number;
     label: string;
     active: number;
     consume: Partial<Record<ResourceId, number>>;
@@ -259,16 +281,20 @@ export function buildingsView(state: GameState): BuildingView[] {
   return BUILDINGS.map((def) => {
     const count = state.run.buildings[def.id] ?? 0;
     const maxed = def.max !== undefined && count >= def.max;
-    const converter = isConverter(def);
+    const converter = isLiveConverter(state, def);
     const recipeRuns = converter ? activeRecipes(state, def.id) : [];
     const recipes = converter
-      ? convertEffects(def).map((e, i) => ({
-          label: e.label ?? 'Active',
-          active: recipeRuns[i] ?? 0,
-          consume: e.consume,
-          produce: e.produce,
-          requiresWorker: e.requiresWorker,
-        }))
+      ? convertEffects(def)
+          .map((e, i) => ({ e, i }))
+          .filter(({ e }) => recipeUnlocked(state, e))
+          .map(({ e, i }) => ({
+            index: i,
+            label: e.label ?? 'Active',
+            active: recipeRuns[i] ?? 0,
+            consume: e.consume,
+            produce: e.produce,
+            requiresWorker: e.requiresWorker,
+          }))
       : [];
     return {
       id: def.id,

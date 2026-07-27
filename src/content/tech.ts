@@ -36,6 +36,12 @@ export type TechId =
   | 'masonry'
   | 'writing'
   | 'folk-lore'
+  | 'warding'
+  | 'meditation'
+  | 'earth-attunement'
+  | 'water-attunement'
+  | 'air-attunement'
+  | 'fire-attunement'
   | 'decimal-system'
   | 'alchemy'
   | 'bookbinding'
@@ -170,6 +176,57 @@ export const TECHS: TechDef[] = [
     cost: 0,
     resourceCost: { culture: 10 },
     unlocks: ['Shrines draw mana'],
+  },
+  {
+    id: 'warding',
+    name: 'Warding',
+    blurb: 'Cut the right marks and the stone will hold a little peace in it.',
+    cost: 200,
+    requires: ['folk-lore'],
+    unlocks: ['Ward Stone (building)'],
+  },
+  {
+    id: 'meditation',
+    name: 'Meditation',
+    blurb: 'Sit still, breathe, listen. It turns out everyone leaks a little magic.',
+    cost: 300,
+    requires: ['folk-lore'],
+    unlocks: ['Every settler draws a trickle of mana'],
+  },
+  // ---- ELEMENTAL ATTUNEMENTS — each teaches ONE building to spend mana for its element.
+  // Every attunement is a toggled recipe that starts OFF, so unlocking one can never crash
+  // an economy on its own. Ordered by how early their building arrives.
+  {
+    id: 'earth-attunement',
+    name: 'Earth Attunement',
+    blurb: 'The quarry stops fighting the rock and starts asking it.',
+    cost: 400,
+    requires: ['folk-lore', 'masonry'],
+    unlocks: ['Quarries can spend mana for Earth'],
+  },
+  {
+    id: 'water-attunement',
+    name: 'Water Attunement',
+    blurb: 'The tide keeps its own time. Learn it and the harbour keeps more than fish.',
+    cost: 500,
+    requires: ['folk-lore', 'sailing'],
+    unlocks: ['Harbours can spend mana for Water'],
+  },
+  {
+    id: 'air-attunement',
+    name: 'Air Attunement',
+    blurb: 'Sails already catch the wind. This catches what the wind is carrying.',
+    cost: 600,
+    requires: ['folk-lore', 'milling'],
+    unlocks: ['Windmills can spend mana for Air'],
+  },
+  {
+    id: 'fire-attunement',
+    name: 'Fire Attunement',
+    blurb: 'Every forge has been half a ritual all along. Finish the other half.',
+    cost: 700,
+    requires: ['folk-lore', 'iron-working'],
+    unlocks: ['Forges can spend mana for Fire'],
   },
   {
     id: 'pottery',
