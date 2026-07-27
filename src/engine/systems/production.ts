@@ -147,7 +147,6 @@ function jobEfficiency(state: GameState, jobId: string): number {
   // Iron Working — the one GLOBAL tool tier, on all gather jobs (incl. Miners).
   if (GATHER_JOBS.has(jobId) && tech.includes('iron-working')) m *= TECH_BONUS.ironWorking;
   // Mini-step boosts — small per-job wins between the big tiers.
-  if (jobId === 'hunter' && tech.includes('animal-husbandry')) m *= TECH_BONUS.animalHusbandry;
   if (jobId === 'forager' && tech.includes('irrigation')) m *= TECH_BONUS.irrigation;
   if (jobId === 'forager' && tech.includes('fertilizer')) m *= TECH_BONUS.fertilizer;
   if (jobId === 'miner' && tech.includes('bloomery')) m *= TECH_BONUS.bloomery;

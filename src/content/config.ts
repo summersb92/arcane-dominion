@@ -166,7 +166,8 @@ export const OPPOSITION = {
  *  STONE and STEEL tools are split into THREE per-tool techs each, boosting ONLY their own gather
  *  job: (Stone/Steel) Axe → Woodcutter, Hoe → Farmer, Pick → Stonecutter. Iron Working is the one
  *  GLOBAL tool tier, stacking on all gather jobs (incl. Miners). Bronze Working was retired.
- *  Agriculture is a crop bonus that applies to the Farmer only. */
+ *  Agriculture and Animal Husbandry are ENABLERS — they open the Farm and the Ranch and
+ *  multiply nothing. */
 export const TECH_BONUS = {
   /** Per-tool STONE techs — each boosts a single gather job by +25%. */
   stoneAxe: 1.25, // Woodcutter only
@@ -179,8 +180,7 @@ export const TECH_BONUS = {
   steelHoe: 1.65, // Farmer only
   steelPick: 1.65, // Stonecutter only
   /** Mini-step boosts — small per-job wins that fill the cost-ladder gaps. */
-  animalHusbandry: 1.25, // Hunter only
-  irrigation: 1.25, // Farmer only (stacks with Agriculture)
+  irrigation: 1.25, // Farmer only
   wheelbarrows: 1.1, // × all gather jobs
   bloomery: 1.25, // Miner only
   optics: 1.25, // Scholar only

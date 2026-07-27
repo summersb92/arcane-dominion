@@ -17,12 +17,13 @@ import { safeLoad, SAVE_MAGIC } from '../src/engine/save';
 import { TECH_BY_ID } from '../src/content/tech';
 
 describe('mini-step techs — per-job boosts', () => {
-  it('Animal Husbandry boosts the Hunter only', () => {
+  it('Animal Husbandry is an ENABLER — it opens the Ranch and boosts no job', () => {
     const s = newGame(1);
     expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6);
     s.run.tech.push('animal-husbandry');
-    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3 * 1.25, 6);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6); // untouched
+    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6); // Hunters unchanged
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(TECH_BY_ID['animal-husbandry'].unlocks).toEqual(['Ranch (building)']);
   });
 
   it('Irrigation, Stone Hoe and Fertilizer stack on the Farmer (Agriculture adds no multiplier)', () => {

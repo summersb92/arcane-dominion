@@ -158,7 +158,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Keep the beasts instead of chasing them. They come to you, which is the whole idea.',
     cost: 100,
     requires: ['agriculture'],
-    unlocks: ['Ranch (building)', '+25% Hunter output'],
+    unlocks: ['Ranch (building)'],
   },
   {
     id: 'pottery',
