@@ -8,6 +8,13 @@
     return r.capped && r.amount >= r.cap * 0.9;
   }
 
+  /** A store that is shrinking. This OUTRANKS the near-cap warning everywhere it appears:
+   *  a stock running out is the urgent read, and a draining store is heading away from its
+   *  ceiling anyway, so the "nearly full" hint would only be noise. */
+  function draining(r: ResourceView): boolean {
+    return r.rate < 0;
+  }
+
   /** How full the store is, 0..100. Uncapped currencies (mana, culture, gold, prismatic)
    *  have no meaningful fraction, so they get no bar at all. */
   function fillPct(r: ResourceView): number {
@@ -40,14 +47,20 @@
         <!-- Storage gauge: a fill behind the text showing amount / cap at a glance.
              Capped resources only — a currency with no ceiling has no fraction to show. -->
         {#if r.capped}
-          <i class="fill" class:amber={nearCap(r)} class:full={r.atCap} style="width:{fillPct(r)}%"></i>
+          <i
+            class="fill"
+            class:amber={nearCap(r) && !draining(r)}
+            class:full={r.atCap && !draining(r)}
+            class:drain={draining(r)}
+            style="width:{fillPct(r)}%"
+          ></i>
         {/if}
         <span class="nm" class:mana={r.magic}>{r.label}</span>
         <span class="val">
-          <span class="vl" class:amber={nearCap(r)}>
+          <span class="vl" class:amber={nearCap(r) && !draining(r)} class:drain={draining(r)}>
             {fmtHeld(r.amount)}{#if r.capped}<span class="lockt"> / {fmtHeld(r.cap)}</span>{/if}
           </span>
-          <span class="rt">{fmtRate(r.rate)}</span>
+          <span class="rt" class:drain={draining(r)}>{fmtRate(r.rate)}</span>
         </span>
       </div>
     {/each}
@@ -85,11 +98,13 @@
     background: var(--mtr-bg);
     transition: width 0.25s ease-out;
   }
-  .fill.amber {
+  .fill.amber,
+  .fill.drain {
     background: var(--bar-off);
   }
   /* Tint the gauge where the theme supports mixing, so it reads as a meter rather than a
-     block of background — and turns warm as the store approaches its ceiling. */
+     block of background: accent while healthy, YELLOW as it nears the ceiling (deeper once
+     it's actually full and overflowing), RED whenever the store is draining. */
   @supports (background: color-mix(in srgb, red 10%, transparent)) {
     .fill {
       background: color-mix(in srgb, var(--accent) 16%, transparent);
@@ -98,7 +113,11 @@
       background: color-mix(in srgb, var(--gold) 24%, transparent);
     }
     .fill.full {
-      background: color-mix(in srgb, var(--life) 24%, transparent);
+      background: color-mix(in srgb, var(--gold) 38%, transparent);
+    }
+    /* Last in the cascade so it wins over amber/full regardless of class order. */
+    .fill.drain {
+      background: color-mix(in srgb, var(--life) 28%, transparent);
     }
   }
   /* Text rides above the gauge. */

@@ -180,6 +180,9 @@ h2.mt { margin-top: 16px; }
 .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; padding: 2px 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .row .nm { color: var(--dim); } .row .vl { color: var(--ink); } .row .rt { color: var(--ok); font-size: 11px; }
 .row .vl.amber { color: var(--gold); }
+/* A DRAINING store reads red — both the held amount and its rate. Declared after .amber so
+   it wins when a store is somehow both nearly full and shrinking. */
+.row .vl.drain, .row .rt.drain { color: var(--life); }
 .mtr { height: 5px; border-radius: 3px; background: var(--mtr-bg); margin: 2px 0 6px; overflow: hidden; }
 .mtr i { display: block; height: 100%; }
 .g { color: var(--gold); } .ins { color: var(--insight); } .ren { color: var(--renown); }

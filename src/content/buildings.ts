@@ -302,7 +302,7 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'science',
     cost: { wood: 150, stone: 120 },
     costGrowth: 1.4,
-    requiresTech: 'writing',
+    requiresTech: 'mathematics',
     effects: [
       { kind: 'jobCapacity', job: 'scholar', slots: 2 },
       { kind: 'produce', resource: 'research', perSec: 0.5 },

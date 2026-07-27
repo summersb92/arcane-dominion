@@ -41,11 +41,13 @@ describe('research is capped by science buildings', () => {
   it('the Library (+100) and Academy (+600) raise the research cap', () => {
     const s = newGame(1);
     expect(researchCap(s)).toBe(300); // base
-    s.run.tech.push('writing'); // unlocks the Library + Academy
+    s.run.tech.push('writing'); // unlocks the Library
     s.run.resources.wood = 500;
     s.run.resources.stone = 500;
     expect(build(s, 'library')).toBe(true);
     expect(researchCap(s)).toBe(400); // 300 base + 100 library
+    expect(build(s, 'academy')).toBe(false); // the Academy needs Mathematics now
+    s.run.tech.push('mathematics');
     expect(build(s, 'academy')).toBe(true);
     expect(researchCap(s)).toBe(1000); // + 600 academy
     // A Scholar can be assigned to the Library.

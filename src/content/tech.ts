@@ -217,17 +217,21 @@ export const TECHS: TechDef[] = [
     id: 'masonry',
     name: 'Masonry',
     blurb: 'Shape stone at scale. Walls follow; so do arguments about walls.',
-    cost: 550,
-    requires: ['stone-pick'],
+    // An OPENER: quarrying stone is one of the first things a camp learns, so this is a root
+    // node. The Stone Pick (+25% Stonecutter) is the follow-up upgrade, not the prerequisite.
+    cost: 50,
     unlocks: ['Quarry (building)', 'Stonecutter (job)'],
   },
   {
     id: 'writing',
     name: 'Writing',
     blurb: 'Set knowledge down in ink, where it cannot wander off.',
-    cost: 500,
-    requires: ['pottery'],
-    unlocks: ['Library (building)', 'Academy (building)'],
+    // The cheapest node in the tree and a root one: the Library it opens is the first source
+    // of research beyond the per-settler trickle, so it must be reachable almost immediately.
+    // The Academy moved to Mathematics — a +600 research ceiling this early would flatten the
+    // whole cost ladder.
+    cost: 20,
+    unlocks: ['Library (building)'],
   },
   {
     id: 'bookbinding',
@@ -253,7 +257,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Number, proof, and measure. The heavens are next.',
     cost: 700,
     requires: ['writing', 'masonry'], // a classic combination tech
-    unlocks: ['Observatory (building)'],
+    unlocks: ['Observatory (building)', 'Academy (building)'],
   },
   {
     id: 'construction',

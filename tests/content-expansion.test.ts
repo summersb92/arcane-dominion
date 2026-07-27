@@ -123,11 +123,12 @@ describe('per-job food upkeep removed', () => {
 
 describe('tech tree — steep research costs, Stone→Iron→Steel DAG (magic is discovery-driven, not a tech)', () => {
   it('ramps research costs steeply (cheap stone-tool openers → ≈3000 at Steelmaking)', () => {
-    expect(TECH_BY_ID['stone-hoe'].cost).toBe(100); // the cheapest opener
+    expect(TECH_BY_ID.writing.cost).toBe(20); // the cheapest opener — buys the Library
+    expect(TECH_BY_ID.masonry.cost).toBe(50); // stone mining, close behind
+    expect(TECH_BY_ID['stone-hoe'].cost).toBe(100);
     expect(TECH_BY_ID['stone-axe'].cost).toBe(150);
     expect(TECH_BY_ID['stone-pick'].cost).toBe(150);
     expect(TECH_BY_ID.agriculture.cost).toBe(150);
-    expect(TECH_BY_ID.masonry.cost).toBe(550);
     expect(TECH_BY_ID.mining.cost).toBe(900);
     expect(TECH_BY_ID['iron-working'].cost).toBe(1800);
     expect(TECH_BY_ID.steelmaking.cost).toBe(3000);
@@ -146,10 +147,15 @@ describe('tech tree — steep research costs, Stone→Iron→Steel DAG (magic is
   });
 
   it('forms a clean prereq chain up to Steelmaking (Bronze Working retired), Naturalism off Agriculture', () => {
-    // Agriculture/Masonry hang off the per-tool stone techs; the stone tools need nothing.
+    // Writing and Masonry are ROOT openers alongside the stone tools; Agriculture hangs off
+    // the Stone Hoe. The Stone Pick now UPGRADES the Stonecutter that Masonry opened, so it is
+    // deliberately not a prerequisite of it.
     expect(TECH_BY_ID['stone-hoe'].requires).toBeUndefined();
+    expect(TECH_BY_ID.writing.requires).toBeUndefined();
+    expect(TECH_BY_ID.masonry.requires).toBeUndefined();
     expect(TECH_BY_ID.agriculture.requires).toContain('stone-hoe');
-    expect(TECH_BY_ID.masonry.requires).toContain('stone-pick');
+    // The Academy's +600 ceiling moved to Mathematics so Writing can be a 20-research opener.
+    expect(TECH_BY_ID.mathematics.requires).toEqual(expect.arrayContaining(['writing', 'masonry']));
     // Forestry was retired — the Woodcutter's Lodge needs no tech at all.
     expect(TECH_BY_ID['forestry' as never]).toBeUndefined();
     // Bronze Working is gone; Iron Working follows Mining directly, Steelmaking follows Iron.
