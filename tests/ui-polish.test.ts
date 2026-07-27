@@ -93,7 +93,12 @@ describe('chronicle quips', () => {
 
   it('the first famine logs a once-only beat', () => {
     const s = newGame(1);
+    s.run.resources.wood = 200;
+    build(s, 'woodcutters-lodge');
+    build(s, 'woodcutters-lodge');
+    build(s, 'woodcutters-lodge');
     s.run.population.total = 3;
+    assignJob(s, 'woodcutter', 3); // employed, so nobody forages the famine away
     s.run.resources.food = 0.1;
     runProduction(s, 10); // food runs out → starving
     runProduction(s, 10); // still starving — no duplicate beat

@@ -41,11 +41,11 @@ describe('Sewers struck; the Windmill replaces it', () => {
     expect(build(s, 'windmill')).toBe(false); // needs Milling
     s.run.tech.push('milling', 'construction', 'engineering');
     expect(build(s, 'windmill')).toBe(true);
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.15, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.15, 6);
     expect(build(s, 'windmill')).toBe(true); // stacks per copy
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.3, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.3, 6);
     expect(build(s, 'aqueduct')).toBe(true); // and with the Aqueduct's +10%
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.4, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.4, 6);
     expect(TECH_BY_ID.milling.requires).toEqual(expect.arrayContaining(['the-wheel', 'agriculture']));
   });
 });
@@ -98,7 +98,7 @@ describe('sink 1 — held essence empowers its matching job', () => {
   // Each element is tested ALONE (its opposite at zero) so this covers the raw scaling and
   // its ceiling; the opposition damping has its own coverage in education.test.ts.
   it('each essence boosts one job, capped at +50%', () => {
-    const base = { wood: 0.5, iron: 0.4, stone: 0.4, food: 0.5 };
+    const base = { wood: 0.5, iron: 0.4, stone: 0.4, food: 6 };
 
     const air = newGame(1);
     air.run.resources.airEssence = 50; // 50 × 0.004 = +20%

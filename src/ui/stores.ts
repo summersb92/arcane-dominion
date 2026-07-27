@@ -677,6 +677,17 @@ export function happinessTooltip(h: HappinessInfo): TooltipContent {
           cls: b.amount >= 0 ? 'ok' : 'life',
         })),
       },
+      {
+        // Happiness is capped at 100, so this multiplier tops out at exactly ×1.00 — full
+        // contentment is the BASELINE, not a bonus. Everything below it is lost work.
+        label: 'Output',
+        lines: [
+          {
+            text: `All worker & idle output  ×${(Math.max(0, Math.min(100, h.value)) / 100).toFixed(2)}`,
+            cls: h.value >= 100 ? 'ok' : 'life',
+          },
+        ],
+      },
     ],
     note: h.status === 'unhappy' ? 'Below the growth threshold — the settlement will not grow.' : undefined,
   };

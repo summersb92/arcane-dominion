@@ -102,7 +102,7 @@ describe('the founding workplaces and the early tech openers', () => {
     expect(s.run.resources.stone).toBe(60);
 
     const withHoe = jobEffectiveProduces(s, 'forager').food!;
-    expect(withHoe).toBeCloseTo(0.5 * 1.25, 6); // the Hoe is the Farmer upgrade
+    expect(withHoe).toBeCloseTo(6 * 1.25, 6); // the Hoe is the Farmer upgrade
     expect(research(s, 'agriculture')).toBe(true); // now revealed, 150 research
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(withHoe, 6); // gateway only
   });

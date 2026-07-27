@@ -29,10 +29,10 @@ describe('mini-step techs — per-job boosts', () => {
     const s = newGame(1);
     // Agriculture is an ENABLER only — it opens the Farm and multiplies nothing.
     s.run.tech.push('agriculture');
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6, 6);
     s.run.tech.push('stone-hoe', 'irrigation', 'fertilizer');
-    // 0.5 × 1.25 (hoe) × 1.25 (irrigation) × 1.5 (fertilizer)
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.25 * 1.25 * 1.5, 6);
+    // 6 × 1.25 (hoe) × 1.25 (irrigation) × 1.5 (fertilizer)
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.25 * 1.25 * 1.5, 6);
   });
 
   it('Bloomery boosts the Miner; Optics the Scholar; Wheelbarrows every gather job', () => {
@@ -112,7 +112,7 @@ describe('policies — enact, revoke, slots, and effects', () => {
   it('enacting needs a free slot; effects apply while culture holds', () => {
     const s = newGame(1);
     s.run.resources.culture = 100;
-    s.run.population.total = 20; // happiness 72 — below the 100 clamp so effects are visible
+    s.run.population.total = 20; // happiness 70 — below the 100 clamp so effects are visible
     expect(enactPolicy(s, 'festivals')).toBe(false); // no governance yet
     s.run.tech.push('code-of-laws'); // 1 slot
     const hBefore = happiness(s).value;
@@ -121,16 +121,18 @@ describe('policies — enact, revoke, slots, and effects', () => {
     expect(enactPolicy(s, 'rationing')).toBe(false); // slots full (1/1)
     expect(revokePolicy(s, 'festivals')).toBe(true);
     expect(enactPolicy(s, 'rationing')).toBe(true);
-    // Rationing: food upkeep ×0.75, −8 happiness.
+    // Rationing: food upkeep ×0.75, −8 happiness. Idle settlers forage 4.2/s scaled by
+    // contentment, so derive the expectation from the live happiness rather than a constant.
     s.run.population.total = 10;
-    expect(productionRates(s).food).toBeCloseTo(-(10 * 0.05 * 0.75) + 10 * 0.03, 6); // upkeep trimmed + idle trickle
+    const hap = happiness(s).value / 100;
+    expect(productionRates(s).food).toBeCloseTo(-(10 * 0.05 * 0.75) + 10 * 4.2 * hap, 6);
   });
 
   it('policies drain culture upkeep and SUSPEND when the jar runs dry', () => {
     const s = newGame(1);
     s.run.tech.push('code-of-laws');
     s.run.resources.culture = 1; // barely anything
-    s.run.population.total = 20; // happiness 72 — below the clamp so the ±8 is visible
+    s.run.population.total = 20; // happiness 70 — below the clamp so the ±8 is visible
     s.run.resources.food = 500; // don't starve during the drain window
     expect(enactPolicy(s, 'festivals')).toBe(true);
     const hHappy = happiness(s).value; // +8 while live

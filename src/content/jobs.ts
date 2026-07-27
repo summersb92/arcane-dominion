@@ -45,7 +45,7 @@ export const JOBS: JobDef[] = [
     id: 'forager',
     name: 'Farmer',
     blurb: 'Works the Farm and argues with the weather.',
-    produces: { food: 0.5 },
+    produces: { food: 6 },
     requiresBuildingCapacity: 'forager-hut',
   },
   {

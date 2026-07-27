@@ -8,6 +8,13 @@
     return r.capped && r.amount >= r.cap * 0.9;
   }
 
+  /** How full the store is, 0..100. Uncapped currencies (mana, culture, gold, prismatic)
+   *  have no meaningful fraction, so they get no bar at all. */
+  function fillPct(r: ResourceView): number {
+    if (!r.capped || !(r.cap > 0)) return 0;
+    return Math.max(0, Math.min(100, (r.amount / r.cap) * 100));
+  }
+
   // The column renders one section per resource GROUP (Materials / Goods / Knowledge /
   // Magic), each under its own heading; sections with nothing revealed stay hidden.
   const GROUPS: { id: string; label: string }[] = [
@@ -30,6 +37,11 @@
     {#each g.rows as r (r.id)}
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div class="row" on:mouseenter={(e) => openTip(e, resourceTooltip(r))} on:mouseleave={hideTooltip}>
+        <!-- Storage gauge: a fill behind the text showing amount / cap at a glance.
+             Capped resources only — a currency with no ceiling has no fraction to show. -->
+        {#if r.capped}
+          <i class="fill" class:amber={nearCap(r)} class:full={r.atCap} style="width:{fillPct(r)}%"></i>
+        {/if}
         <span class="nm" class:mana={r.magic}>{r.label}</span>
         <span class="val">
           <span class="vl" class:amber={nearCap(r)}>
@@ -46,6 +58,8 @@
   /* Grid row: name | value+rate. The name ellipsizes instead of pushing the value
      off the edge, so a narrow column clips the LABEL, never the number. */
   .row {
+    position: relative; /* anchors the storage fill */
+    overflow: hidden; /* clip the fill to the row's rounded corners */
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
@@ -59,6 +73,40 @@
   .row:hover {
     background: var(--hover);
   }
+  /* The storage gauge — sits BEHIND the label and value. */
+  .fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 5px 0 0 5px;
+    background: var(--mtr-bg);
+    transition: width 0.25s ease-out;
+  }
+  .fill.amber {
+    background: var(--bar-off);
+  }
+  /* Tint the gauge where the theme supports mixing, so it reads as a meter rather than a
+     block of background — and turns warm as the store approaches its ceiling. */
+  @supports (background: color-mix(in srgb, red 10%, transparent)) {
+    .fill {
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    .fill.amber {
+      background: color-mix(in srgb, var(--gold) 24%, transparent);
+    }
+    .fill.full {
+      background: color-mix(in srgb, var(--life) 24%, transparent);
+    }
+  }
+  /* Text rides above the gauge. */
+  .row .nm,
+  .row .val {
+    position: relative;
+    z-index: 1;
+  }
   .row .nm {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -68,7 +116,8 @@
     white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
-    .row {
+    .row,
+    .fill {
       transition: none;
     }
   }

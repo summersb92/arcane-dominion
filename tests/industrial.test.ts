@@ -68,13 +68,13 @@ describe('Industrial goods chain — Toolworks → Engine Works → Factory', ()
 describe('Furniture is a luxury good that raises happiness', () => {
   it('held furniture adds happiness (+1 per 5, capped at +25)', () => {
     const s = newGame(1);
-    s.run.population.total = 20; // crowding 28 → base happiness 72
-    expect(happiness(s).value).toBe(72);
+    s.run.population.total = 20; // crowding 30 → base happiness 70
+    expect(happiness(s).value).toBe(70);
     s.run.resources.furniture = 50; // 50 / 5 = +10
-    expect(happiness(s).value).toBe(82);
+    expect(happiness(s).value).toBe(80);
     expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furniture'))).toBe(true);
     s.run.resources.furniture = 1000; // capped at +25
-    expect(happiness(s).value).toBe(97); // 72 + 25
+    expect(happiness(s).value).toBe(95); // 70 + 25
   });
 });
 

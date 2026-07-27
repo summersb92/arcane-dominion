@@ -19,6 +19,7 @@ import { activeRecipes, activeCount, convertEffects, isConverter } from './build
 import { logEvent } from './chronicle';
 import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
 import { magicYieldMult, oppositionFactor } from './education';
+import { happiness } from './happiness';
 
 const EPS = 1e-9;
 
@@ -157,6 +158,9 @@ function jobEfficiency(state: GameState, jobId: string): number {
   m *= globalJobMult(state);
   // Governance: the form's passive and any live worker policies apply to every job.
   m *= formBonuses(state).workerMult * policyMults(state).worker;
+  // CONTENTMENT is the master modifier: 1.0x at full happiness, scaling down as the
+  // settlement sours. A miserable settlement simply works less.
+  m *= contentment(state);
   return m;
 }
 
@@ -202,6 +206,13 @@ function compendiumManaPerPop(state: GameState): number {
   return Math.min(KNOWLEDGE.compendiumManaPerPopMax, comp * KNOWLEDGE.compendiumManaPerPop);
 }
 
+/** Contentment as a 0..1 multiplier. Happiness is capped at 100, so a fully content
+ *  settlement produces at exactly 1.0x — contentment can never push output ABOVE baseline,
+ *  only drag it down. Applied to every worker's output AND to idle foraging. */
+function contentment(state: GameState): number {
+  return Math.max(0, Math.min(1, happiness(state).value / 100));
+}
+
 /** Compute every per-second flow from the current assignment + building counts. */
 function flows(state: GameState): Flows {
   const gross = {} as Record<ResourceId, number>;
@@ -232,8 +243,9 @@ function flows(state: GameState): Flows {
     }
   }
 
-  // Idle (unassigned) settlers forage a small subsistence trickle of food.
-  gross.food += POPULATION.idleFoodPerSettler * idleCount(run);
+  // Idle (unassigned) settlers forage for themselves — at a rate that scales with how
+  // CONTENT the settlement is (full rate at 100 happiness, half at 50, nothing at 0).
+  gross.food += POPULATION.idleFoodPerSettler * idleCount(run) * contentment(state);
 
   // Constructs: passive production + mana upkeep, scaled by building count. NO food, NO pop.
   for (const b of BUILDINGS) {
@@ -341,7 +353,12 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   // Idle settlers forage a small subsistence trickle of food.
   if (id === 'food') {
     const idle = idleCount(run);
-    if (idle > 0) producers.push({ label: `Idle settlers${times(idle)}`, amount: POPULATION.idleFoodPerSettler * idle });
+    if (idle > 0) {
+      producers.push({
+        label: `Idle settlers${times(idle)}`,
+        amount: POPULATION.idleFoodPerSettler * idle * contentment(state),
+      });
+    }
   }
 
   // Converters both produce (outputs) and consume (inputs) this resource.

@@ -4,7 +4,7 @@ import { simulate } from '../src/engine/tick';
 import { build } from '../src/engine/systems/buildings';
 import { assignJob } from '../src/engine/systems/jobs';
 import { research, canAffordTech } from '../src/engine/systems/tech';
-import { productionRates, runProduction } from '../src/engine/systems/production';
+import { productionRates, runProduction, jobEffectiveProduces } from '../src/engine/systems/production';
 import { effectiveCap, researchCap } from '../src/engine/systems/caps';
 import { happiness } from '../src/engine/systems/happiness';
 import { growthStatus } from '../src/engine/systems/population';
@@ -56,10 +56,40 @@ describe('research is capped by science buildings', () => {
   it('research clamps at its effective cap in a tick (excess is lost)', () => {
     const s = newGame(1);
     // No science buildings → cap stays at the base 300. Many settlers trickle research.
-    s.run.population.total = 10; // 10 × 0.1 = 1 research/s
+    s.run.population.total = 50; // 50 × 0.02 = 1 research/s
     s.run.resources.research = 250;
     runProduction(s, 100); // would add 100 → 350, but clamps at 300
     expect(s.run.resources.research).toBe(300);
+  });
+});
+
+describe('contentment is the master production modifier', () => {
+  it('caps at 100 happiness → exactly ×1.00, and scales output down below that', () => {
+    const s = newGame(1);
+    s.run.buildings.hut = 20;
+    s.run.popCap = 20;
+    // 5 settlers: inside the free buffer, so happiness is a full 100 → no penalty at all.
+    s.run.population.total = 5;
+    s.run.buildings['woodcutters-lodge'] = 5;
+    assignJob(s, 'woodcutter', 5);
+    expect(happiness(s).value).toBe(100);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+
+    // Piling on luxuries can't push happiness past 100, so output never exceeds ×1.00.
+    s.run.resources.furs = 1000;
+    expect(happiness(s).value).toBe(100);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+  });
+
+  it('each settler past 5 costs 2 happiness, and that shows up in output', () => {
+    const s = newGame(1);
+    s.run.buildings.hut = 30;
+    s.run.popCap = 30;
+    s.run.buildings['woodcutters-lodge'] = 30;
+    s.run.population.total = 30; // 25 past the buffer → −50 → happiness 50
+    assignJob(s, 'woodcutter', 1);
+    expect(happiness(s).value).toBe(50);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 0.5, 6);
   });
 });
 
@@ -70,16 +100,16 @@ describe('happiness gates growth', () => {
     expect(happiness(s).status).toBe('content');
 
     s.run.population.total = 10;
-    expect(happiness(s).value).toBe(92); // 100 − 2×(10−6 buffer)
+    expect(happiness(s).value).toBe(90); // 100 − 2×(10−5 buffer)
 
     s.run.population.total = 40;
-    expect(happiness(s).value).toBe(32); // 100 − 2×(40−6)
+    expect(happiness(s).value).toBe(30); // 100 − 2×(40−5)
     expect(happiness(s).status).toBe('unhappy');
   });
 
   it('a Bard + an Amphitheater raise happiness', () => {
     const s = newGame(1);
-    s.run.population.total = 30; // value 52 with the 6-pop buffer (100 − 2×24)
+    s.run.population.total = 30; // value 50 with the 5-pop buffer (100 − 2×25)
     const before = happiness(s).value;
 
     // Build the Amphitheater (luxury +10 happiness, +2 Bard slots).
@@ -105,14 +135,14 @@ describe('happiness gates growth', () => {
     build(s, 'forager-hut'); // 2
     build(s, 'forager-hut'); // 3 slots (one job per building)
     s.run.popCap = 100;
-    s.run.population.total = 32; // crowding 2×(32−6) = 52 → happiness 48 (< 50)
+    s.run.population.total = 31; // crowding 2×(31−5) = 52 → happiness 48 (< 50)
     assignJob(s, 'forager', 3); // 3 farmers (agri ×1.5) + idle trickle > upkeep → net positive
     s.run.resources.food = 500;
 
     expect(happiness(s).status).toBe('unhappy');
     expect(growthStatus(s).status).toBe('unhappy');
     simulate(s, 30);
-    expect(s.run.population.total).toBe(32); // no growth while unhappy
+    expect(s.run.population.total).toBe(31); // no growth while unhappy
 
     // Build an Amphitheater (+10) → happiness 58, content → growth resumes.
     s.run.tech.push('the-arts');
@@ -121,7 +151,7 @@ describe('happiness gates growth', () => {
     expect(happiness(s).status).toBe('content');
     expect(growthStatus(s).status).toBe('growing');
     simulate(s, 30);
-    expect(s.run.population.total).toBeGreaterThan(32); // grows once content
+    expect(s.run.population.total).toBeGreaterThan(31); // grows once content
   });
 });
 
@@ -163,15 +193,15 @@ describe('furs luxury resource + Hunter', () => {
 
   it('held furs raise happiness (+1 per 10, capped at +15) and show in the breakdown', () => {
     const s = newGame(1);
-    s.run.population.total = 20; // crowding 2×(20−6) = 28 → happiness 72
-    expect(happiness(s).value).toBe(72);
+    s.run.population.total = 20; // crowding 2×(20−5) = 30 → happiness 70
+    expect(happiness(s).value).toBe(70);
 
     s.run.resources.furs = 50; // 50 / 10 = +5
-    expect(happiness(s).value).toBe(77);
+    expect(happiness(s).value).toBe(75);
     expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furs'))).toBe(true);
 
     s.run.resources.furs = 1000; // would be +100 but the bonus caps at +15
-    expect(happiness(s).value).toBe(87); // 72 + 15
+    expect(happiness(s).value).toBe(85); // 70 + 15
   });
 });
 

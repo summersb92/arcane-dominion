@@ -115,7 +115,7 @@
       <h2>{$game.population.name}</h2>
       <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
 
-      <div class="jobscols" class:single={!gov.unlocked}>
+      <div class="jobscols">
       <div class="jobscol">
       <!-- Prominent, always-present Population readout: the next-settler progress bar
            fills while growing (with %), or names the paused reason when it can't grow. -->
@@ -594,16 +594,14 @@
     color: var(--life);
     font-weight: 600;
   }
-  /* Settlement tab: jobs on the left; the Government panel (once Code of Laws lands)
-     on the right. Single column until governance unlocks, and on narrow widths. */
+  /* Settlement tab: on DESKTOP the jobs (population, growth, assignment rows) stay in the
+     LEFT half and never stretch across the pane — the right half is reserved for the
+     Government panel, and stays empty until Code of Laws lands. Stacks on narrow widths. */
   .jobscols {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 16px;
     align-items: start;
-  }
-  .jobscols.single {
-    grid-template-columns: minmax(0, 1fr);
   }
   @media (max-width: 720px) {
     .jobscols {

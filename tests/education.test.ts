@@ -157,7 +157,7 @@ describe('opposition — the stronger element drowns out the weaker, asymptotica
     const factor = 1 - 0.9 * (400 / 460);
     expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(0.4 * (1 + 0.4 * factor), 6);
     // Water's own empowerment is untouched (it is the stronger side).
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(0.5 * 1.5, 6); // capped at +50%
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.5, 6); // capped at +50%
   });
 });
 

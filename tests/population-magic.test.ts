@@ -37,7 +37,12 @@ describe('population growth', () => {
   it('stalls and then loses settlers under starvation', () => {
     const s = newGame(1);
     s.run.popCap = 5;
-    s.run.population.total = 3; // mouths to feed, no foragers
+    s.run.resources.wood = 200;
+    build(s, 'woodcutters-lodge');
+    build(s, 'woodcutters-lodge');
+    build(s, 'woodcutters-lodge');
+    s.run.population.total = 3;
+    assignJob(s, 'woodcutter', 3); // everyone EMPLOYED — nobody is idle-foraging
     s.run.resources.food = 0.2; // will run out almost immediately
     simulate(s, 30);
     expect(s.run.flags.starving).toBe(true);
