@@ -31,7 +31,7 @@ export function happiness(state: GameState): HappinessInfo {
   const settlers = run.population.total;
   const crowded = Math.max(0, settlers - HAPPINESS.freeBuffer);
   const crowding = HAPPINESS.crowdingPerSettler * crowded;
-  if (crowding > 0) breakdown.push({ label: `Crowding (${crowded} over ${HAPPINESS.freeBuffer})`, amount: -crowding });
+  if (crowding > 0) breakdown.push({ label: 'Crowding', amount: -crowding });
 
   // Culture-job bonus: each assigned Bard raises spirits.
   const bards = run.population.jobs.bard ?? 0;
