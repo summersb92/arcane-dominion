@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { JOB_BY_ID } from '../src/content/jobs';
 import { BUILDING_BY_ID } from '../src/content/buildings';
@@ -111,7 +112,7 @@ describe('per-job food upkeep removed', () => {
   it('food is consumed only by base settler upkeep, regardless of jobs worked', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
-    s.run.buildings.hut = 1;
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge'); // 1 woodcutter slot
     build(s, 'woodcutters-lodge'); // a 2nd lodge → 2 slots total
     s.run.population.total = 2;
@@ -175,7 +176,7 @@ describe('per-tool stone techs boost ONLY their own gather job', () => {
     const s = newGame(1);
     s.run.resources.wood = 200;
     s.run.resources.stone = 200;
-    s.run.buildings.hut = 1;
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     s.run.tech.push('masonry'); // opens the Quarry/Stonecutter
     build(s, 'woodcutters-lodge');
     build(s, 'forager-hut');
@@ -201,7 +202,7 @@ describe('tool-tier efficiency stacks on a gather job', () => {
   it('Stone Axe < Iron Working < Steel Axe each raise Woodcutter output multiplicatively', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1;
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);

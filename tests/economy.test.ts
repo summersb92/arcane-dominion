@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { doGather, actionsView } from '../src/engine/systems/actions';
@@ -54,19 +55,28 @@ describe('buildings', () => {
     expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(10 * 1.5)); // 15
   });
 
-  it('the House, the Shrine and the two founding workplaces are unlocked at the start', () => {
+  it('the Build tab opens with the House alone, then unfolds a rung at a time', () => {
     const s = newGame(1);
     const unlocked = () => buildingsView(s).filter((b) => b.unlocked).map((b) => b.id);
-    // A settlement can shelter itself, plant, fell timber and raise a Shrine on day one.
-    expect(unlocked()).toEqual(['hut', 'wayside-shrine', 'woodcutters-lodge', 'forager-hut']);
+    // Day one is a single decision: somewhere to live.
+    expect(unlocked()).toEqual(['hut']);
 
-    s.run.resources.wood = 10;
+    s.run.resources.wood = 10_000;
     expect(build(s, 'hut')).toBe(true);
-    const after = unlocked();
-    expect(after).toContain('storehouse'); // reveals once a House stands
-    expect(after).not.toContain('hunters-lodge'); // gated behind the Archery tech
-    expect(after).not.toContain('library'); // the science building is gated behind Writing
-    expect(after).not.toContain('farm-house'); // the housing/farm hybrid needs Agriculture
+    expect(unlocked()).toEqual(['hut', 'forager-hut']); // a roof, then something to eat
+
+    expect(build(s, 'forager-hut')).toBe(true);
+    const third = unlocked();
+    expect(third).toContain('woodcutters-lodge'); // the forest, and somewhere to put things
+    expect(third).toContain('storehouse');
+    expect(third).not.toContain('wayside-shrine'); // one rung further out
+
+    expect(build(s, 'woodcutters-lodge')).toBe(true);
+    const fourth = unlocked();
+    expect(fourth).toContain('wayside-shrine');
+    expect(fourth).not.toContain('hunters-lodge'); // gated behind the Archery tech
+    expect(fourth).not.toContain('library'); // the science building is gated behind Writing
+    expect(fourth).not.toContain('farm-house'); // the housing/farm hybrid needs Agriculture
   });
 
   it("the Hunter's Lodge is gated behind the Archery tech", () => {
@@ -79,7 +89,7 @@ describe('buildings', () => {
   });
 
   it('the Farm needs no tech and opens a Farmer slot immediately', () => {
-    const s = newGame(1);
+    const s = reveal(newGame(1), 'forager-hut');
     s.run.resources.wood = 100;
     expect(build(s, 'forager-hut')).toBe(true); // buildable from turn one
     expect(jobCapacity(s, 'forager')).toBe(1); // one Farmer slot per Farm
@@ -100,7 +110,7 @@ describe('jobs', () => {
   it('assigning a woodcutter produces wood and consumes only base settler food', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge'); // opens 2 woodcutter slots
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 1)).toBe(1);
@@ -119,7 +129,7 @@ describe('jobs', () => {
   it('cannot assign beyond idle settlers', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // only 1 idle
@@ -130,7 +140,7 @@ describe('jobs', () => {
   it('cannot assign beyond building capacity', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge'); // capacity 1 — one building, one slot
     s.run.population.total = 5;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // capped at the single slot
@@ -142,7 +152,7 @@ describe('jobs', () => {
 describe('buildings: storage bump + escalating cost', () => {
   it('a workplace adds a little storage cap AND costs more each copy', () => {
     const s = newGame(1);
-    s.run.buildings.hut = 1; // prereq for the workplace
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     s.run.resources.wood = 200;
     const capBefore = s.run.caps.wood;
     const costBefore = buildingCost(s, 'woodcutters-lodge').wood as number;
@@ -215,7 +225,7 @@ describe('next-settler growth status', () => {
   it('reports growing progress toward the next settler under a food surplus', () => {
     const s = newGame(1);
     s.run.popCap = 5;
-    s.run.buildings.hut = 1; // prereq for the Farm
+    reveal(s, 'forager-hut'); // the opening chain: a House reveals the Farm
     s.run.buildings['forager-hut'] = 1; // Farm → Farmer capacity
     s.run.population.total = 1;
     assignJob(s, 'forager', 1); // a Farmer nets +food over base upkeep → sustainable
@@ -254,7 +264,7 @@ describe('resource breakdown (hover math)', () => {
   it('decomposes a resource into producers, consumers, and net', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1; // Hut prereq
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
@@ -284,7 +294,7 @@ describe('tech', () => {
   it('stone-axe boosts Woodcutter output (+25%)', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
-    s.run.buildings.hut = 1; // Hut prereq unlocks the workplace (v0.1: only Hut shows at start)
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);

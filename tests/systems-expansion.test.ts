@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { build } from '../src/engine/systems/buildings';
@@ -210,7 +211,7 @@ describe('furs luxury resource + Hunter', () => {
     expect(effectiveCap(s, 'furs')).toBe(200);
 
     // A Storehouse's `cap` effect (+50 each) raises the furs cap too.
-    s.run.buildings.hut = 1;
+    reveal(s, 'storehouse'); // the opening chain: House → Farm → Storehouse
     s.run.resources.wood = 100;
     s.run.resources.stone = 100;
     expect(build(s, 'storehouse')).toBe(true);

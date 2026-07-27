@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { productionRates } from '../src/engine/systems/production';
@@ -31,7 +32,7 @@ describe('cost escalation is legible (the "43 wood / 20-wood Farm" confusion)', 
     for (const id of ['forager-hut', 'woodcutters-lodge', 'quarry', 'mine', 'harbor'] as const) {
       expect(BUILDING_BY_ID[id].costGrowth, id).toBe(1.25);
     }
-    const s = newGame(1);
+    const s = reveal(newGame(1), 'forager-hut');
     s.run.resources.wood = 100_000;
     const ladder: number[] = [];
     for (let i = 0; i < 4; i++) {
@@ -141,7 +142,7 @@ describe('the base workplaces store their own yield and sharpen their own job', 
     s.run.resources.wood = 2000;
     s.run.resources.stone = 2000;
     s.run.tech.push('masonry', 'agriculture');
-    s.run.buildings.hut = 1; // workplace prereq
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     const before = { ...s.run.caps };
     expect(build(s, 'woodcutters-lodge')).toBe(true);
     expect(s.run.caps.wood).toBe(before.wood + 100);

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { build, buildingsView } from '../src/engine/systems/buildings';
@@ -123,7 +124,7 @@ describe('chronicle quips', () => {
   });
 
   it('the first famine logs a once-only beat', () => {
-    const s = newGame(1);
+    const s = reveal(newGame(1), 'woodcutters-lodge');
     s.run.resources.wood = 200;
     build(s, 'woodcutters-lodge');
     build(s, 'woodcutters-lodge');

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { build } from '../src/engine/systems/buildings';
@@ -13,7 +14,7 @@ describe('population growth', () => {
     // Housing for several settlers + a forager workplace, and a food surplus.
     s.run.popCap = 10;
     s.run.resources.wood = 20;
-    s.run.buildings.hut = 1;
+    reveal(s, 'forager-hut'); // the opening chain: a House reveals the Farm
     s.run.tech.push('agriculture'); // the Farm is gated behind Agriculture
     build(s, 'forager-hut');
     s.run.resources.food = 40;
@@ -39,6 +40,7 @@ describe('population growth', () => {
     const s = newGame(1);
     s.run.popCap = 5;
     s.run.resources.wood = 200;
+    reveal(s, 'woodcutters-lodge');
     build(s, 'woodcutters-lodge');
     build(s, 'woodcutters-lodge');
     build(s, 'woodcutters-lodge');
@@ -121,7 +123,7 @@ describe('determinism', () => {
     const play = () => {
       const s = newGame(123);
       for (let i = 0; i < 20; i++) doGather(s, 'gather-wood');
-      s.run.buildings.hut = 1; // Hut prereq unlocks the workplace
+      reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
       build(s, 'woodcutters-lodge');
       s.run.popCap = 10;
       simulate(s, 120);

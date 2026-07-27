@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { build, setRecipeActive, setActive, activeCount } from '../src/engine/systems/buildings';
 import { happiness } from '../src/engine/systems/happiness';
@@ -287,11 +288,15 @@ describe('the Entertainer draws on the treasury', () => {
 });
 
 describe('the Shrine — the first building, and the first culture', () => {
-  it('is buildable on day one for stone alone', () => {
+  it('waits for a working settlement, then costs stone alone', () => {
     const s = newGame(1);
+    // Hidden on day one: a camp raises a shrine once it is housed, fed and cutting timber.
+    expect(toView(s).buildings.find((b) => b.id === 'wayside-shrine')!.unlocked).toBe(false);
+
+    reveal(s, 'wayside-shrine');
     const row = toView(s).buildings.find((b) => b.id === 'wayside-shrine')!;
     expect(row.name).toBe('Shrine');
-    expect(row.unlocked).toBe(true); // no tech, no prereq building
+    expect(row.unlocked).toBe(true); // still no TECH — only the rungs below it
     expect(row.costParts.map((p) => p.text)).toEqual(['Stone 30']);
     s.run.resources.stone = 30;
     expect(build(s, 'wayside-shrine')).toBe(true);
@@ -299,7 +304,7 @@ describe('the Shrine — the first building, and the first culture', () => {
   });
 
   it('trickles culture, and draws mana only once Folk Lore is in', () => {
-    const s = newGame(1);
+    const s = reveal(newGame(1), 'wayside-shrine');
     s.run.resources.stone = 200;
     build(s, 'wayside-shrine');
     build(s, 'wayside-shrine');
@@ -336,7 +341,7 @@ describe('the Shrine — the first building, and the first culture', () => {
   });
 
   it('the Shrine can pay for Folk Lore by itself — the loop closes', () => {
-    const s = newGame(1);
+    const s = reveal(newGame(1), 'wayside-shrine');
     s.run.resources.stone = 500;
     for (let i = 0; i < 5; i++) build(s, 'wayside-shrine');
     // Settlers trickle the research half (0.02/s each). Five Shrines now make culture twice

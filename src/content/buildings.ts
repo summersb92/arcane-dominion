@@ -197,8 +197,10 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'civic',
     cost: { stone: 30 },
     costGrowth: 1.25,
-    // No tech at all — this is one of the first things a camp can raise, and the only source
-    // of Culture before The Arts. Folk Lore then teaches it to draw mana as well.
+    // Still no TECH — the only source of Culture before The Arts, and Folk Lore later teaches
+    // it to draw mana as well. But it waits for a working settlement: people raise a shrine
+    // once they are housed, fed and cutting timber, not on the first afternoon.
+    requiresBuilding: 'woodcutters-lodge',
     effects: [
       { kind: 'produce', resource: 'culture', perSec: 0.02 },
       { kind: 'produce', resource: 'mana', perSec: 0.02, requiresTech: 'folk-lore' },
@@ -269,7 +271,9 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'storage',
     cost: { wood: 20, stone: 10 },
     costGrowth: 1.55,
-    requiresBuilding: 'hut',
+    // Third rung of the opening chain: a settlement that is housed and fed starts
+    // wondering where to put things.
+    requiresBuilding: 'forager-hut',
     effects: [{ kind: 'cap', amount: 50 }],
   },
   {
@@ -289,7 +293,9 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.25,
-    // Buildable from the very start, alongside the Farm — the two founding workplaces.
+    // Third rung of the opening chain, alongside the Storehouse: once the fields are in,
+    // the settlement can spare hands for the forest.
+    requiresBuilding: 'forager-hut',
     effects: [
       { kind: 'jobCapacity', job: 'woodcutter', slots: 1 },
       { kind: 'resourceCap', resource: 'wood', amount: BASE_WORKPLACE_CAP },
@@ -303,7 +309,9 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 20 },
     costGrowth: 1.25,
-    // Buildable from the very start — a settlement knows how to plant before it theorizes.
+    // Second rung of the opening chain: roof first, then something to eat under it.
+    // A settlement knows how to plant before it theorizes.
+    requiresBuilding: 'hut',
     effects: [
       { kind: 'jobCapacity', job: 'forager', slots: 1 },
       { kind: 'resourceCap', resource: 'food', amount: BASE_WORKPLACE_CAP },

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { build, setActive } from '../src/engine/systems/buildings';
 import { assignJob, jobCapacity } from '../src/engine/systems/jobs';
@@ -83,7 +84,7 @@ describe('Steam Works — mechanization (spend goods → global output)', () => 
   it('boosts EVERY worker while fuelled, and does nothing when starved of fuel', () => {
     const s = newGame(1);
     // A working Woodcutter to sample the global multiplier.
-    s.run.buildings.hut = 1;
+    reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     s.run.resources.wood = 25;
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;

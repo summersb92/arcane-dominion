@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { build } from '../src/engine/systems/buildings';
 import { jobCapacity } from '../src/engine/systems/jobs';
@@ -65,17 +66,18 @@ describe('Aqueduct rework — repeatable Farmer infrastructure', () => {
 });
 
 describe('the founding workplaces and the early tech openers', () => {
-  it('the Farm and the Woodcutter\'s Lodge need NO tech — both buildable from turn one', () => {
+  it('the Farm and the Woodcutter\'s Lodge need NO tech — only the rung below them', () => {
     expect(BUILDING_BY_ID['forager-hut'].requiresTech).toBeUndefined();
-    expect(BUILDING_BY_ID['forager-hut'].requiresBuilding).toBeUndefined();
+    expect(BUILDING_BY_ID['forager-hut'].requiresBuilding).toBe('hut');
     expect(BUILDING_BY_ID['woodcutters-lodge'].requiresTech).toBeUndefined();
-    expect(BUILDING_BY_ID['woodcutters-lodge'].requiresBuilding).toBeUndefined();
+    expect(BUILDING_BY_ID['woodcutters-lodge'].requiresBuilding).toBe('forager-hut');
 
-    // A brand-new settlement can raise both with nothing but gathered wood.
-    const s = newGame(1);
+    // Given a House, the rest of the chain unfolds on nothing but gathered wood — the Farm
+    // reveals the Lodge, and no research is involved at any point.
+    const s = reveal(newGame(1), 'forager-hut'); // a House stands
     s.run.resources.wood = 100;
     expect(build(s, 'forager-hut')).toBe(true);
-    expect(build(s, 'woodcutters-lodge')).toBe(true);
+    expect(build(s, 'woodcutters-lodge')).toBe(true); // revealed by the Farm just raised
     expect(jobCapacity(s, 'forager')).toBe(1);
     expect(jobCapacity(s, 'woodcutter')).toBe(1);
     // Forestry was retired entirely.
