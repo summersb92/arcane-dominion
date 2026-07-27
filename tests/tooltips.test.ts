@@ -193,3 +193,24 @@ describe('Alchemy reveals alchemical components', () => {
     expect(effectsFor(s, 'library')).toContain('+50 Research cap');
   });
 });
+
+describe("the Hunter's Lodge stores only what it brings home", () => {
+  it('raises the food and furs caps by 100 each, and nothing else', () => {
+    const s = newGame(1);
+    s.run.tech.push('archery');
+    s.run.resources.wood = 500;
+    const before = { ...s.run.caps };
+    expect(build(s, 'hunters-lodge')).toBe(true);
+    expect(s.run.caps.food).toBe(before.food + 100);
+    expect(s.run.caps.furs).toBe(before.furs + 100);
+    // Every other ceiling is untouched — a Lodge is not a general store.
+    for (const id of Object.keys(before) as (keyof typeof before)[]) {
+      if (id === 'food' || id === 'furs') continue;
+      expect(s.run.caps[id], `${id} should be untouched`).toBe(before[id]);
+    }
+    const fx = effectsFor(s, 'hunters-lodge');
+    expect(fx).toContain('+100 Food storage');
+    expect(fx).toContain('+100 Furs storage');
+    expect(fx).toContain('+1 Hunter job');
+  });
+});

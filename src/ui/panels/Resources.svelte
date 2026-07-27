@@ -22,11 +22,12 @@
     return Math.max(0, Math.min(100, (r.amount / r.cap) * 100));
   }
 
-  // The column renders one section per resource GROUP (Materials / Goods / Knowledge /
-  // Magic), each under its own heading; sections with nothing revealed stay hidden.
+  // The column renders one section per resource GROUP (Materials / Goods / Luxury Goods /
+  // Knowledge / Magic), each under its own heading; sections with nothing revealed stay hidden.
   const GROUPS: { id: string; label: string }[] = [
     { id: 'materials', label: 'Materials' },
     { id: 'goods', label: 'Goods' },
+    { id: 'luxury', label: 'Luxury Goods' },
     { id: 'wealth', label: 'Wealth' },
     { id: 'knowledge', label: 'Knowledge' },
     { id: 'magic', label: 'Magic' },

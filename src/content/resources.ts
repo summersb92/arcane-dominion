@@ -57,9 +57,10 @@ export type MundaneResourceId =
   | 'waterEssence';
 
 /** Display group for the resource column — each renders under its own heading, in
- *  RESOURCES order: raw Materials, refined Goods, Knowledge (chain goods + currencies),
+ *  RESOURCES order: raw Materials, refined Goods, Luxury Goods (held for morale), Knowledge
+ *  (chain goods + currencies),
  *  and Magic. Purely presentational; the cap machinery keys off MundaneResourceId. */
-export type ResourceGroup = 'materials' | 'goods' | 'wealth' | 'knowledge' | 'magic' | 'prismatic';
+export type ResourceGroup = 'materials' | 'goods' | 'luxury' | 'wealth' | 'knowledge' | 'magic' | 'prismatic';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -78,8 +79,9 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'iron', label: 'Iron', glyph: '🔩', tier: 'mundane', group: 'materials' },
   // Coal — fuel dug at the Coal Mine or charred from wood at a Charcoal Ground.
   { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane', group: 'materials' },
-  // Furs — a luxury good hunters bring in; held furs raise happiness, or feed the Tannery.
-  { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'materials' },
+  // ---- LUXURY — held, not spent: the stock itself raises morale (systems/happiness.ts). ----
+  // Furs are what a Hunter brings in; they also feed the Tannery, which quietly costs morale.
+  { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'luxury' },
   // ---- GOODS — refined and manufactured (Steelworks + the Age of Steam chains). ----
   // Alchemical Components — gland, herb and horn, rendered down. The ALCHEMY tech (off
   // Mathematics) reveals them and teaches Hunters and Ranches to save them. Nothing consumes

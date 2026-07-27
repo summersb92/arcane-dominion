@@ -282,7 +282,12 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 25 },
     costGrowth: 1.15,
     requiresTech: 'archery',
-    effects: [{ kind: 'jobCapacity', job: 'hunter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+    // Like the other base workplaces, it stores its OWN yield — and a Lodge yields two things.
+    effects: [
+      { kind: 'jobCapacity', job: 'hunter', slots: 1 },
+      { kind: 'resourceCap', resource: 'food', amount: BASE_WORKPLACE_CAP },
+      { kind: 'resourceCap', resource: 'furs', amount: BASE_WORKPLACE_CAP },
+    ],
   },
   {
     id: 'quarry',
