@@ -29,6 +29,9 @@ export interface JobDef {
   blurb: string;
   /** Per-worker, per-second gross output. */
   produces: Partial<Record<ResourceId, number>>;
+  /** Per-worker, per-second UPKEEP. Unlike `produces` this is NOT scaled by efficiency —
+   *  a performer costs the same whatever tools the settlement owns. */
+  consumes?: Partial<Record<ResourceId, number>>;
   /** Extra per-worker output that only flows once `tech` is researched — the same idea as
    *  a building's tech-gated `produce` effect (Alchemy teaches Hunters to save the
    *  alchemically useful parts). Merged into `produces` by systems/production.ts. */
@@ -118,9 +121,10 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'bard',
-    name: 'Bard',
-    blurb: 'Performs wherever there is a stage. Each Bard also lifts spirits.',
+    name: 'Entertainer',
+    blurb: 'Performs wherever there is a stage, for a fee. Spirits rise; the treasury does not.',
     produces: { culture: 0.2 },
+    consumes: { gold: 0.1 },
     requiresBuildingCapacity: 'amphitheater',
   },
 ];

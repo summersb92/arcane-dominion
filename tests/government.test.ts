@@ -100,8 +100,8 @@ describe('governance — forms and slots', () => {
     expect(happiness(s).breakdown.some((b) => b.label === 'Republic')).toBe(true);
     // Culture production ×1.25: one Bard (0.2/s base).
     s.run.tech.push('the-arts');
-    s.run.resources.wood = 100;
-    s.run.resources.stone = 100;
+    s.run.resources.wood = 200;
+    s.run.resources.stone = 200;
     build(s, 'amphitheater');
     s.run.population.total = 1;
     assignJob(s, 'bard', 1);

@@ -1,6 +1,6 @@
 // Happiness — a 0..100 derived read model (no mutation, no stored field) that gates
 // population GROWTH. It starts at HAPPINESS.base, drops with crowding (more settlers →
-// less content), and rises with Culture workers (assigned Bards) and luxury buildings
+// less content), and rises with assigned Entertainers and luxury buildings
 // (the Amphitheater's `happiness` effect). Below HAPPINESS.growthThreshold the settlement
 // stops growing (systems/population.ts). Unhappiness never forces settler LOSS this pass —
 // starvation still handles loss. Pure engine, no DOM.
@@ -33,10 +33,10 @@ export function happiness(state: GameState): HappinessInfo {
   const crowding = HAPPINESS.crowdingPerSettler * crowded;
   if (crowding > 0) breakdown.push({ label: 'Crowding', amount: -crowding });
 
-  // Culture-job bonus: each assigned Bard raises spirits.
+  // Culture-job bonus: each assigned Entertainer raises spirits.
   const bards = run.population.jobs.bard ?? 0;
   const bardBonus = HAPPINESS.cultureWorkerBonus * bards;
-  if (bardBonus > 0) breakdown.push({ label: `Bards (${bards})`, amount: bardBonus });
+  if (bardBonus > 0) breakdown.push({ label: 'Entertainers', amount: bardBonus });
 
   // Luxury buildings: sum every `happiness` building effect × its count (e.g. Amphitheater).
   let luxury = 0;

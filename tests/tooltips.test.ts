@@ -237,3 +237,46 @@ describe('a card never names a resource behind a tech you lack', () => {
     expect(effectsFor(s, 'mine').some((l) => /Mana Crystals/.test(l))).toBe(true);
   });
 });
+
+describe('the Entertainer draws on the treasury', () => {
+  it('is named Entertainer, and each one costs 0.1 Wealth/s', () => {
+    const s = newGame(1);
+    s.run.tech.push('the-arts');
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
+    expect(build(s, 'amphitheater')).toBe(true);
+    expect(build(s, 'amphitheater')).toBe(true);
+    s.run.population.total = 2;
+    assignJob(s, 'bard', 2);
+    // Upkeep is NOT scaled by efficiency, so a Workshop doesn't make performers cheaper.
+    s.run.buildings.workshop = 1;
+    expect(productionRates(s).gold).toBeCloseTo(-0.2, 6);
+    expect(effectsFor(s, 'amphitheater')).toEqual(['+1 Entertainer job']);
+  });
+
+  it('never drives the treasury below zero', () => {
+    const s = newGame(1);
+    s.run.tech.push('the-arts');
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
+    build(s, 'amphitheater');
+    s.run.population.total = 1;
+    assignJob(s, 'bard', 1);
+    s.run.resources.gold = 0.05; // less than one second of fees
+    runProduction(s, 10);
+    expect(s.run.resources.gold).toBe(0);
+  });
+
+  it('the treasury tooltip names the Entertainer as the drain, and reads as Wealth', () => {
+    const s = newGame(1);
+    s.run.tech.push('the-arts');
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
+    build(s, 'amphitheater');
+    s.run.population.total = 1;
+    assignJob(s, 'bard', 1);
+    const row = toView(s).resources.find((r) => r.id === 'gold')!;
+    expect(row.label).toBe('Wealth');
+    expect(row.group).toBe('materials'); // merged into the single "Resources" section
+  });
+});

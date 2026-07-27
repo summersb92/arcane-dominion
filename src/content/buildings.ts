@@ -736,14 +736,12 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Amphitheater',
     blurb: 'Song, story, and spectacle — the settlement applauds itself.',
     category: 'civic',
-    cost: { wood: 40, stone: 30 },
+    cost: { wood: 40, stone: 120 },
     costGrowth: 1.3,
     requiresTech: 'the-arts',
-    effects: [
-      { kind: 'jobCapacity', job: 'bard', slots: 1 },
-      { kind: 'happiness', amount: 10 },
-      { kind: 'cap', amount: STRUCT_CAP },
-    ],
+    // An empty stage lifts nobody: the morale comes from the ENTERTAINERS you staff it with
+    // (+5 each, systems/happiness.ts), who draw a fee from the treasury. It stores nothing.
+    effects: [{ kind: 'jobCapacity', job: 'bard', slots: 1 }],
   },
   {
     id: 'sacred-grove',

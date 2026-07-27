@@ -60,12 +60,12 @@ export const STARTING = {
 
 /** Happiness (systems/happiness.ts). Happiness is a 0..100 derived read model that gates
  *  population GROWTH: below `growthThreshold` the settlement won't grow. It starts at
- *  `base`, drops with crowding, and rises with Culture workers (Bards) + luxury buildings. */
+ *  `base`, drops with crowding, and rises with assigned Entertainers + luxury buildings. */
 export const HAPPINESS = {
   base: 100, // a fresh, empty camp is fully content
   freeBuffer: 5, // the first 5 settlers cost NO happiness — each one past 5 costs 2
   crowdingPerSettler: 2, // −2 happiness per settler ABOVE the free buffer
-  cultureWorkerBonus: 4, // + per assigned Bard (Culture job)
+  cultureWorkerBonus: 5, // + morale per assigned Entertainer (the Amphitheater's job)
   growthThreshold: 50, // growth pauses while happiness is below this
   /** Furs are a LUXURY: held furs raise happiness — +1 per this many furs held… */
   fursPerHappiness: 10,

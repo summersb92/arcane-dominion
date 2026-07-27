@@ -378,7 +378,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Song, story, and spectacle. The settlement learns to applaud.',
     cost: 550,
     requires: ['pottery'],
-    unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Bard (job)'],
+    unlocks: ['Amphitheater (building)', 'Culture (resource)', 'Entertainer (job)'],
   },
   {
     id: 'wheelbarrows',

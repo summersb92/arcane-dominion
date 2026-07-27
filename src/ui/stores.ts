@@ -419,7 +419,7 @@ export function toView(state: GameState): UiState {
       show = amount > EPS || rates.gold > EPS;
     } else if (def.id === 'culture') {
       // A future currency, revealed only once discovered (produced/held) — same progressive
-      // reveal as research/mana. A Bard at the Amphitheater is what first yields it.
+      // reveal as research/mana. An Entertainer at the Amphitheater is what first yields it.
       show = amount > EPS || rates.culture > EPS;
     } else if (def.id === 'furs') {
       // Luxury good — revealed only once discovered (held or being produced). A Hunter at

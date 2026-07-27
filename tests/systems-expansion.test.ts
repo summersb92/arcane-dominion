@@ -135,22 +135,23 @@ describe('happiness gates growth', () => {
     expect(happiness(s).status).toBe('unhappy');
   });
 
-  it('a Bard + an Amphitheater raise happiness', () => {
+  it('an EMPTY Amphitheater lifts nobody; each Entertainer is worth +5', () => {
     const s = newGame(1);
     s.run.population.total = 30; // value 50 with the 5-pop buffer (100 − 2×25)
     const before = happiness(s).value;
 
-    // Build the Amphitheater (luxury +10 happiness, +2 Bard slots).
     s.run.tech.push('the-arts');
-    s.run.resources.wood = 100;
-    s.run.resources.stone = 100;
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
     expect(build(s, 'amphitheater')).toBe(true);
-    const withLuxury = happiness(s).value;
-    expect(withLuxury).toBe(before + 10);
+    // The stage itself does nothing — the morale is in the performance.
+    expect(happiness(s).value).toBe(before);
 
-    // Assign a Bard (culture worker) → +4 more.
     expect(assignJob(s, 'bard', 1)).toBe(1);
-    expect(happiness(s).value).toBe(withLuxury + 4);
+    expect(happiness(s).value).toBe(before + 5);
+    expect(build(s, 'amphitheater')).toBe(true);
+    expect(assignJob(s, 'bard', 1)).toBe(1);
+    expect(happiness(s).value).toBe(before + 10); // stacks per Entertainer
   });
 
   it('growth pauses below the threshold and resumes once happiness recovers', () => {
@@ -173,9 +174,13 @@ describe('happiness gates growth', () => {
 
     // Build an Amphitheater (+10) → happiness 58, content → growth resumes.
     s.run.tech.push('the-arts');
-    s.run.resources.wood = 200;
-    s.run.resources.stone = 200;
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
     expect(build(s, 'amphitheater')).toBe(true);
+    expect(build(s, 'amphitheater')).toBe(true);
+    // An empty stage is worth nothing — staff both to clear the growth threshold.
+    s.run.population.jobs.forager = 29;
+    expect(assignJob(s, 'bard', 2)).toBe(2);
     expect(happiness(s).status).toBe('content');
     expect(growthStatus(s).status).toBe('growing');
     simulate(s, 30);
@@ -242,8 +247,8 @@ describe('culture resource', () => {
   it('a Bard at the Amphitheater produces culture', () => {
     const s = newGame(1);
     s.run.tech.push('the-arts');
-    s.run.resources.wood = 100;
-    s.run.resources.stone = 100;
+    s.run.resources.wood = 200;
+    s.run.resources.stone = 200;
     expect(build(s, 'amphitheater')).toBe(true);
     s.run.population.total = 1;
     expect(assignJob(s, 'bard', 1)).toBe(1);

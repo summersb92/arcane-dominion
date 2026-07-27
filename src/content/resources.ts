@@ -83,7 +83,7 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane', group: 'materials' },
   // Gold — the treasury, earned by Harbours, Markets and Banks (the Currency line). Capped
   // by housing once Currency is in (caps.ts goldCap); uncapped before that.
-  { id: 'gold', label: 'Gold', glyph: '🪙', tier: 'knowledge', group: 'materials' },
+  { id: 'gold', label: 'Wealth', glyph: '🪙', tier: 'knowledge', group: 'materials' },
   // ---- LUXURY — held, not spent: the stock itself raises morale (systems/happiness.ts). ----
   // Furs are what a Hunter brings in; they also feed the Tannery, which quietly costs morale.
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'luxury' },

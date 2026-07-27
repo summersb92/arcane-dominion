@@ -252,6 +252,11 @@ function flows(state: GameState): Flows {
     for (const [res, per] of Object.entries(jobProduces(state, job))) {
       gross[res as ResourceId] += workers * (per as number) * eff;
     }
+    // Upkeep is NOT scaled by efficiency — a performer's fee doesn't fall because the
+    // settlement bought better axes.
+    for (const [res, per] of Object.entries(job.consumes ?? {})) {
+      gross[res as ResourceId] -= workers * (per as number);
+    }
   }
 
   // Idle (unassigned) settlers forage for themselves — at a rate that scales with how
@@ -349,6 +354,12 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (workers <= 0) continue;
     const per = jobProduces(state, job)[id];
     if (per) producers.push({ label: `${job.name}${times(workers)}`, amount: workers * per * jobEfficiency(state, job.id) });
+  }
+  // Jobs whose UPKEEP draws on this resource.
+  for (const job of JOBS) {
+    const workers = run.population.jobs[job.id] ?? 0;
+    const per = job.consumes?.[id];
+    if (workers > 0 && per) consumers.push({ label: `${job.name}${times(workers)}`, amount: workers * per });
   }
   // Constructs that produce this resource (count × per-second, no pop/food).
   for (const b of BUILDINGS) {
@@ -492,6 +503,8 @@ export function runProduction(state: GameState, dt: number): void {
   for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'alchemical', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
+    // A stock can never be negative — job upkeep simply stops taking once the store is dry.
+    else if (run.resources[id] < 0) run.resources[id] = 0;
   }
 
   // First-of-a-resource story beats (once per run, flag-gated) — the moment a new good exists.
