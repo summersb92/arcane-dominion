@@ -502,16 +502,20 @@ export function toView(state: GameState): UiState {
     // Full cost = research plus any material cost, e.g. "Research 10 · Stone 10".
     const fullCost: Partial<Record<ResourceId, number>> = { research: t.cost, ...t.resourceCost };
     // Per-resource shortfall, matching the engine's affordability tolerance (systems/tech.ts).
-    const costParts = (Object.entries(fullCost) as [ResourceId, number][]).map(([id, amt]) => ({
-      text: `${RESOURCE_BY_ID[id].label} ${fmtCost(amt)}`,
-      short: (run.resources[id] ?? 0) < amt - 1e-6,
-    }));
+    // A zero entry is not a cost — Folk Lore asks for culture and no research at all, and
+    // "Research 0" would read as a price rather than the absence of one.
+    const costParts = (Object.entries(fullCost) as [ResourceId, number][])
+      .filter(([, amt]) => amt > 0)
+      .map(([id, amt]) => ({
+        text: `${RESOURCE_BY_ID[id].label} ${fmtCost(amt)}`,
+        short: (run.resources[id] ?? 0) < amt - 1e-6,
+      }));
     return {
       id: t.id,
       name: t.name,
       blurb: t.blurb,
       cost: t.cost,
-      costText: costText(fullCost),
+      costText: costParts.map((p) => p.text).join(' · '),
       costParts,
       unlocks: t.unlocks,
       researched: t.researched,

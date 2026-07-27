@@ -35,6 +35,7 @@ export type TechId =
   | 'agriculture'
   | 'masonry'
   | 'writing'
+  | 'folk-lore'
   | 'decimal-system'
   | 'alchemy'
   | 'bookbinding'
@@ -160,6 +161,15 @@ export const TECHS: TechDef[] = [
     cost: 100,
     requires: ['agriculture'],
     unlocks: ['Ranch (building)'],
+  },
+  {
+    id: 'folk-lore',
+    name: 'Folk Lore',
+    blurb: 'The stories people already tell, written down and taken seriously. The stones answer.',
+    // Costs CULTURE, not research — the first tech the Shrine's own trickle pays for.
+    cost: 0,
+    resourceCost: { culture: 10 },
+    unlocks: ['Shrines draw mana'],
   },
   {
     id: 'pottery',

@@ -4,6 +4,7 @@ import { build } from '../src/engine/systems/buildings';
 import { assignJob } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, productionRates, runProduction } from '../src/engine/systems/production';
 import { TECH_BY_ID } from '../src/content/tech';
+import { research } from '../src/engine/systems/tech';
 import { toView, buildingTooltip, techTooltip } from '../src/ui/stores';
 
 /** Pull the "Effects" lines a card's tooltip would render for one building. */
@@ -278,5 +279,54 @@ describe('the Entertainer draws on the treasury', () => {
     const row = toView(s).resources.find((r) => r.id === 'gold')!;
     expect(row.label).toBe('Wealth');
     expect(row.group).toBe('materials'); // merged into the single "Resources" section
+  });
+});
+
+describe('the Shrine — the first building, and the first culture', () => {
+  it('is buildable on day one for stone alone', () => {
+    const s = newGame(1);
+    const row = toView(s).buildings.find((b) => b.id === 'wayside-shrine')!;
+    expect(row.name).toBe('Shrine');
+    expect(row.unlocked).toBe(true); // no tech, no prereq building
+    expect(row.costParts.map((p) => p.text)).toEqual(['Stone 30']);
+    s.run.resources.stone = 30;
+    expect(build(s, 'wayside-shrine')).toBe(true);
+    expect(s.run.resources.wood).toBe(0); // stone only — no wood was touched
+  });
+
+  it('trickles culture, and draws mana only once Folk Lore is in', () => {
+    const s = newGame(1);
+    s.run.resources.stone = 200;
+    build(s, 'wayside-shrine');
+    build(s, 'wayside-shrine');
+    expect(productionRates(s).culture).toBeCloseTo(0.02, 6); // 0.01 per Shrine
+    expect(productionRates(s).mana).toBeCloseTo(0, 6);
+    expect(effectsFor(s, 'wayside-shrine')).toEqual(['+0.01 Culture/s']); // mana stays hidden
+
+    s.run.tech.push('folk-lore');
+    expect(productionRates(s).mana).toBeCloseTo(0.2, 6); // 0.1 per Shrine
+    expect(effectsFor(s, 'wayside-shrine')).toContain('+0.10 Mana/s');
+  });
+
+  it('Folk Lore costs 10 culture and no research at all', () => {
+    expect(TECH_BY_ID['folk-lore'].cost).toBe(0);
+    expect(TECH_BY_ID['folk-lore'].resourceCost).toEqual({ culture: 10 });
+    expect(TECH_BY_ID['folk-lore'].requires).toBeUndefined();
+
+    // The card shows only the real price — no "Research 0" line.
+    const s = newGame(1);
+    const row = toView(s).tech.find((t) => t.id === 'folk-lore')!;
+    expect(row.costParts.map((p) => p.text)).toEqual(['Culture 10']);
+    expect(row.costText).toBe('Culture 10');
+  });
+
+  it('the Shrine can pay for Folk Lore by itself — the loop closes', () => {
+    const s = newGame(1);
+    s.run.resources.stone = 500;
+    for (let i = 0; i < 5; i++) build(s, 'wayside-shrine');
+    runProduction(s, 200); // 5 Shrines × 0.01/s × 200s = 10 culture
+    expect(s.run.resources.culture).toBeCloseTo(10, 6);
+    expect(research(s, 'folk-lore')).toBe(true);
+    expect(productionRates(s).mana).toBeCloseTo(0.5, 6);
   });
 });

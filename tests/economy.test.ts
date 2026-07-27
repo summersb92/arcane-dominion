@@ -54,11 +54,11 @@ describe('buildings', () => {
     expect(buildingCost(s, 'hut').wood).toBe(Math.ceil(10 * 1.5)); // 15
   });
 
-  it('the House and the two founding workplaces are unlocked at the start', () => {
+  it('the House, the Shrine and the two founding workplaces are unlocked at the start', () => {
     const s = newGame(1);
     const unlocked = () => buildingsView(s).filter((b) => b.unlocked).map((b) => b.id);
-    // A settlement can shelter itself, plant, and fell timber on day one — no tech needed.
-    expect(unlocked()).toEqual(['hut', 'woodcutters-lodge', 'forager-hut']);
+    // A settlement can shelter itself, plant, fell timber and raise a Shrine on day one.
+    expect(unlocked()).toEqual(['hut', 'wayside-shrine', 'woodcutters-lodge', 'forager-hut']);
 
     s.run.resources.wood = 10;
     expect(build(s, 'hut')).toBe(true);

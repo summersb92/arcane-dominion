@@ -42,6 +42,7 @@ export type BuildingId =
   | 'monastery'
   | 'theatre'
   | 'forum'
+  | 'wayside-shrine'
   | 'shrine'
   | 'ley-grove'
   | 'standing-stones'
@@ -171,6 +172,20 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'popCap', amount: 1 },
       { kind: 'cap', amount: STRUCT_CAP },
       { kind: 'coinCap', amount: 100 },
+    ],
+  },
+  {
+    id: 'wayside-shrine',
+    name: 'Shrine',
+    blurb: 'Stacked stones at the roadside. People leave things; something keeps them.',
+    category: 'civic',
+    cost: { stone: 30 },
+    costGrowth: 1.15,
+    // No tech at all — this is one of the first things a camp can raise, and the only source
+    // of Culture before The Arts. Folk Lore then teaches it to draw mana as well.
+    effects: [
+      { kind: 'produce', resource: 'culture', perSec: 0.01 },
+      { kind: 'produce', resource: 'mana', perSec: 0.1, requiresTech: 'folk-lore' },
     ],
   },
   {
@@ -518,9 +533,11 @@ export const BUILDINGS: BuildingDef[] = [
     ],
   },
   {
+    // NB: the id stays `shrine` so existing saves keep their count — only the NAME moved,
+    // to make room for the early-game Shrine below.
     id: 'shrine',
-    name: 'Shrine',
-    blurb: 'A quiet place for rites. Whatever listens appreciates the tidiness.',
+    name: 'Temple',
+    blurb: 'Rites with a roof, and someone paid to remember the words.',
     category: 'civic',
     cost: { wood: 60, stone: 40 },
     costGrowth: 1.4,
