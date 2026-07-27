@@ -214,3 +214,26 @@ describe("the Hunter's Lodge stores only what it brings home", () => {
     expect(fx).toContain('+1 Hunter job');
   });
 });
+
+describe('a card never names a resource behind a tech you lack', () => {
+  it('the Ranch says nothing of Alchemical Components until Alchemy is in', () => {
+    const s = newGame(1);
+    s.run.tech.push('animal-husbandry');
+    const before = effectsFor(s, 'ranch');
+    expect(before).toContain('+0.40 Food/s');
+    expect(before.some((l) => /Alchemical|requires/i.test(l))).toBe(false);
+
+    s.run.tech.push('alchemy');
+    const after = effectsFor(s, 'ranch');
+    expect(after).toContain('+0.05 Alchemical Components/s');
+    expect(after.some((l) => /requires/i.test(l))).toBe(false); // stated plainly, not as a promise
+  });
+
+  it('the Mine keeps Mana Crystals hidden until Crystallurgy the same way', () => {
+    const s = newGame(1);
+    s.run.tech.push('mining');
+    expect(effectsFor(s, 'mine').some((l) => /Mana Crystals/.test(l))).toBe(false);
+    s.run.tech.push('crystallurgy');
+    expect(effectsFor(s, 'mine').some((l) => /Mana Crystals/.test(l))).toBe(true);
+  });
+});

@@ -326,11 +326,13 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
       case 'jobBoost':
         lines.push({ text: `+${Math.round(e.amount * 100)}% ${JOB_BY_ID[e.job].name} output (per copy)`, cls: 'ok' });
         break;
-      case 'produce': {
-        const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
-        lines.push({ text: `+${numStr(e.perSec)} ${RESOURCE_BY_ID[e.resource].label}/s${gate}`, cls: 'ok' });
+      case 'produce':
+        // A tech-gated output is INVISIBLE until its tech is in — the card must not name a
+        // resource the player has never heard of (the Ranch and Alchemical Components, the
+        // Mine and Mana Crystals). Same rule the gated researchCap follows.
+        if (e.requiresTech && !techs.includes(e.requiresTech)) break;
+        lines.push({ text: `+${numStr(e.perSec)} ${RESOURCE_BY_ID[e.resource].label}/s`, cls: 'ok' });
         break;
-      }
       case 'convert':
         lines.push({ text: `${e.label ? `${e.label}: ` : ''}${recipeText(e.consume, e.produce, e.requiresWorker)}` });
         break;
