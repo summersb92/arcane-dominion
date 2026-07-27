@@ -649,6 +649,7 @@ export function actionTooltip(a: ActionRowView): TooltipContent {
   return {
     title: a.name,
     sections: [{ label: 'Yields', lines: [{ text: a.gainText, cls: 'ok' }] }],
+    note: 'Hold to keep gathering.',
     blurb: a.blurb,
   };
 }
