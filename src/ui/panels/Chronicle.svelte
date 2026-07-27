@@ -10,7 +10,6 @@
   <ul class="chron">
     {#each $game.chronicle as c}
       <li>
-        <span class="t">{c.t}</span>
         <span class:ev={c.kind === 'ev'} class:found={c.kind === 'found'}>{c.text}</span>
       </li>
     {/each}
@@ -61,6 +60,12 @@
     max-height: 220px;
     overflow-y: auto;
     margin-top: 8px;
+  }
+  /* Entries are separated by a rule rather than a timestamp. The rule sits ABOVE each entry
+     and the first one goes without, so the list never opens or closes on a stray line. */
+  ul.chron :global(li + li) {
+    border-top: 1px solid var(--edge);
+    padding-top: 6px;
   }
   @media (prefers-reduced-motion: reduce) {
     summary::before {

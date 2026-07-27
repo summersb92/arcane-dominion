@@ -13,11 +13,10 @@
 <header>
   <div class="title">ARCANE DOMINION <span class="tag">· v0.1</span></div>
   <div class="who">
-    {#if cal.unlocked}
-      <span class="cal" title="Day {cal.day} of {cal.season}, Year {cal.year}">
-        {cal.season} · Day {cal.day} · Year {cal.year}
-      </span>
-    {/if}
+    <!-- The SEASON is always on screen. The Calendar tech adds the precise day and year. -->
+    <span class="cal" title={cal.unlocked ? `Day ${cal.day} of ${cal.season}, Year ${cal.year}` : cal.season}>
+      {#if cal.unlocked}{cal.season} · Day {cal.day} · Year {cal.year}{:else}{cal.season}{/if}
+    </span>
     <span class="vitals">
       <span>Pop <strong>{pop.total}</strong>/{pop.cap}</span>
       {#if pop.idle > 0}<span>Idle <strong>{pop.idle}</strong></span>{/if}

@@ -18,7 +18,7 @@ import { TECH_BY_ID, type TechId } from '../content/tech';
 import { productionRates, foodBalance, resourceBreakdown, jobEffectiveProduces } from '../engine/systems/production';
 import { growthStatus, type GrowthInfo } from '../engine/systems/population';
 import { happiness, type HappinessInfo } from '../engine/systems/happiness';
-import { calendar, dateAt, type CalendarInfo } from '../engine/systems/calendar';
+import { calendar, type CalendarInfo } from '../engine/systems/calendar';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -62,7 +62,7 @@ export interface ResourceView {
   label: string;
   glyph: string;
   amount: number;
-  rate: number; // net /s (zeroed when at cap so gains read as wasted)
+  rate: number; // net /s — the TRUE production rate, shown even when the store is full
   cap: number; // Infinity for the uncapped magic currencies
   capped: boolean; // this resource has a finite storage cap (mundane)
   atCap: boolean; // amount is at/over the cap → gains are wasted
@@ -119,6 +119,8 @@ export interface BuildingRowView {
   recipes: { label: string; active: number; hint: string }[];
   disabled: boolean; // build button disabled
   reason: string; // why disabled ("maxed" / "can't afford"), else ''
+  /** Tech ids researched so far, so the tooltip can hide effects still behind a gate. */
+  techs: readonly string[];
 }
 export interface TechRowView {
   id: TechId;
@@ -155,7 +157,6 @@ export interface TradeRowView {
   affordable: boolean;
 }
 export interface ChronicleView {
-  t: string;
   text: string;
   kind?: 'ev' | 'found';
 }
@@ -168,7 +169,7 @@ export interface UiState {
   actions: ActionRowView[];
   tabs: { id: string; label: string; visible: boolean; locked: boolean; badge?: number }[];
   chronicle: ChronicleView[];
-  calendar: CalendarInfo; // current date; hidden until the Calendar tech is researched
+  calendar: CalendarInfo; // current date; the SEASON always shows, day/year need the tech
   government: GovernmentView; // forms + policies (systems/government.ts)
   trade: TradeRowView[]; // market stalls unlocked by Currency / Banking (systems/trade.ts)
   education: EducationView; // Arcanum yield, curriculum focus, opposition (systems/education.ts)
@@ -279,10 +280,17 @@ function recipeText(
 
 /** Derive the tooltip "Effects" lines for a building from its data — the single source
  *  of truth, so blurbs stay flavor-only and numbers can never drift from the engine. */
-function effectLines(id: BuildingId): TooltipLine[] {
+function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine[] {
   const def = BUILDING_BY_ID[id];
   if (!def) return [];
   const lines: TooltipLine[] = [];
+  // Research-cap bonuses fold into a single total, counting only the halves whose tech is
+  // in. A bonus you haven't unlocked yet is not advertised — it would read as a promise the
+  // building isn't keeping.
+  const capTotal = def.effects.reduce(
+    (n, e) => (e.kind === 'researchCap' && (!e.requiresTech || techs.includes(e.requiresTech)) ? n + e.amount : n),
+    0,
+  );
   const push = (e: BuildingEffect): void => {
     switch (e.kind) {
       case 'popCap':
@@ -329,11 +337,12 @@ function effectLines(id: BuildingId): TooltipLine[] {
       case 'coinCap':
         lines.push({ text: `+${e.amount} Gold cap (with Currency)`, cls: 'ok' });
         break;
-      case 'researchCap': {
-        const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
-        lines.push({ text: `+${e.amount} Research cap${gate}`, cls: 'ok' });
+      case 'researchCap':
+        // Emitted once, at the first researchCap effect, as the combined total.
+        if (capTotal > 0 && !lines.some((l) => l.text.endsWith('Research cap'))) {
+          lines.push({ text: `+${capTotal} Research cap`, cls: 'ok' });
+        }
         break;
-      }
       case 'happiness':
         lines.push({ text: `+${e.amount} happiness`, cls: 'ok' });
         break;
@@ -343,14 +352,6 @@ function effectLines(id: BuildingId): TooltipLine[] {
   if ((def.costGrowth ?? 1) > 1) lines.push({ text: 'Cost rises with each copy' });
   return lines;
 }
-/** Chronicle stamps read as in-world DATES rather than a wall clock — the season and year
- *  the entry happened in. The Calendar tech still earns its keep: it reveals the precise
- *  DAY and puts the live date in the header. */
-function stamp(playtimeSeconds: number): string {
-  const d = dateAt(playtimeSeconds);
-  return `${d.season} Y${d.year}`;
-}
-
 // ---- derive the panel view-model from canonical state ----
 export function toView(state: GameState): UiState {
   const run = state.run;
@@ -366,7 +367,10 @@ export function toView(state: GameState): UiState {
     const cap = effectiveCap(state, def.id);
     const capped = Number.isFinite(cap);
     const atCap = capped && amount >= cap - EPS;
-    const rate = atCap ? 0 : rates[def.id];
+    // The rate is what the settlement PRODUCES, not what it manages to keep. A full store
+    // still reports its output — you need to see what you're throwing away to know how much
+    // storage to build. The gold at-cap fill is what says "none of this is landing".
+    const rate = rates[def.id];
     let show = true;
     if (def.id === 'mana') {
       show = run.flags.magicDiscovered === true || amount > EPS || Math.abs(rate) > EPS;
@@ -465,6 +469,7 @@ export function toView(state: GameState): UiState {
       })),
       disabled,
       reason,
+      techs: run.tech as readonly string[],
     };
   });
 
@@ -537,7 +542,7 @@ export function toView(state: GameState): UiState {
     chronicle: run.chronicle
       .slice(-chronicleLines(state))
       .reverse()
-      .map((c) => ({ t: stamp(c.at), text: c.text, kind: c.kind })),
+      .map((c) => ({ text: c.text, kind: c.kind })),
     calendar: calendar(state),
     government: governmentView(state),
     trade: tradeView(state).map((p) => ({
@@ -624,7 +629,7 @@ export function buildingTooltip(b: BuildingRowView): TooltipContent {
   const sections: TooltipSection[] = [
     { label: 'Cost', lines: [{ text: b.costText || '—', cls: b.affordable ? undefined : 'life' }] },
   ];
-  const fx = effectLines(b.id);
+  const fx = effectLines(b.id, b.techs);
   if (fx.length) sections.push({ label: 'Effects', lines: fx });
   sections.push({ label: 'Built', lines: [{ text: String(b.count) }] });
   const note = b.maxed ? 'Built to its maximum.' : !b.affordable ? "You can't afford this yet." : undefined;
