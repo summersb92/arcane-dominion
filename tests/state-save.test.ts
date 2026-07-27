@@ -410,7 +410,7 @@ describe('validate rejects garbage', () => {
     expect(safeLoad(serialize(s)).ok).toBe(false);
   });
 
-  it('rejects more assigned workers than settlers exist', () => {
+  it('rejects more assigned workers than citizens exist', () => {
     const s: any = newGame(1);
     s.run.population.total = 1;
     s.run.population.jobs = { woodcutter: 3 };

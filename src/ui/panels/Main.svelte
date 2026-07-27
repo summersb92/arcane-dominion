@@ -34,7 +34,7 @@
   }
 
   // Build tab: unlocked buildings grouped under category headings (the ~30-card wall,
-  // sectioned). Constructs keep their own "Arcane Constructs" section below.
+  // sectioned). Constructs keep their own "Arcane Works" section below.
   const CATEGORIES: { id: BuildingRowView['category']; label: string }[] = [
     { id: 'housing', label: 'Housing' },
     { id: 'production', label: 'Production' },
@@ -67,9 +67,9 @@
   function growthLabel(status: string): string {
     switch (status) {
       case 'growing':
-        return 'Next settler';
+        return 'Next citizen';
       case 'starving':
-        return 'Losing settlers to hunger';
+        return 'Losing citizens to hunger';
       case 'full':
         return 'Housing full — build a House';
       case 'unhappy':
@@ -85,7 +85,7 @@
     <section>
       <h2>Build</h2>
       <div class="sub">
-        Raise structures to house settlers, expand storage, and open workplaces. Costs rise as you build.
+        Raise structures to house citizens, expand storage, and open workplaces. Costs rise as you build.
       </div>
       {#if buildSections.length === 0}
         <div class="empty">Nothing to build yet — gather some wood first.</div>
@@ -101,8 +101,11 @@
       {/if}
 
       {#if constructs.length}
-        <h2 class="mt">Arcane Constructs</h2>
-        <div class="sub">Magic labour — production with no settlers and no food, only mana upkeep.</div>
+        <h2 class="mt">Arcane Works</h2>
+        <div class="sub">
+          What magic buys that labour cannot — a deeper mana pool, and yields the weather has no
+          say over.
+        </div>
         <div class="tgrid">
           {#each constructs as b (b.id)}
             <BuildCard {b} accent="var(--mana)" />
@@ -113,11 +116,11 @@
   {:else if $activeTab === 'jobs'}
     <section>
       <h2>{$game.population.name}</h2>
-      <div class="sub">Assign idle settlers to workplaces. Each worker produces its trade; only settlers eat food.</div>
+      <div class="sub">Assign idle citizens to workplaces. Each worker produces its trade; only citizens eat food.</div>
 
       <div class="jobscols">
       <div class="jobscol">
-      <!-- Prominent, always-present Population readout: the next-settler progress bar
+      <!-- Prominent, always-present Population readout: the next-citizen progress bar
            fills while growing (with %), or names the paused reason when it can't grow. -->
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div
@@ -128,7 +131,7 @@
       >
         <div class="ghead">
           <span class="gtitle">Population</span>
-          <span class="gcount"><strong>{pop.total}</strong> / {pop.cap} settlers</span>
+          <span class="gcount"><strong>{pop.total}</strong> / {pop.cap} citizens</span>
         </div>
         <div class="glabel">
           <span>{growthLabel(pop.growth.status)}</span>
@@ -242,7 +245,7 @@
 
           <h3 class="govsec">Taxes</h3>
           <div class="govnote">
-            A tax rate — trading settler morale for a cut of the settlement's wealth — is not
+            A tax rate — trading citizen morale for a cut of the settlement's wealth — is not
             yet levied. Coming with the treasury rework.
           </div>
 
@@ -544,7 +547,7 @@
       transition: none;
     }
   }
-  /* Next-settler progress — a prominent, always-present Population readout at the top of
+  /* Next-citizen progress — a prominent, always-present Population readout at the top of
      the settlement tab. */
   .growth {
     margin-bottom: 12px;

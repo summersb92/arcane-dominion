@@ -109,15 +109,15 @@ describe('per-job food upkeep removed', () => {
     }
   });
 
-  it('food is consumed only by base settler upkeep, regardless of jobs worked', () => {
+  it('food is consumed only by base citizen upkeep, regardless of jobs worked', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
     reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge'); // 1 woodcutter slot
     build(s, 'woodcutters-lodge'); // a 2nd lodge → 2 slots total
     s.run.population.total = 2;
-    assignJob(s, 'woodcutter', 2); // both working → no idle settlers
-    // 2 settlers × 4 base upkeep = -8/s; workers add nothing (and none are idle).
+    assignJob(s, 'woodcutter', 2); // both working → no idle citizens
+    // 2 citizens × 4 base upkeep = -8/s; workers add nothing (and none are idle).
     expect(productionRates(s).food).toBeCloseTo(-8, 6);
   });
 });

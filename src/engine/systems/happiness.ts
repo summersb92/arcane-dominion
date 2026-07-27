@@ -1,8 +1,8 @@
 // Happiness — a 0..100 derived read model (no mutation, no stored field) that gates
-// population GROWTH. It starts at HAPPINESS.base, drops with crowding (more settlers →
+// population GROWTH. It starts at HAPPINESS.base, drops with crowding (more citizens →
 // less content), and rises with assigned Entertainers and luxury buildings
 // (the Amphitheater's `happiness` effect). Below HAPPINESS.growthThreshold the settlement
-// stops growing (systems/population.ts). Unhappiness never forces settler LOSS this pass —
+// stops growing (systems/population.ts). Unhappiness never forces citizen LOSS this pass —
 // starvation still handles loss. Pure engine, no DOM.
 
 import { HAPPINESS } from '../../content/config';
@@ -21,7 +21,7 @@ export interface HappinessLine {
 }
 
 /** How much of a luxury buys one point of happiness AT THE CURRENT SIZE. A luxury is a
- *  per-head comfort: the same pile spread over twice the settlers is half the comfort, so
+ *  per-head comfort: the same pile spread over twice the citizens is half the comfort, so
  *  the per-point cost grows with the population past HAPPINESS.luxuryPopBaseline. */
 export function luxuryPerPoint(state: GameState, basePerPoint: number): number {
   const pop = state.run.population.total;
@@ -51,11 +51,11 @@ export function happiness(state: GameState): HappinessInfo {
   const run = state.run;
   const breakdown: HappinessLine[] = [{ label: 'Base', amount: HAPPINESS.base }];
 
-  // Crowding: only settlers ABOVE the free buffer strain the settlement — the first
+  // Crowding: only citizens ABOVE the free buffer strain the settlement — the first
   // HAPPINESS.freeBuffer live happily at no cost.
-  const settlers = run.population.total;
-  const crowded = Math.max(0, settlers - HAPPINESS.freeBuffer);
-  const crowding = HAPPINESS.crowdingPerSettler * crowded;
+  const citizens = run.population.total;
+  const crowded = Math.max(0, citizens - HAPPINESS.freeBuffer);
+  const crowding = HAPPINESS.crowdingPerCitizen * crowded;
   if (crowding > 0) breakdown.push({ label: 'Crowding', amount: -crowding });
 
   // Culture-job bonus: each assigned Entertainer raises spirits.

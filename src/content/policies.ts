@@ -6,8 +6,8 @@
 //
 // Effects are simple multipliers/adders read by the engine:
 //   workerOutputMult  → multiplies every worker's output (production.ts globalJobMult)
-//   foodUpkeepMult    → multiplies the per-settler food upkeep (production.ts)
-//   researchPerPopMult→ multiplies the per-settler research trickle (production.ts)
+//   foodUpkeepMult    → multiplies the per-citizen food upkeep (production.ts)
+//   researchPerPopMult→ multiplies the per-citizen research trickle (production.ts)
 //   manaOutputMult    → multiplies gross mana production (production.ts)
 //   happiness         → flat happiness adjustment (systems/happiness.ts)
 //

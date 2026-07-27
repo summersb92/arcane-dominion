@@ -72,21 +72,21 @@ describe('magic buildings are flag-gated (not tech-gated)', () => {
     expect(unlocked(s, 'arcane-font')).toBe(true);
   });
 
-  it('Animated Tools need BOTH the flag AND a standing Arcane Font', () => {
+  it('the Enchanted Grove needs BOTH the flag AND a standing Arcane Font', () => {
     const s = newGame(1);
     s.run.flags.magicDiscovered = true;
     // Flag alone is not enough — a Font must already exist.
-    expect(unlocked(s, 'animated-tools')).toBe(false);
+    expect(unlocked(s, 'enchanted-grove')).toBe(false);
     s.run.buildings['arcane-font'] = 1;
-    expect(unlocked(s, 'animated-tools')).toBe(true);
+    expect(unlocked(s, 'enchanted-grove')).toBe(true);
   });
 
   it('the magic buildings carry requiresFlag and no requiresTech', () => {
     expect(BUILDING_BY_ID['arcane-font'].requiresFlag).toBe('magicDiscovered');
     expect(BUILDING_BY_ID['arcane-font'].requiresTech).toBeUndefined();
-    expect(BUILDING_BY_ID['animated-tools'].requiresFlag).toBe('magicDiscovered');
-    expect(BUILDING_BY_ID['animated-tools'].requiresBuilding).toBe('arcane-font');
-    expect(BUILDING_BY_ID['animated-tools'].requiresTech).toBeUndefined();
+    expect(BUILDING_BY_ID['enchanted-grove'].requiresFlag).toBe('magicDiscovered');
+    expect(BUILDING_BY_ID['enchanted-grove'].requiresBuilding).toBe('arcane-font');
+    expect(BUILDING_BY_ID['enchanted-grove'].requiresTech).toBeUndefined();
   });
 });
 

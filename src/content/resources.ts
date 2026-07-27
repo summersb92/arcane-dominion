@@ -99,9 +99,9 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane', group: 'goods' },
   // ---- KNOWLEDGE — the chain goods (furs → parchment → books → compendiums) + currencies. ----
   { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane', group: 'knowledge' },
-  // Held BOOKS raise research gained per settler.
+  // Held BOOKS raise research gained per citizen.
   { id: 'books', label: 'Books', glyph: '📖', tier: 'mundane', group: 'knowledge' },
-  // Held COMPENDIUMS raise the research cap and yield a little mana per settler.
+  // Held COMPENDIUMS raise the research cap and yield a little mana per citizen.
   { id: 'compendiums', label: 'Compendiums', glyph: '📚', tier: 'mundane', group: 'knowledge' },
   { id: 'research', label: 'Research', glyph: '📜', tier: 'knowledge', group: 'knowledge' },
   { id: 'culture', label: 'Culture', glyph: '🎭', tier: 'knowledge', group: 'knowledge' },

@@ -1,4 +1,4 @@
-// Tech tree (pure data). Research (produced by Scholars + the per-settler curiosity
+// Tech tree (pure data). Research (produced by Scholars + the per-citizen curiosity
 // trickle) is spent to unlock nodes. Each node lists prerequisite tech ids and a
 // human-readable `unlocks` list; the ACTUAL gating lives on the things gated
 // (BuildingDef.requiresTech, and the efficiency techs read in systems/production.ts).
@@ -197,7 +197,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Sit still, breathe, listen. It turns out everyone leaks a little magic.',
     cost: 300,
     requires: ['folk-lore'],
-    unlocks: ['Every settler draws a trickle of mana'],
+    unlocks: ['Every citizen draws a trickle of mana'],
   },
   // ---- ELEMENTAL ATTUNEMENTS — each teaches ONE building to spend mana for its element.
   // All four are hidden until an ACADEMY stands: that is where mana stops being one pool and
@@ -307,7 +307,7 @@ export const TECHS: TechDef[] = [
     name: 'Writing',
     blurb: 'Set knowledge down in ink, where it cannot wander off.',
     // The cheapest node in the tree and a root one: the Library it opens is the first source
-    // of research beyond the per-settler trickle, so it must be reachable almost immediately.
+    // of research beyond the per-citizen trickle, so it must be reachable almost immediately.
     // The Academy moved to Mathematics — a +600 research ceiling this early would flatten the
     // whole cost ladder.
     cost: 20,
@@ -316,7 +316,7 @@ export const TECHS: TechDef[] = [
   {
     id: 'bookbinding',
     name: 'Bookbinding',
-    blurb: 'Cure hides into parchment and bind the pages. Held Books sharpen every settler’s curiosity.',
+    blurb: 'Cure hides into parchment and bind the pages. Held Books sharpen every citizen’s curiosity.',
     cost: 900,
     resourceCost: { culture: 50 }, // a literate culture underwrites the craft
     requires: ['writing'],

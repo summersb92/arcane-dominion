@@ -71,7 +71,7 @@ describe('Furniture is a luxury good that raises happiness', () => {
     const s = newGame(1);
     s.run.population.total = 20; // crowding 30 → base happiness 70
     expect(happiness(s).value).toBe(70);
-    // At 20 settlers (2x the 10-settler baseline) a point costs 10 furniture, not 5.
+    // At 20 citizens (2x the 10-citizen baseline) a point costs 10 furniture, not 5.
     s.run.resources.furniture = 50;
     expect(happiness(s).value).toBe(75);
     expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furniture'))).toBe(true);

@@ -123,7 +123,7 @@ describe('the founding workplaces and the early tech openers', () => {
     s.run.tech.push('animal-husbandry');
     expect(build(s, 'ranch')).toBe(true);
 
-    // FLAT food: no settlers, no workers, no inputs.
+    // FLAT food: no citizens, no workers, no inputs.
     expect(s.run.population.total).toBe(0);
     expect(productionRates(s).food).toBeCloseTo(0.4 * foodEnvMult(s), 6);
     expect(build(s, 'ranch')).toBe(true); // stacks per copy

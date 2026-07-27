@@ -14,7 +14,7 @@ import { goldCap } from '../src/engine/systems/caps';
 import { jobEffectiveProduces, runProduction } from '../src/engine/systems/production';
 
 describe('House: 10 wood, +1 population', () => {
-  it('costs 10 and admits one settler', () => {
+  it('costs 10 and admits one citizen', () => {
     const s = newGame(1);
     expect(buildingCost(s, 'hut')).toEqual({ wood: 10 });
     s.run.resources.wood = 10;

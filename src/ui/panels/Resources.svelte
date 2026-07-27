@@ -61,11 +61,12 @@
             {fmtHeld(r.amount)}{#if r.capped}<span class="lockt"> / {fmtHeld(r.cap)}</span>{/if}
           </span>
           <span class="rt" class:drain={draining(r)}>{fmtRate(r.rate)}</span>
-          <!-- A standing environmental modifier (the season on food), bracketed straight
-               after the rate it is acting on, so the cause sits beside the effect. -->
-          {#if r.mod}<span class="mod" class:good={r.mod.good} class:bad={!r.mod.good} title={r.mod.title}
-            >[{r.mod.text}]</span
-          >{/if}
+          <!-- Environmental modifiers (season, then weather), bracketed straight after the
+               rate they act on, so the causes sit beside the effect. One bracket each —
+               a combined figure would hide which of the two is doing the damage. -->
+          {#each r.mods ?? [] as m}<span class="mod" class:good={m.good} class:bad={!m.good} title={m.title}
+              >[{m.text}]</span
+            >{/each}
           <!-- A blocking condition the rate alone can't show (food stalling growth). -->
           {#if r.warn}<span class="warn" title={r.warnText}>!</span>{/if}
         </span>

@@ -25,13 +25,13 @@
       on:keydown={(e) => onKey(e, t.id, t.locked)}
     >
       {t.label}{#if t.locked} 🔒{/if}
-      {#if t.badge}<span class="badge" title="{t.badge} idle settler{t.badge === 1 ? '' : 's'}">{t.badge}</span>{/if}
+      {#if t.badge}<span class="badge" title="{t.badge} idle citizen{t.badge === 1 ? '' : 's'}">{t.badge}</span>{/if}
     </button>
   {/each}
 </nav>
 
 <style>
-  /* Idle-settler badge — tells you when the settlement tab needs a visit without leaving
+  /* Idle-citizen badge — tells you when the settlement tab needs a visit without leaving
      Build/Research. */
   .badge {
     display: inline-block;

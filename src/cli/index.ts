@@ -139,7 +139,7 @@ function printHelp(): void {
       '  sim <seconds> [--seed N] [--json] fast-forward the deterministic tick loop',
       '  gather <actionId>                 instant manual gather (gather-wood/forage-food/quarry-stone)',
       '  build <buildingId>                pay cost + raise a building',
-      '  assign <jobId> <n>                assign n idle settlers to a job (negative n to unassign)',
+      '  assign <jobId> <n>                assign n idle citizens to a job (negative n to unassign)',
       '  research <techId>                 spend research to unlock a tech',
       '  buildings                         list every building (cost/count/buildable)',
       '  techs                             list every tech node (cost/status)',

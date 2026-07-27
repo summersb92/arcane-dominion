@@ -122,7 +122,7 @@ describe('sink 1 — held essence empowers its matching job', () => {
   });
 });
 
-describe('sink 2 — elemental constructs burn essence for settler-free labour', () => {
+describe('sink 2 — elemental constructs burn essence for citizen-free labour', () => {
   it('Storm Sails, Stone Titan, Flame Wardens and the Rain Engine each spend their element', () => {
     const s = primed();
     s.run.tech.push('aeromancy', 'geomancy', 'pyromancy', 'hydromancy');
@@ -136,8 +136,8 @@ describe('sink 2 — elemental constructs burn essence for settler-free labour',
     expect(build(s, 'rain-engine')).toBe(true);
 
     const r = productionRates(s);
-    expect(r.wood).toBeCloseTo(1.2, 6); // Storm Sails, no settlers
-    expect(r.food).toBeGreaterThan(1.4); // Rain Engine (no settlers to eat)
+    expect(r.wood).toBeCloseTo(1.2, 6); // Storm Sails, no citizens
+    expect(r.food).toBeGreaterThan(1.4); // Rain Engine (no citizens to eat)
     expect(r.steel).toBeCloseTo(0.35, 6); // Flame Wardens — steel with no coal
     expect(r.airEssence).toBeCloseTo(-0.05, 6); // each spends its element
     expect(r.earthEssence).toBeCloseTo(-0.05, 6);

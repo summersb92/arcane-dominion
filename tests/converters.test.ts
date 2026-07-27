@@ -33,7 +33,7 @@ describe('Charcoal Ground — a worker-free converter (wood → coal)', () => {
     s.run.resources.stone = 100;
     expect(build(s, 'charcoal-ground')).toBe(true); // starts active (1/1)
 
-    // Net rates: −0.5 wood, +0.4 coal per active ground (no settlers involved).
+    // Net rates: −0.5 wood, +0.4 coal per active ground (no citizens involved).
     expect(productionRates(s).coal).toBeCloseTo(0.4, 6);
     expect(productionRates(s).wood).toBeCloseTo(-0.5, 6);
 

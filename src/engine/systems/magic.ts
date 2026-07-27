@@ -1,7 +1,7 @@
 // Magic discovery — the moment a settlement first touches the arcane. Magic is no longer a
 // tech; it is discovery-driven. THREE independent paths each trip the same `magicDiscovered`
 // flag (whichever the player reaches first wins), and that flag is what reveals the Mana
-// currency and unlocks the magic buildings (Arcane Font, Animated Tools — requiresFlag in
+// currency and unlocks the magic buildings (Arcane Font, Enchanted Grove — requiresFlag in
 // content/buildings.ts). Once discovered the flag is never re-checked. Pure engine, no DOM.
 //
 //   a) FROM THE EARTH  — Mana Crystals (mined by the Mines) reach the threshold.

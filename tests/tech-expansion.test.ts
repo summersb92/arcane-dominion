@@ -86,7 +86,7 @@ describe('Magic techs are gated behind discovering magic (requiresFlag) and cost
     expect(TECH_BY_ID.runecraft.requires).toContain('enchantment');
   });
 
-  it('nature + crystal magic buildings are gated by their techs and run without settlers', () => {
+  it('nature + crystal magic buildings are gated by their techs and run without citizens', () => {
     // Ley Grove (Druidry) — passive mana.
     const s = newGame(1);
     s.run.flags.magicDiscovered = true;
@@ -94,9 +94,9 @@ describe('Magic techs are gated behind discovering magic (requiresFlag) and cost
     s.run.resources.wood = 200;
     s.run.resources.stone = 200;
     expect(build(s, 'ley-grove')).toBe(true);
-    expect(productionRates(s).mana).toBeCloseTo(0.6, 6); // no settlers needed
+    expect(productionRates(s).mana).toBeCloseTo(0.6, 6); // no citizens needed
 
-    // Golem Works (Enchantment) — mines iron + stone on mana upkeep, no settlers.
+    // Golem Works (Enchantment) — mines iron + stone on mana upkeep, no citizens.
     const g = newGame(2);
     g.run.flags.magicDiscovered = true;
     g.run.tech.push('enchantment');

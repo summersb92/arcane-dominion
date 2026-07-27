@@ -67,7 +67,7 @@ describe('mini-step buildings', () => {
     s.run.resources.iron = 200;
     s.run.resources.coal = 200;
     expect(build(s, 'blast-furnace')).toBe(true);
-    expect(productionRates(s).steel).toBeCloseTo(0.15, 6); // no settlers involved
+    expect(productionRates(s).steel).toBeCloseTo(0.15, 6); // no citizens involved
   });
 
   it('the Guild Hall boosts every worker (+5%)', () => {
@@ -127,7 +127,7 @@ describe('policies — enact, revoke, slots, and effects', () => {
     expect(enactPolicy(s, 'rationing')).toBe(false); // slots full (1/1)
     expect(revokePolicy(s, 'festivals')).toBe(true);
     expect(enactPolicy(s, 'rationing')).toBe(true);
-    // Rationing: food upkeep ×0.75, −8 happiness. Idle settlers forage 4.2/s scaled by
+    // Rationing: food upkeep ×0.75, −8 happiness. Idle citizens forage 4.2/s scaled by
     // contentment, so derive the expectation from the live happiness rather than a constant.
     s.run.population.total = 10;
     const hap = happiness(s).value / 100;

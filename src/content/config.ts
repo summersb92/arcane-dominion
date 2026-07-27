@@ -4,7 +4,7 @@
 export const OFFLINE_CAP_MS = 12 * 60 * 60 * 1000; // 12h offline catch-up cap
 export const AUTOSAVE_INTERVAL_MS = 30_000;
 
-/** Fresh-game bootstrap: a handful of settlers' worth of food, empty everything else. */
+/** Fresh-game bootstrap: a handful of citizens' worth of food, empty everything else. */
 export const STARTING = {
   wood: 0,
   food: 20,
@@ -62,7 +62,7 @@ export const STARTING = {
    *  Academy +600 each) to raise the ceiling
    *  toward the ~3000 needed by Steelmaking. See systems/caps.ts effectiveCap. */
   researchCap: 300,
-  popCap: 0, // no housing yet — build a House to admit settlers
+  popCap: 0, // no housing yet — build a House to admit citizens
 };
 
 /** Happiness (systems/happiness.ts). Happiness is a 0..100 derived read model that gates
@@ -70,8 +70,8 @@ export const STARTING = {
  *  `base`, drops with crowding, and rises with assigned Entertainers + luxury buildings. */
 export const HAPPINESS = {
   base: 100, // a fresh, empty camp is fully content
-  freeBuffer: 5, // the first 5 settlers cost NO happiness — each one past 5 costs 2
-  crowdingPerSettler: 2, // −2 happiness per settler ABOVE the free buffer
+  freeBuffer: 5, // the first 5 citizens cost NO happiness — each one past 5 costs 2
+  crowdingPerCitizen: 2, // −2 happiness per citizen ABOVE the free buffer
   cultureWorkerBonus: 5, // + morale per assigned Entertainer (the Amphitheater's job)
   growthThreshold: 50, // growth pauses while happiness is below this
   /** LUXURY goods scale with the settlement. The per-point costs below are quoted for a
@@ -135,51 +135,51 @@ export const MANUAL_GATHER_RETIRE_CAP = 12000;
 
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
 export const POPULATION = {
-  /** Food each settler consumes per second, regardless of job. Deliberately close to what an
-   *  idle settler forages (4.2) and to a Farmer's output (6): an unemployed settler barely
+  /** Food each citizen consumes per second, regardless of job. Deliberately close to what an
+   *  idle citizen forages (4.2) and to a Farmer's output (6): an unemployed citizen barely
    *  feeds themself, and only Farmers build a real surplus. */
   baseFoodUpkeep: 4,
-  /** Research each settler passively generates per second — a curiosity trickle that
-   *  begins with your very first settler, so Research (the tech currency) accrues from
+  /** Research each citizen passively generates per second — a curiosity trickle that
+   *  begins with your very first citizen, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */
-  researchPerSettler: 0.02,
-  /** Mana the settlement can HOLD per settler. Mana has no warehouse — it is carried in
+  researchPerCitizen: 0.02,
+  /** Mana the settlement can HOLD per citizen. Mana has no warehouse — it is carried in
    *  people, so the pool is only as deep as the population. With nobody home it is zero. */
-  manaCapPerSettler: 1,
-  /** Mana each settler draws per second ONCE the Meditation tech is researched — the first
+  manaCapPerCitizen: 1,
+  /** Mana each citizen draws per second ONCE the Meditation tech is researched — the first
    *  mana income that doesn't depend on a building. Small on purpose; Shrines still carry it. */
-  manaPerSettler: 0.005,
-  /** Food each IDLE (unassigned) settler forages per second AT FULL HAPPINESS. The actual
+  manaPerCitizen: 0.005,
+  /** Food each IDLE (unassigned) citizen forages per second AT FULL HAPPINESS. The actual
    *  yield scales with contentment — a settlement at 50 happiness forages at half rate — so
-   *  keeping people happy is itself a food policy (systems/production.ts idleFoodPerSettler
+   *  keeping people happy is itself a food policy (systems/production.ts idleFoodPerCitizen
    *  × happiness/100). */
-  idleFoodPerSettler: 4.2,
+  idleFoodPerCitizen: 4.2,
   /** A full granary is itself a reason to grow. While the food store sits at or above this
    *  FRACTION of its cap, the settlement keeps growing even on a negative net rate — it is
    *  eating into a surplus it already banked, which is what a surplus is for. Below it,
    *  growth needs a non-negative rate again. */
   growthReserveFraction: 0.25,
-  /** Seconds of sustained food surplus (and free housing) to gain one settler. */
+  /** Seconds of sustained food surplus (and free housing) to gain one citizen. */
   growthIntervalSec: 8,
-  /** Seconds of sustained starvation before one settler is lost. */
+  /** Seconds of sustained starvation before one citizen is lost. */
   starveIntervalSec: 12,
 };
 
 /** Knowledge chain (furs → parchment → books → compendiums). HELD books/compendiums feed back
- *  into the economy — books raise research gained per settler; compendiums raise the research cap
- *  and yield a little mana per settler. Each bonus scales with the held count, up to a cap. */
+ *  into the economy — books raise research gained per citizen; compendiums raise the research cap
+ *  and yield a little mana per citizen. Each bonus scales with the held count, up to a cap. */
 export const KNOWLEDGE = {
-  /** + research/settler/s per BOOK held… */
+  /** + research/citizen/s per BOOK held… */
   booksResearchPerPop: 0.005,
-  /** …capped at this much extra research/settler/s (reached at ~50 books). */
+  /** …capped at this much extra research/citizen/s (reached at ~50 books). */
   booksResearchPerPopMax: 0.25,
   /** + research CAP per COMPENDIUM held… */
   compendiumResearchCap: 15,
   /** …capped at this much extra research cap (reached at 200 compendiums). */
   compendiumResearchCapMax: 3000,
-  /** + mana/settler/s per COMPENDIUM held… */
+  /** + mana/citizen/s per COMPENDIUM held… */
   compendiumManaPerPop: 0.003,
-  /** …capped at this much extra mana/settler/s (reached at 100 compendiums). */
+  /** …capped at this much extra mana/citizen/s (reached at 100 compendiums). */
   compendiumManaPerPopMax: 0.3,
 };
 

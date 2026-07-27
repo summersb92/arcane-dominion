@@ -1,6 +1,6 @@
-// Job catalogue (pure data). A JOB is work a settler performs each tick: it PRODUCES
+// Job catalogue (pure data). A JOB is work a citizen performs each tick: it PRODUCES
 // a resource. Jobs no longer carry a per-worker food cost — the only food consumer is
-// the base per-settler upkeep (POPULATION.baseFoodUpkeep, see systems/population.ts),
+// the base per-citizen upkeep (POPULATION.baseFoodUpkeep, see systems/population.ts),
 // which still gates population growth. A job is only assignable up to the capacity
 // granted by its workplace BUILDING (see requiresBuildingCapacity + systems/jobs.ts).
 //
@@ -21,6 +21,7 @@ export type JobId =
   | 'engineer'
   | 'scribe'
   | 'scholar'
+  | 'mage'
   | 'bard';
 
 export interface JobDef {
@@ -118,6 +119,16 @@ export const JOBS: JobDef[] = [
     blurb: 'Studies wherever there are shelves. Produces questions, then answers.',
     produces: { research: 0.5 },
     requiresBuildingCapacity: 'library',
+  },
+  {
+    id: 'mage',
+    name: 'Mage',
+    blurb: 'Sits at the font and listens. The pool answers only while someone is asking.',
+    // The Font's mana is DRAWN, not given: an unstaffed font is a hole in the ground with
+    // opinions. Putting the yield on the job (as the Library does with its Scholars) is what
+    // makes staffing it a real decision.
+    produces: { mana: 0.5 },
+    requiresBuildingCapacity: 'arcane-font',
   },
   {
     id: 'bard',

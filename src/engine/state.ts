@@ -16,7 +16,7 @@ export const SAVE_VERSION = 16; // v16: added `vacancies` (posts emptied by deat
 // (the historical import site) without reaching into content directly.
 export type { ResourceId, MundaneResourceId } from '../content/resources';
 
-/** Population: total settlers + how many are assigned to each job. idle = total − Σ jobs. */
+/** Population: total citizens + how many are assigned to each job. idle = total − Σ jobs. */
 export interface Population {
   total: number;
   jobs: Record<JobId, number>;
@@ -37,7 +37,7 @@ export interface ChronicleEntry {
 }
 
 /** Births and deaths for the season currently underway. The chronicle reports the SEASON,
- *  not the settler: individual arrivals are noise, "four born, one lost" is a story. Flushed
+ *  not the citizen: individual arrivals are noise, "four born, one lost" is a story. Flushed
  *  into a single line when the season turns (systems/chronicle.ts runChronicleWatch). */
 export interface SeasonTally {
   /** Absolute season ordinal since the run began (not the 0..3 index within a year). */
@@ -54,7 +54,7 @@ export interface RunState {
    *  culture are uncapped). */
   caps: Record<MundaneResourceId, number>;
   population: Population;
-  /** Work left undone by the dead, waiting for the next settlers (see Vacancies). */
+  /** Work left undone by the dead, waiting for the next citizens (see Vacancies). */
   vacancies: Vacancies;
   popCap: number; // housing capacity
   buildings: Partial<Record<BuildingId, number>>; // count built per building
@@ -154,15 +154,15 @@ export function freshCaps(): Record<MundaneResourceId, number> {
 /** Opening chronicle lines — one is picked per run (deterministic by seed), so each new
  *  settlement starts its story a little differently. */
 const OPENINGS = [
-  "A handful of settlers make camp at the forest's edge.",
-  'A handful of settlers, a forest, and a plan that is mostly optimism.',
+  "A handful of citizens make camp at the forest's edge.",
+  'A handful of citizens, a forest, and a plan that is mostly optimism.',
   "The wagons stop at the forest's edge. Nobody remembers deciding that.",
   'They came for the timber. They stayed because the wagon broke.',
   "The forest's edge. Home, pending further notice.",
   'Someone plants a stake in the ground and calls it a settlement. The ground disagrees.',
 ];
 
-/** A brand-new settlement: settlers make camp with a little food and nothing else. */
+/** A brand-new settlement: citizens make camp with a little food and nothing else. */
 export function newGame(seed: number = seedFrom(Date.now())): GameState {
   const now = Date.now();
   return {

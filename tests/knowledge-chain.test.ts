@@ -50,19 +50,19 @@ describe('Knowledge chain — furs → parchment → books → compendiums', () 
 });
 
 describe('Held knowledge goods feed back into the economy', () => {
-  it('held BOOKS raise research gained per settler (capped)', () => {
+  it('held BOOKS raise research gained per citizen (capped)', () => {
     const s = newGame(1);
     s.run.population.total = 10; // base trickle 10 × 0.02 = 0.2 research/s
     expect(productionRates(s).research).toBeCloseTo(0.2, 6);
 
-    s.run.resources.books = 20; // +0.005 × 20 = +0.1 /settler
+    s.run.resources.books = 20; // +0.005 × 20 = +0.1 /citizen
     expect(productionRates(s).research).toBeCloseTo(1.2, 6); // (0.02 + 0.1) × 10
 
-    s.run.resources.books = 1000; // bonus caps at +0.25 /settler
+    s.run.resources.books = 1000; // bonus caps at +0.25 /citizen
     expect(productionRates(s).research).toBeCloseTo(2.7, 6); // (0.02 + 0.25) × 10
   });
 
-  it('held COMPENDIUMS raise the research cap and yield mana per settler (capped)', () => {
+  it('held COMPENDIUMS raise the research cap and yield mana per citizen (capped)', () => {
     const s = newGame(1);
     expect(effectiveCap(s, 'research')).toBe(300); // base
 
@@ -72,7 +72,7 @@ describe('Held knowledge goods feed back into the economy', () => {
     s.run.population.total = 10;
     expect(productionRates(s).mana).toBeCloseTo(1.5, 6); // min(0.3, 50×0.003=0.15) × 10
 
-    s.run.resources.compendiums = 1000; // cap bonus maxes at +3000, mana at +0.3/settler
+    s.run.resources.compendiums = 1000; // cap bonus maxes at +3000, mana at +0.3/citizen
     expect(effectiveCap(s, 'research')).toBe(3300);
     expect(productionRates(s).mana).toBeCloseTo(3.0, 6); // 0.3 × 10
   });

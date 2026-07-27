@@ -344,8 +344,8 @@ describe('the Shrine — the first building, and the first culture', () => {
     const s = reveal(newGame(1), 'wayside-shrine');
     s.run.resources.stone = 500;
     for (let i = 0; i < 5; i++) build(s, 'wayside-shrine');
-    // Settlers trickle the research half (0.02/s each). Five Shrines now make culture twice
-    // as fast, so the wait is half as long — which needs twice as many settlers to cover the
+    // Citizens trickle the research half (0.02/s each). Five Shrines now make culture twice
+    // as fast, so the wait is half as long — which needs twice as many citizens to cover the
     // research. At 5 pop they are still inside the happiness buffer and feed themselves.
     s.run.population.total = 5;
     runProduction(s, 100); // 5 Shrines × 0.02/s × 100s = 10 culture
@@ -403,7 +403,7 @@ describe('mana finds early uses: the Ward Stone and the elemental attunements', 
     expect(row.active).toBe(0);
   });
 
-  it('Meditation gives every settler a mana trickle', () => {
+  it('Meditation gives every citizen a mana trickle', () => {
     const s = newGame(1);
     s.run.population.total = 40;
     expect(productionRates(s).mana).toBeCloseTo(0, 6);
@@ -494,7 +494,7 @@ describe('the Academy is where mana starts having kinds', () => {
 });
 
 describe('mana is carried in people, so the pool is only as deep as the population', () => {
-  it('the cap is one per settler and moves with the population', () => {
+  it('the cap is one per citizen and moves with the population', () => {
     const s = newGame(1);
     expect(effectiveCap(s, 'mana')).toBe(0); // nobody home
     s.run.population.total = 12;
@@ -503,7 +503,7 @@ describe('mana is carried in people, so the pool is only as deep as the populati
     expect(effectiveCap(s, 'mana')).toBe(3);
   });
 
-  it('a tick clamps the pool down when settlers are lost', () => {
+  it('a tick clamps the pool down when citizens are lost', () => {
     const s = newGame(1);
     s.run.population.total = 20;
     s.run.resources.mana = 20;
@@ -528,7 +528,7 @@ describe('mana is carried in people, so the pool is only as deep as the populati
 })
 
 describe('the works that deepen the mana pool', () => {
-  it('the Arcanum adds 100 and the Font 25, on top of one per settler', () => {
+  it('the Arcanum adds 100 and the Font 25, on top of one per citizen', () => {
     const s = newGame(1);
     s.run.population.total = 8;
     expect(effectiveCap(s, 'mana')).toBe(8);
@@ -536,7 +536,7 @@ describe('the works that deepen the mana pool', () => {
     s.run.flags.magicDiscovered = true;
     s.run.resources.stone = 400;
     expect(build(s, 'arcane-font')).toBe(true);
-    expect(effectiveCap(s, 'mana')).toBe(33); // 8 settlers + 25
+    expect(effectiveCap(s, 'mana')).toBe(33); // 8 citizens + 25
 
     s.run.tech.push('prismatic-theory');
     s.run.resources.wood = 400;
@@ -549,10 +549,11 @@ describe('the works that deepen the mana pool', () => {
   it('Fonts stack, so the mana-costed techs are actually reachable', () => {
     const s = newGame(1);
     s.run.flags.magicDiscovered = true;
-    s.run.resources.stone = 2000;
+    // Fonts escalate now, so eight of them is a serious quarrying project, not pocket change.
+    s.run.resources.stone = 20_000;
     s.run.population.total = 20;
     for (let i = 0; i < 8; i++) expect(build(s, 'arcane-font')).toBe(true);
-    // 20 settlers + 8 Fonts × 25 = 220, enough to bank Prismatic Theory's 200.
+    // 20 citizens + 8 Fonts × 25 = 220, enough to bank Prismatic Theory's 200.
     expect(effectiveCap(s, 'mana')).toBe(220);
   });
 });

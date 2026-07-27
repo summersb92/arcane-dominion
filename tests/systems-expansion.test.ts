@@ -84,7 +84,7 @@ describe('research is capped by science buildings', () => {
 
   it('research clamps at its effective cap in a tick (excess is lost)', () => {
     const s = newGame(1);
-    // No science buildings → cap stays at the base 300. Many settlers trickle research.
+    // No science buildings → cap stays at the base 300. Many citizens trickle research.
     s.run.population.total = 50; // 50 × 0.02 = 1 research/s
     s.run.resources.research = 250;
     runProduction(s, 100); // would add 100 → 350, but clamps at 300
@@ -97,7 +97,7 @@ describe('contentment is the master production modifier', () => {
     const s = newGame(1);
     s.run.buildings.hut = 20;
     s.run.popCap = 20;
-    // 5 settlers: inside the free buffer, so happiness is a full 100 → no penalty at all.
+    // 5 citizens: inside the free buffer, so happiness is a full 100 → no penalty at all.
     s.run.population.total = 5;
     s.run.buildings['woodcutters-lodge'] = 5;
     assignJob(s, 'woodcutter', 5);
@@ -111,7 +111,7 @@ describe('contentment is the master production modifier', () => {
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(FIVE_LODGES, 6);
   });
 
-  it('each settler past 5 costs 2 happiness, and that shows up in output', () => {
+  it('each citizen past 5 costs 2 happiness, and that shows up in output', () => {
     const s = newGame(1);
     s.run.buildings.hut = 30;
     s.run.popCap = 30;
@@ -124,7 +124,7 @@ describe('contentment is the master production modifier', () => {
 });
 
 describe('happiness gates growth', () => {
-  it('degrades with population and turns unhappy in the tens of settlers', () => {
+  it('degrades with population and turns unhappy in the tens of citizens', () => {
     const s = newGame(1);
     expect(happiness(s).value).toBe(100); // empty camp is fully content
     expect(happiness(s).status).toBe('content');
@@ -159,12 +159,12 @@ describe('happiness gates growth', () => {
 
   it('growth pauses below the threshold and resumes once happiness recovers', () => {
     const s = newGame(1);
-    // Room + a sustainable food surplus, but too many settlers → unhappy. At 4 food upkeep
-    // per settler an unhappy settlement only stays fed if EVERYONE farms with the full tool
+    // Room + a sustainable food surplus, but too many citizens → unhappy. At 4 food upkeep
+    // per citizen an unhappy settlement only stays fed if EVERYONE farms with the full tool
     // chain — otherwise it starves and growthStatus reports 'stalled' instead of 'unhappy'.
     s.run.buildings.hut = 1;
     s.run.tech.push('agriculture', 'stone-hoe', 'irrigation', 'fertilizer');
-    s.run.buildings['forager-hut'] = 31; // a Farm slot for every settler
+    s.run.buildings['forager-hut'] = 31; // a Farm slot for every citizen
     s.run.popCap = 100;
     s.run.population.total = 31; // crowding 2×(31−5) = 52 → happiness 48 (< 50)
     assignJob(s, 'forager', 31); // 31 × 6 × 2.34 tools × 0.48 contentment ≈ 209/s vs 124 upkeep
@@ -201,7 +201,7 @@ describe('furs luxury resource + Hunter', () => {
     s.run.population.total = 1;
     expect(assignJob(s, 'hunter', 1)).toBe(1);
     const r = productionRates(s);
-    // +0.3 hunter food (× the season/weather environment) − 4 settler upkeep.
+    // +0.3 hunter food (× the season/weather environment) − 4 citizen upkeep.
     expect(r.food).toBeCloseTo(0.3 * foodEnvMult(s, true) - 4, 6);
     expect(r.furs).toBeCloseTo(0.15, 6); // +0.15 furs
   });
@@ -234,7 +234,7 @@ describe('furs luxury resource + Hunter', () => {
     s.run.population.total = 20; // crowding 2×(20−5) = 30 → happiness 70
     expect(happiness(s).value).toBe(70);
 
-    // A luxury is a PER-HEAD comfort: at 20 settlers (2× the 10-settler baseline) it takes
+    // A luxury is a PER-HEAD comfort: at 20 citizens (2× the 10-citizen baseline) it takes
     // 20 furs — not 10 — to buy one point. 50 furs therefore pays +2, not +5.
     s.run.resources.furs = 50;
     expect(happiness(s).value).toBe(72);

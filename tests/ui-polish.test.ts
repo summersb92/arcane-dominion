@@ -109,7 +109,7 @@ describe('chronicle quips', () => {
     expect(s.run.chronicle.filter((c) => c.text.startsWith('Built ')).length).toBe(0);
   });
 
-  it('population milestones log once (10 settlers)', () => {
+  it('population milestones log once (10 citizens)', () => {
     const s = newGame(1);
     s.run.popCap = 12;
     s.run.population.total = 9;

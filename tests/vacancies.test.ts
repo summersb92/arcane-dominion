@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { reveal } from './helpers';
 import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
-import { assignJob, unassignJob, refillVacancy, removeSettler } from '../src/engine/systems/jobs';
+import { assignJob, unassignJob, refillVacancy, removeCitizen } from '../src/engine/systems/jobs';
 import { foodAllowsGrowth, growthStatus, runPopulation } from '../src/engine/systems/population';
 import { safeLoad, SAVE_MAGIC } from '../src/engine/save';
 
@@ -23,20 +23,20 @@ function staffed() {
 }
 
 describe('the settlement remembers the work its dead were doing', () => {
-  it('records the post a starved settler is pulled from', () => {
+  it('records the post a starved citizen is pulled from', () => {
     const s = staffed();
     expect(s.run.vacancies).toEqual({});
-    expect(removeSettler(s)).toBe(true);
+    expect(removeCitizen(s)).toBe(true);
     // Exactly one post opened, and the workforce shrank by one.
     const total = Object.values(s.run.vacancies).reduce((n, v) => n + (v ?? 0), 0);
     expect(total).toBe(1);
     expect(s.run.population.total).toBe(2);
   });
 
-  it('remembers nothing when the settler who died was idle', () => {
+  it('remembers nothing when the citizen who died was idle', () => {
     const s = staffed();
-    s.run.population.total = 4; // a fourth settler, unassigned
-    expect(removeSettler(s)).toBe(true);
+    s.run.population.total = 4; // a fourth citizen, unassigned
+    expect(removeCitizen(s)).toBe(true);
     expect(s.run.vacancies).toEqual({}); // an idle death costs the settlement no work
     expect(s.run.population.total).toBe(3);
   });
@@ -48,13 +48,13 @@ describe('the settlement remembers the work its dead were doing', () => {
   });
 });
 
-describe('returning settlers are put back to work, food first', () => {
+describe('returning citizens are put back to work, food first', () => {
   it('fills the Farm before the Hunt, and the Hunt before the woodpile', () => {
     const s = staffed();
     // Empty every post: three deaths with nobody idle.
-    removeSettler(s);
-    removeSettler(s);
-    removeSettler(s);
+    removeCitizen(s);
+    removeCitizen(s);
+    removeCitizen(s);
     expect(s.run.population.total).toBe(0);
     expect(s.run.vacancies).toEqual({ forager: 1, hunter: 1, woodcutter: 1 });
 
@@ -68,15 +68,15 @@ describe('returning settlers are put back to work, food first', () => {
     expect(s.run.vacancies).toEqual({});
   });
 
-  it('does nothing when there is no idle settler to place', () => {
+  it('does nothing when there is no idle citizen to place', () => {
     const s = staffed();
-    removeSettler(s); // opens a post
+    removeCitizen(s); // opens a post
     expect(refillVacancy(s)).toBeNull(); // everyone left is already working
   });
 
   it('forgets a post there is no longer room for', () => {
     const s = staffed();
-    removeSettler(s);
+    removeCitizen(s);
     const [job] = Object.keys(s.run.vacancies);
     s.run.buildings['forager-hut'] = 0;
     s.run.buildings['woodcutters-lodge'] = 0;
@@ -88,7 +88,7 @@ describe('returning settlers are put back to work, food first', () => {
 
   it('staffing a post by hand settles the debt to it', () => {
     const s = staffed();
-    removeSettler(s);
+    removeCitizen(s);
     const [job] = Object.keys(s.run.vacancies) as ('forager' | 'hunter' | 'woodcutter')[];
     s.run.population.total += 1;
     expect(assignJob(s, job, 1)).toBe(1);
@@ -108,7 +108,7 @@ describe('returning settlers are put back to work, food first', () => {
   });
 });
 
-describe('an empty camp can always draw its first settler', () => {
+describe('an empty camp can always draw its first citizen', () => {
   it('grows from zero even with an empty larder and no production at all', () => {
     const s = newGame(1);
     s.run.buildings.hut = 1;

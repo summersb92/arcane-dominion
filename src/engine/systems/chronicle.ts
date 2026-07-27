@@ -1,5 +1,5 @@
 // Chronicle — the settlement's log of things WORTH REMEMBERING. Deliberately not a
-// receipt printer: individual builds and individual settlers never appear. What lands here
+// receipt printer: individual builds and individual citizens never appear. What lands here
 // is the stuff you'd tell someone about later —
 //   * a season's births and deaths, rolled into one line when the season turns;
 //   * weather severe enough to matter;
@@ -50,9 +50,9 @@ function tallyLine(ordinal: number, born: number, died: number): string | null {
   if (born <= 0 && died <= 0) return null;
   const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
   const season = CALENDAR.seasons[((ordinal % 4) + 4) % 4];
-  if (born > 0 && died > 0) return `${season} ends: ${plural(born, 'settler', 'settlers')} born, ${died} lost.`;
-  if (born > 0) return `${season} ends: ${plural(born, 'settler', 'settlers')} born.`;
-  return `${season} ends: ${plural(died, 'settler', 'settlers')} lost.`;
+  if (born > 0 && died > 0) return `${season} ends: ${plural(born, 'citizen', 'citizens')} born, ${died} lost.`;
+  if (born > 0) return `${season} ends: ${plural(born, 'citizen', 'citizens')} born.`;
+  return `${season} ends: ${plural(died, 'citizen', 'citizens')} lost.`;
 }
 
 /**

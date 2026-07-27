@@ -8,7 +8,7 @@ import { calendar } from '../src/engine/systems/calendar';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { BUILDING_BY_ID } from '../src/content/buildings';
 import { MANUAL_GATHER_RETIRE_CAP } from '../src/content/config';
-import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
+import { assignJob, unassignJob, jobCapacity, idleCitizens } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
 import { productionRates, resourceBreakdown } from '../src/engine/systems/production';
 
@@ -108,7 +108,7 @@ describe('buildings', () => {
 });
 
 describe('jobs', () => {
-  it('assigning a woodcutter produces wood and consumes only base settler food', () => {
+  it('assigning a woodcutter produces wood and consumes only base citizen food', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
@@ -118,7 +118,7 @@ describe('jobs', () => {
 
     const rates = productionRates(s);
     expect(rates.wood).toBeCloseTo(1 * 1.02, 6); // 1 worker × 0.5/s × the Lodge's own +2%
-    expect(rates.food).toBeCloseTo(-4, 6); // base settler upkeep only — jobs no longer eat food
+    expect(rates.food).toBeCloseTo(-4, 6); // base citizen upkeep only — jobs no longer eat food
 
     const woodBefore = s.run.resources.wood;
     const foodBefore = s.run.resources.food;
@@ -127,14 +127,14 @@ describe('jobs', () => {
     expect(s.run.resources.food).toBeLessThan(foodBefore);
   });
 
-  it('cannot assign beyond idle settlers', () => {
+  it('cannot assign beyond idle citizens', () => {
     const s = newGame(1);
     s.run.resources.wood = 25;
     reveal(s, 'woodcutters-lodge'); // the opening chain: House → Farm → Lodge
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     expect(assignJob(s, 'woodcutter', 5)).toBe(1); // only 1 idle
-    expect(idleSettlers(s)).toBe(0);
+    expect(idleCitizens(s)).toBe(0);
     expect(assignJob(s, 'woodcutter', 1)).toBe(0); // none left idle
   });
 
@@ -165,9 +165,9 @@ describe('buildings: storage bump + escalating cost', () => {
     expect(costAfter).toBeGreaterThan(costBefore); // costGrowth escalates per copy
   });
 
-  it('magic constructs are special — flat cost, no escalation', () => {
-    expect(BUILDING_BY_ID['arcane-font'].costGrowth).toBeUndefined();
-    expect(BUILDING_BY_ID['animated-tools'].costGrowth).toBeUndefined();
+  it('the arcane works escalate too — a Font is not something to stack cheaply', () => {
+    expect(BUILDING_BY_ID['arcane-font'].costGrowth).toBeGreaterThan(1);
+    expect(BUILDING_BY_ID['enchanted-grove'].costGrowth).toBeGreaterThan(1);
   });
 });
 
@@ -224,8 +224,8 @@ describe('manual gather retires once storage has outgrown it', () => {
   });
 });
 
-describe('next-settler growth status', () => {
-  it('reports growing progress toward the next settler under a food surplus', () => {
+describe('next-citizen growth status', () => {
+  it('reports growing progress toward the next citizen under a food surplus', () => {
     const s = newGame(1);
     s.run.popCap = 5;
     reveal(s, 'forager-hut'); // the opening chain: a House reveals the Farm
@@ -251,15 +251,15 @@ describe('next-settler growth status', () => {
   });
 });
 
-describe('research trickle (tech currency from the first settler)', () => {
-  it('yields no research with no settlers, and a trickle once a settler arrives', () => {
+describe('research trickle (tech currency from the first citizen)', () => {
+  it('yields no research with no citizens, and a trickle once a citizen arrives', () => {
     const s = newGame(1);
     expect(productionRates(s).research).toBe(0);
     s.run.population.total = 1;
     expect(productionRates(s).research).toBeGreaterThan(0);
-    // and the breakdown attributes it to the settlers
+    // and the breakdown attributes it to the citizens
     const bd = resourceBreakdown(s, 'research');
-    expect(bd.producers.some((p) => p.label.startsWith('Settlers'))).toBe(true);
+    expect(bd.producers.some((p) => p.label.startsWith('Citizens'))).toBe(true);
   });
 });
 
@@ -277,7 +277,7 @@ describe('resource breakdown (hover math)', () => {
     expect(wood.net).toBeCloseTo(productionRates(s).wood, 6);
 
     const food = resourceBreakdown(s, 'food');
-    // A settler + a working woodcutter both eat food → consumers present, net negative.
+    // A citizen + a working woodcutter both eat food → consumers present, net negative.
     expect(food.consumers.length).toBeGreaterThan(0);
     expect(food.net).toBeLessThan(0);
   });

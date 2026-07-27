@@ -130,7 +130,7 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v14 → v15: added `seasonTally` (the per-season birth/death roll-up the chronicle reports).
  *            Backfilled by normalize to the season the save's playtime actually falls in, so a
  *            loaded save doesn't immediately flush a phantom "season turned" line.
- *   v15 → v16: added `vacancies` (posts emptied by starvation, refilled as settlers return).
+ *   v15 → v16: added `vacancies` (posts emptied by starvation, refilled as citizens return).
  *            Backfills to {} — an older save simply has no remembered posts, which is exactly
  *            right: nothing was recorded while it was being played.
  */
@@ -365,9 +365,9 @@ function validate(state: GameState): void {
     }
     assigned += n;
   }
-  // Assigned workers can never exceed the total settler count — that would mean phantom labour.
+  // Assigned workers can never exceed the total citizen count — that would mean phantom labour.
   if (assigned > run.population.total + EPS) {
-    throw new Error(`Save assigns ${assigned} workers but only ${run.population.total} settlers exist.`);
+    throw new Error(`Save assigns ${assigned} workers but only ${run.population.total} citizens exist.`);
   }
 
   if (typeof run.popCap !== 'number' || !Number.isFinite(run.popCap) || run.popCap < -EPS) {

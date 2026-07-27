@@ -1,8 +1,8 @@
 // Production — the per-tick resource economy. Each tick this system:
 //   1. gathers GROSS production from assigned jobs (Σ workers × per-worker output,
 //      scaled by any tech efficiency bonus) and from magic CONSTRUCTS (buildings
-//      like the Arcane Font and Animated Tools — production with NO population);
-//   2. subtracts UPKEEP — per-job food, base per-settler food, and per-construct mana;
+//      like the Golem Works and the elemental attunements — production with NO population);
+//   2. subtracts UPKEEP — per-job food, base per-citizen food, and per-construct mana;
 //   3. applies the net deltas, clamps every resource to its effective cap, and sets
 //      run.flags.starving when food demand outran supply + stock.
 //
@@ -287,7 +287,7 @@ function envMult(state: GameState, res: ResourceId, jobId?: string): number {
 
 /** A job's EFFECTIVE per-worker output — base `produces` × the live efficiency multiplier
  *  (tool techs + Workshop/Forge/Steam Works) × the season/weather environment. The read
- *  model for job tooltips, so the number on screen matches what a settler actually makes. */
+ *  model for job tooltips, so the number on screen matches what a citizen actually makes. */
 export function jobEffectiveProduces(state: GameState, jobId: string): Partial<Record<ResourceId, number>> {
   const def = JOBS.find((j) => j.id === jobId);
   if (!def) return {};
@@ -302,26 +302,26 @@ export function jobEffectiveProduces(state: GameState, jobId: string): Partial<R
 interface Flows {
   /** Gross production per resource (jobs + constructs), before upkeep. */
   gross: Record<ResourceId, number>;
-  /** Food consumed per second (base per-settler upkeep only — jobs have no food cost). */
+  /** Food consumed per second (base per-citizen upkeep only — jobs have no food cost). */
   foodUpkeep: number;
   /** Mana consumed per second by constructs. */
   manaUpkeep: number;
 }
 
-/** Idle (unassigned) settlers = total − Σ workers across all jobs. Never negative. */
+/** Idle (unassigned) citizens = total − Σ workers across all jobs. Never negative. */
 function idleCount(run: GameState['run']): number {
   let assigned = 0;
   for (const n of Object.values(run.population.jobs)) assigned += n ?? 0;
   return Math.max(0, run.population.total - assigned);
 }
 
-/** Extra research/settler/s from HELD books (capped) — the knowledge-chain payoff. */
+/** Extra research/citizen/s from HELD books (capped) — the knowledge-chain payoff. */
 function booksResearchPerPop(state: GameState): number {
   const books = state.run.resources.books ?? 0;
   return Math.min(KNOWLEDGE.booksResearchPerPopMax, books * KNOWLEDGE.booksResearchPerPop);
 }
 
-/** Mana/settler/s from HELD compendiums (capped) — the top knowledge-chain payoff. */
+/** Mana/citizen/s from HELD compendiums (capped) — the top knowledge-chain payoff. */
 function compendiumManaPerPop(state: GameState): number {
   const comp = state.run.resources.compendiums ?? 0;
   return Math.min(KNOWLEDGE.compendiumManaPerPopMax, comp * KNOWLEDGE.compendiumManaPerPop);
@@ -341,21 +341,21 @@ function flows(state: GameState): Flows {
 
   const run = state.run;
   const gov = policyMults(state);
-  // Food's ONLY consumer is the base per-settler upkeep — jobs no longer eat food.
+  // Food's ONLY consumer is the base per-citizen upkeep — jobs no longer eat food.
   // Rationing (policy) trims it while live.
   const foodUpkeep = POPULATION.baseFoodUpkeep * run.population.total * gov.foodUpkeep;
   let manaUpkeep = 0;
 
-  // Curiosity trickle: every settler passively yields a little Research (the tech currency),
-  // starting with the first settler. HELD books raise the per-settler yield (knowledge chain);
+  // Curiosity trickle: every citizen passively yields a little Research (the tech currency),
+  // starting with the first citizen. HELD books raise the per-citizen yield (knowledge chain);
   // Scholarly Patronage (policy) multiplies the whole trickle.
   gross.research +=
-    (POPULATION.researchPerSettler + booksResearchPerPop(state)) * run.population.total * gov.researchPerPop;
-  // HELD compendiums yield a little mana per settler.
+    (POPULATION.researchPerCitizen + booksResearchPerPop(state)) * run.population.total * gov.researchPerPop;
+  // HELD compendiums yield a little mana per citizen.
   gross.mana += compendiumManaPerPop(state) * run.population.total;
-  // Meditation: every settler draws their own small trickle, building or no building.
+  // Meditation: every citizen draws their own small trickle, building or no building.
   if (run.tech.includes('meditation' as never)) {
-    gross.mana += POPULATION.manaPerSettler * run.population.total;
+    gross.mana += POPULATION.manaPerCitizen * run.population.total;
   }
 
   // Jobs: Σ workers × per-worker output × efficiency. No food upkeep per worker.
@@ -373,9 +373,9 @@ function flows(state: GameState): Flows {
     }
   }
 
-  // Idle (unassigned) settlers forage for themselves — at a rate that scales with how
+  // Idle (unassigned) citizens forage for themselves — at a rate that scales with how
   // CONTENT the settlement is (full rate at 100 happiness, half at 50, nothing at 0).
-  gross.food += POPULATION.idleFoodPerSettler * idleCount(run) * contentment(state) * envMult(state, 'food');
+  gross.food += POPULATION.idleFoodPerCitizen * idleCount(run) * contentment(state) * envMult(state, 'food');
 
   // Constructs: passive production + mana upkeep, scaled by building count. NO food, NO pop.
   for (const b of BUILDINGS) {
@@ -484,7 +484,7 @@ function producerMultipliers(state: GameState, id: ResourceId): MultiplierLine[]
   }
   if (id === 'research') {
     const m = policyMults(state).researchPerPop;
-    if (m !== 1) out.push({ label: 'Policies (settler trickle)', mult: m, global: true });
+    if (m !== 1) out.push({ label: 'Policies (citizen trickle)', mult: m, global: true });
   }
   // The Arcanum's teaching lifts every magical stream.
   const magic = magicYieldMult(state, id);
@@ -500,18 +500,18 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   const consumers: BreakdownLine[] = [];
   const times = (n: number): string => (n > 1 ? ` ×${n}` : '');
 
-  // The per-settler curiosity trickle (Research only), from the first settler onward.
+  // The per-citizen curiosity trickle (Research only), from the first citizen onward.
   if (id === 'research' && run.population.total > 0) {
-    producers.push({ label: `Settlers${times(run.population.total)}`, amount: POPULATION.researchPerSettler * run.population.total });
+    producers.push({ label: `Citizens${times(run.population.total)}`, amount: POPULATION.researchPerCitizen * run.population.total });
     const booksBonus = booksResearchPerPop(state) * run.population.total;
-    if (booksBonus > 0) producers.push({ label: `Books (per settler)`, amount: booksBonus });
+    if (booksBonus > 0) producers.push({ label: `Books (per citizen)`, amount: booksBonus });
   }
-  // Held compendiums yield mana per settler.
+  // Held compendiums yield mana per citizen.
   if (id === 'mana' && run.population.total > 0) {
     const compMana = compendiumManaPerPop(state) * run.population.total;
-    if (compMana > 0) producers.push({ label: `Compendiums (per settler)`, amount: compMana });
+    if (compMana > 0) producers.push({ label: `Compendiums (per citizen)`, amount: compMana });
     if (run.tech.includes('meditation' as never)) {
-      producers.push({ label: 'Meditation (per settler)', amount: POPULATION.manaPerSettler * run.population.total });
+      producers.push({ label: 'Meditation (per citizen)', amount: POPULATION.manaPerCitizen * run.population.total });
     }
   }
   // Jobs that produce this resource (workers × per-worker × tech efficiency).
@@ -546,13 +546,13 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     }
   }
 
-  // Idle settlers forage a small subsistence trickle of food.
+  // Idle citizens forage a small subsistence trickle of food.
   if (id === 'food') {
     const idle = idleCount(run);
     if (idle > 0) {
       producers.push({
-        label: `Idle settlers${times(idle)}`,
-        amount: POPULATION.idleFoodPerSettler * idle * contentment(state) * envMult(state, 'food'),
+        label: `Idle citizens${times(idle)}`,
+        amount: POPULATION.idleFoodPerCitizen * idle * contentment(state) * envMult(state, 'food'),
       });
     }
   }
@@ -565,12 +565,12 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (inPer) consumers.push({ label: `${c.name} (converts)`, amount: -(c.copies * inPer) });
   }
 
-  // Consumers: food's only consumer is the base per-settler upkeep; mana by constructs;
+  // Consumers: food's only consumer is the base per-citizen upkeep; mana by constructs;
   // culture by live policy upkeep.
   if (id === 'food') {
     if (run.population.total > 0) {
       consumers.push({
-        label: `Settler upkeep${times(run.population.total)}`,
+        label: `Citizen upkeep${times(run.population.total)}`,
         amount: -(POPULATION.baseFoodUpkeep * run.population.total * policyMults(state).foodUpkeep),
       });
     }
@@ -650,7 +650,7 @@ export function runProduction(state: GameState, dt: number): void {
   if (run.resources.mana < 0) run.resources.mana = 0;
 
   // Food: production − upkeep. If demand outran supply + stock, that is STARVATION —
-  // clamp to 0 and flag it so population.ts can begin losing settlers.
+  // clamp to 0 and flag it so population.ts can begin losing citizens.
   const nextFood = run.resources.food + (f.gross.food - f.foodUpkeep) * dt;
   if (nextFood < -EPS) {
     run.resources.food = 0;
@@ -720,7 +720,7 @@ const RESOURCE_FIRSTS: [ResourceId, string, string][] = [
   ['coal', 'firstCoal', 'Coal catches. Hotter, longer, dirtier — progress, in a word.'],
   ['steel', 'firstSteel', 'The first steel cools. It rings when struck, like it knows.'],
   ['engines', 'firstEngine', 'An engine idles in the yard. Half the settlement calls it "him".'],
-  ['books', 'firstBook', 'The first book is bound. Two settlers can read it.'],
+  ['books', 'firstBook', 'The first book is bound. Two citizens can read it.'],
   ['compendiums', 'firstCompendium', 'A compendium is finished. It settles three arguments and starts five.'],
   ['prismatic', 'firstPrismatic', 'The lens holds. Prismatic light pools like water that forgot to fall.'],
   ['alchemical', 'firstAlchemical', 'Jars of gland and herb line a shelf. Nobody is quite sure what for — yet.'],

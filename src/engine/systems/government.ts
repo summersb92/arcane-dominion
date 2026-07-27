@@ -178,7 +178,7 @@ export function policyEffectLines(def: PolicyDef): { text: string; good: boolean
   const pct = (m: number): string => `${m >= 1 ? '+' : '-'}${Math.round(Math.abs(m - 1) * 100)}%`;
   if (def.workerOutputMult) out.push({ text: `${pct(def.workerOutputMult)} worker output`, good: def.workerOutputMult >= 1 });
   if (def.foodUpkeepMult) out.push({ text: `${pct(def.foodUpkeepMult)} food upkeep`, good: def.foodUpkeepMult <= 1 });
-  if (def.researchPerPopMult) out.push({ text: `${pct(def.researchPerPopMult)} settler research`, good: def.researchPerPopMult >= 1 });
+  if (def.researchPerPopMult) out.push({ text: `${pct(def.researchPerPopMult)} citizen research`, good: def.researchPerPopMult >= 1 });
   if (def.manaOutputMult) out.push({ text: `${pct(def.manaOutputMult)} mana production`, good: def.manaOutputMult >= 1 });
   if (def.happiness) out.push({ text: `${def.happiness > 0 ? '+' : ''}${def.happiness} happiness`, good: def.happiness > 0 });
   return out;

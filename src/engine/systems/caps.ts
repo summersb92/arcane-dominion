@@ -60,10 +60,10 @@ export function cultureCap(state: GameState): number {
 }
 
 /** The effective MANA cap. Mana has no warehouse — it is carried in people, so the pool is
- *  only as deep as the population (POPULATION.manaCapPerSettler each). A settlement with
+ *  only as deep as the population (POPULATION.manaCapPerCitizen each). A settlement with
  *  nobody home holds none. */
 export function manaCap(state: GameState): number {
-  let cap = POPULATION.manaCapPerSettler * state.run.population.total;
+  let cap = POPULATION.manaCapPerCitizen * state.run.population.total;
   // …plus the works built to hold it: an Arcane Font's basin, an Arcanum's vaults.
   for (const b of BUILDINGS) {
     const count = state.run.buildings[b.id] ?? 0;

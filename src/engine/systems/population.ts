@@ -1,8 +1,8 @@
-// Population — deterministic settler growth and starvation. Runs AFTER production so
+// Population — deterministic citizen growth and starvation. Runs AFTER production so
 // it sees this tick's fresh food stock + the starving flag. A single signed
 // accumulator (run.growthProgress) drives both: it fills toward +growthInterval while
-// there is a sustainable food surplus and free housing (→ gain a settler), and drains
-// toward −starveInterval while starving (→ lose a settler). When neither condition
+// there is a sustainable food surplus and free housing (→ gain a citizen), and drains
+// toward −starveInterval while starving (→ lose a citizen). When neither condition
 // holds it decays back toward zero so a brief blip never banks progress. Pure engine.
 
 import { POPULATION, HAPPINESS } from '../../content/config';
@@ -10,7 +10,7 @@ import type { GameState } from '../state';
 import { logEvent, tallyBirth, tallyDeath } from './chronicle';
 import { foodBalance } from './production';
 import { happiness } from './happiness';
-import { idleSettlers, refillVacancy, removeSettler } from './jobs';
+import { idleCitizens, refillVacancy, removeCitizen } from './jobs';
 import { effectiveCap } from './caps';
 
 const EPS = 1e-9;
@@ -24,7 +24,7 @@ const EPS = 1e-9;
 export function foodAllowsGrowth(state: GameState): boolean {
   // An EMPTY camp is never held back by food: there is nobody to feed, nobody to farm, and
   // no way back from zero if the larder happens to be bare too. A settlement that starves to
-  // the last settler must always be able to draw a first one again, or the run is simply over
+  // the last citizen must always be able to draw a first one again, or the run is simply over
   // with no way to say so.
   if (state.run.population.total <= 0) return true;
   const food = state.run.resources.food;
@@ -36,9 +36,9 @@ export function foodAllowsGrowth(state: GameState): boolean {
 
 /** Once-per-run chronicle beats for milestone populations (keyed by the new total). */
 const POP_MILESTONES: Record<number, string> = {
-  10: 'Ten settlers. The camp has started calling itself a village.',
+  10: 'Ten citizens. The camp has started calling itself a village.',
   25: "Twenty-five souls. Someone proposes a committee. It's that kind of place now.",
-  50: 'Fifty settlers, and the founders no longer know every face.',
+  50: 'Fifty citizens, and the founders no longer know every face.',
 };
 
 /** Move `v` toward 0 by at most `dt`, without overshooting. */
@@ -64,7 +64,7 @@ export function runPopulation(state: GameState, dt: number): void {
   if (starving && run.population.total > 0) {
     run.growthProgress -= dt;
     if (run.growthProgress <= -POPULATION.starveIntervalSec) {
-      if (removeSettler(state)) {
+      if (removeCitizen(state)) {
         run.growthProgress += POPULATION.starveIntervalSec;
         // Reported as a SEASON total, not one line per loss (systems/chronicle.ts).
         tallyDeath(state);
@@ -79,13 +79,13 @@ export function runPopulation(state: GameState, dt: number): void {
       const wasEmpty = run.population.total === 0;
       run.population.total += 1;
       // Ordinary arrivals are counted, not narrated — the season reports them in one line.
-      // Only the FIRST settler and the milestone populations earn their own beat.
+      // Only the FIRST citizen and the milestone populations earn their own beat.
       tallyBirth(state);
       // Put them straight back to work a famine interrupted, food first — the settlement
       // remembers what it was doing (systems/jobs.ts refillVacancy).
       refillVacancy(state);
       const milestone = POP_MILESTONES[run.population.total];
-      if (wasEmpty) logEvent(state, 'The first settler joins the camp.', 'ev');
+      if (wasEmpty) logEvent(state, 'The first citizen joins the camp.', 'ev');
       else if (milestone && run.flags[`popBeat${run.population.total}`] !== true) {
         run.flags[`popBeat${run.population.total}`] = true;
         logEvent(state, milestone, 'ev');
@@ -96,9 +96,9 @@ export function runPopulation(state: GameState, dt: number): void {
   }
 }
 
-/** Where the next settler stands. `progress` is 0..1 toward the next event:
+/** Where the next citizen stands. `progress` is 0..1 toward the next event:
  *   growing  → filling toward the next arrival
- *   starving → filling toward the next loss (you're losing settlers)
+ *   starving → filling toward the next loss (you're losing citizens)
  *   full     → housing is full; build more to grow
  *   unhappy  → has room + food, but happiness is below the growth threshold — growth paused
  *   stalled  → has room but no food surplus (or no housing yet) — growth paused */
@@ -108,7 +108,7 @@ export interface GrowthInfo {
   progress: number; // 0..1
 }
 
-/** Read model (no mutation): the next-settler status + progress, for the UI bar. Mirrors
+/** Read model (no mutation): the next-citizen status + progress, for the UI bar. Mirrors
  *  the growth/starve gates in runPopulation so the bar matches what will actually happen. */
 export function growthStatus(state: GameState): GrowthInfo {
   const run = state.run;
@@ -131,6 +131,6 @@ export function growthStatus(state: GameState): GrowthInfo {
   return { status: 'stalled', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };
 }
 
-// idleSettlers is re-exported so callers/tests can read the derived idle count without
+// idleCitizens is re-exported so callers/tests can read the derived idle count without
 // reaching into systems/jobs directly.
-export { idleSettlers };
+export { idleCitizens };

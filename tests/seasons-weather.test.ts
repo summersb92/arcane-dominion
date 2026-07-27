@@ -98,41 +98,75 @@ describe('weather is a short, deterministic spell', () => {
   });
 });
 
-describe('the Food row wears its season', () => {
-  const foodMod = (playtime: number) => {
-    const s = newGame(1);
+describe('the Food row wears its season and its weather', () => {
+  /** A seed whose weather AT `playtime` matches `want`. The roll is derived from the seed
+   *  and the day, so a test needing fair (or foul) weather has to go looking for a seed that
+   *  gives it at the moment being tested — the spell at day 0 says nothing about day 305. */
+  const seedWhere = (playtime: number, want: (swing: number) => boolean): number => {
+    for (let seed = 1; seed < 20_000; seed++) if (want(weatherAt(seed, playtime).swing)) return seed;
+    throw new Error('no seed produced the requested weather');
+  };
+  const fair_ = (pt: number) => seedWhere(pt, (sw) => sw === 0);
+  const fine_ = (pt: number) => seedWhere(pt, (sw) => sw > 0);
+  const foul_ = (pt: number) => seedWhere(pt, (sw) => sw < 0);
+
+  const foodMods = (playtime: number, seed = fair_(playtime)) => {
+    const s = newGame(seed);
     s.playtime = playtime;
-    return toView(s).resources.find((r) => r.id === 'food')!.mod;
+    return toView(s).resources.find((r) => r.id === 'food')!.mods;
   };
 
-  it('brackets the modifier in the seasons that move the number', () => {
-    expect(foodMod(intoSeason(0))?.text).toBe('+50%'); // Spring
-    expect(foodMod(intoSeason(3))?.text).toBe('-50%'); // Winter
+  it('brackets the season in the seasons that move the number', () => {
+    expect(foodMods(intoSeason(0))!.map((m) => m.text)).toEqual(['+50%']); // Spring
+    expect(foodMods(intoSeason(3))!.map((m) => m.text)).toEqual(['-50%']); // Winter
   });
 
-  it('shows nothing at all in the seasons that do not', () => {
-    expect(foodMod(intoSeason(1))).toBeUndefined(); // Summer
-    expect(foodMod(intoSeason(2))).toBeUndefined(); // Autumn
+  it('shows nothing at all when neither season nor weather is doing anything', () => {
+    expect(foodMods(intoSeason(1))).toBeUndefined(); // Summer, fair
+    expect(foodMods(intoSeason(2))).toBeUndefined(); // Autumn, fair
   });
 
-  it('reads as a gain in Spring and a loss in Winter, and says Hunters are spared', () => {
-    expect(foodMod(intoSeason(0))!.good).toBe(true);
-    const winter = foodMod(intoSeason(3))!;
-    expect(winter.good).toBe(false);
-    expect(winter.title).toMatch(/Hunters are unaffected/);
+  it('brackets the weather on its own when the season is neutral', () => {
+    const fine = foodMods(intoSeason(1), fine_(intoSeason(1)))!;
+    expect(fine).toHaveLength(1);
+    expect(fine[0].text).toMatch(/^\+\d+%$/);
+    expect(fine[0].good).toBe(true);
+    expect(fine[0].title).toMatch(/weather/);
+  });
+
+  it('shows season and weather as SEPARATE brackets, season first', () => {
+    const pt = intoSeason(3);
+    const both = foodMods(pt, fine_(pt))!; // a hard winter under a kind sky
+    expect(both).toHaveLength(2);
+    expect(both[0].text).toBe('-50%'); // the season
+    expect(both[0].good).toBe(false);
+    expect(both[1].good).toBe(true); // the weather, judged on its own
+    expect(both[1].text).toMatch(/^\+\d+%$/);
+  });
+
+  it('colours each modifier by its own direction, not the combined effect', () => {
+    const springFoul = foodMods(intoSeason(0), foul_(intoSeason(0)))!;
+    expect(springFoul.map((m) => m.good)).toEqual([true, false]);
+  });
+
+  it('says Hunters are spared by winter, but not by the weather', () => {
+    const pt = intoSeason(3);
+    const both = foodMods(pt, fine_(pt))!;
+    expect(both[0].title).toMatch(/Hunters are unaffected/);
+    expect(both[1].title).toMatch(/Hunters included/);
   });
 
   it('is a FOOD affair — no other resource carries one', () => {
-    const s = newGame(1);
-    s.playtime = intoSeason(3); // the season with the loudest modifier
+    const s = newGame(foul_(intoSeason(3)));
+    s.playtime = intoSeason(3); // season AND weather both biting
     for (const r of toView(s).resources) {
-      if (r.id !== 'food') expect(r.mod, r.id).toBeUndefined();
+      if (r.id !== 'food') expect(r.mods, r.id).toBeUndefined();
     }
   });
 });
 
 describe('a deep granary keeps the settlement growing', () => {
-  /** Housing, food in the barn, and the only settler off cutting timber — so nobody is
+  /** Housing, food in the barn, and the only citizen off cutting timber — so nobody is
    *  foraging and net food is firmly negative (4/s of upkeep against no income). */
   function hungryButStocked(fraction: number) {
     const s = newGame(1);
@@ -253,14 +287,14 @@ describe('a building whose price changes in KIND partway up the ladder', () => {
 });
 
 describe('the chronicle reports seasons, not receipts', () => {
-  it('logs nothing for a repeat build and nothing for an ordinary settler', () => {
+  it('logs nothing for a repeat build and nothing for an ordinary citizen', () => {
     const s = newGame(1);
     s.run.resources.wood = 100_000;
     build(s, 'hut');
     build(s, 'hut');
     build(s, 'hut');
     expect(s.run.chronicle.filter((c) => c.text.startsWith('Built '))).toHaveLength(0);
-    expect(s.run.chronicle.filter((c) => c.text.includes('A new settler arrives'))).toHaveLength(0);
+    expect(s.run.chronicle.filter((c) => c.text.includes('A new citizen arrives'))).toHaveLength(0);
   });
 
   it('rolls births and deaths into one line when the season turns', () => {
@@ -269,12 +303,12 @@ describe('the chronicle reports seasons, not receipts', () => {
     s.run.popCap = 20;
     s.run.buildings['forager-hut'] = 20;
     s.run.resources.food = s.run.caps.food;
-    // Run past the first season boundary — settlers arrive throughout.
+    // Run past the first season boundary — citizens arrive throughout.
     simulate(s, CALENDAR.daysPerSeason * CALENDAR.daySeconds + 5);
     expect(s.run.population.total).toBeGreaterThan(0);
     const roll = s.run.chronicle.filter((c) => /^Spring ends:/.test(c.text));
     expect(roll).toHaveLength(1);
-    expect(roll[0].text).toMatch(/settlers? born/);
+    expect(roll[0].text).toMatch(/citizens? born/);
     // The tally resets for the new season.
     expect(s.run.seasonTally.index).toBe(1);
   });

@@ -30,7 +30,7 @@ import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
   jobCapacity,
-  idleSettlers,
+  idleCitizens,
   assignJob as engineAssignJob,
   unassignJob as engineUnassignJob,
 } from '../engine/systems/jobs';
@@ -80,9 +80,12 @@ export interface ResourceView {
    *  growth) — the row shows a `!`. Distinct from atCap, which is about waste, not stalling. */
   warn?: boolean;
   warnText?: string; // hover title for the `!`
-  /** A standing environmental modifier on this resource, shown in brackets beside the name
-   *  (today: the SEASON on food). Absent when nothing is currently moving the number. */
-  mod?: { text: string; good: boolean; title: string };
+  /** Environmental modifiers currently acting on this resource, each shown in its own
+   *  brackets after the rate (today: the SEASON and the WEATHER on food). Kept as separate
+   *  entries rather than one combined figure so each stays attributable — a bad season under
+   *  fine weather reads `[-50%] [+10%]`, which says more than a single `[-45%]` would.
+   *  Empty when nothing is moving the number. */
+  mods?: { text: string; good: boolean; title: string }[];
 }
 export interface PopulationView {
   total: number;
@@ -91,7 +94,7 @@ export interface PopulationView {
   foodBalance: number; // net food /s
   starving: boolean;
   name: string; // the settlement's name for its size — grows Camp → Small Village → … → City
-  growth: GrowthInfo; // next-settler status + 0..1 progress toward it
+  growth: GrowthInfo; // next-citizen status + 0..1 progress toward it
   happiness: HappinessInfo; // 0..100 value + content/unhappy status + breakdown
 }
 
@@ -113,7 +116,7 @@ export interface JobRowView {
   assigned: number;
   capacity: number;
   produceText: string; // e.g. "🪵 +0.5/s"
-  canAssign: boolean; // an idle settler exists AND a free slot
+  canAssign: boolean; // an idle citizen exists AND a free slot
   canUnassign: boolean; // at least one worker to pull
 }
 export interface BuildingRowView {
@@ -237,6 +240,12 @@ const signStr = (x: number): string => (x < 0 ? '-' : '+');
 function signedRate(x: number): string {
   return `${signStr(x)}${numStr(Math.abs(x))}/s`;
 }
+/** A multiplier as a signed percentage for the row's bracket: 1.5 → "+50%", 0.9 → "-10%". */
+function pctText(mult: number): string {
+  const pct = Math.round((mult - 1) * 100);
+  return `${pct > 0 ? '+' : ''}${pct}%`;
+}
+
 /** Colour token for a resource, so tooltips/labels tint by tier. */
 function resToken(id: ResourceId): string {
   switch (id) {
@@ -446,7 +455,7 @@ export function toView(state: GameState): UiState {
   const resources: ResourceView[] = RESOURCES.map((def) => {
     const amount = run.resources[def.id];
     // "magic" here is a DISPLAY group (only Mana). Research is uncapped like magic but
-    // shows with the main resources, since it trickles from the very first settler.
+    // shows with the main resources, since it trickles from the very first citizen.
     const magic = def.tier === 'magic';
     const cap = effectiveCap(state, def.id);
     const capped = Number.isFinite(cap);
@@ -509,21 +518,32 @@ export function toView(state: GameState): UiState {
     // Food carries a growth warning: when neither a surplus nor a deep enough reserve is
     // there, the settlement simply stops growing — and that is invisible from the rate alone.
     const warn = def.id === 'food' && !foodAllowsGrowth(state);
-    // …and the SEASON, in brackets, whenever it is moving the number. A rate that halves
-    // overnight needs to say why on the row itself, not only in the hover.
-    const seasonMult = def.id === 'food' ? seasonFoodMult(state) : 1;
-    const mod =
-      seasonMult === 1
-        ? undefined
-        : {
-            text: `${seasonMult > 1 ? '+' : ''}${Math.round((seasonMult - 1) * 100)}%`,
-            good: seasonMult > 1,
-            // Winter spares the Hunter, so the headline figure isn't the whole story.
-            title:
-              seasonMult > 1
-                ? `${calendar(state).season} — food production is up by half`
-                : `${calendar(state).season} — the fields yield half. Hunters are unaffected.`,
-          };
+    // …and the ENVIRONMENT, in brackets, whenever it is moving the number. A rate that
+    // halves overnight needs to say why on the row itself, not only in the hover.
+    const mods: { text: string; good: boolean; title: string }[] = [];
+    if (def.id === 'food') {
+      const seasonMult = seasonFoodMult(state);
+      if (seasonMult !== 1) {
+        mods.push({
+          text: pctText(seasonMult),
+          good: seasonMult > 1,
+          // Winter spares the Hunter, so the headline figure isn't the whole story.
+          title:
+            seasonMult > 1
+              ? `${calendar(state).season} — food production is up by half`
+              : `${calendar(state).season} — the fields yield half. Hunters are unaffected.`,
+        });
+      }
+      const wx = weather(state);
+      if (wx.swing !== 0) {
+        mods.push({
+          text: pctText(1 + wx.swing),
+          good: wx.swing > 0,
+          // Unlike winter, weather plays no favourites — it reaches every food source.
+          title: `${wx.label} weather — every food source, Hunters included`,
+        });
+      }
+    }
     return {
       id: def.id,
       label: def.label,
@@ -538,7 +558,7 @@ export function toView(state: GameState): UiState {
       show,
       warn,
       warnText: warn ? 'Population growth is paused — food is neither in surplus nor deeply stocked.' : undefined,
-      mod,
+      mods: mods.length ? mods : undefined,
     };
   });
 
@@ -660,7 +680,7 @@ export function toView(state: GameState): UiState {
       // Gather lives in the side rail (3 buttons); Build is the main view.
       { id: 'build', label: 'Build', visible: true, locked: false },
       // The settlement tab is named for its size and grows with the population. The badge
-      // shows IDLE settlers, so you know when to visit without leaving Build/Research.
+      // shows IDLE citizens, so you know when to visit without leaving Build/Research.
       { id: 'jobs', label: settlementName(run.population.total), visible: true, locked: false, badge: idle > 0 ? idle : undefined },
       { id: 'research', label: 'Research', visible: true, locked: false },
     ],
@@ -728,7 +748,7 @@ function multCls(m: MultiplierLine): string {
 function atCapNote(id: ResourceId): string {
   switch (id) {
     case 'mana':
-      return 'At cap — further mana is lost. Mana is carried in settlers: grow the population, or raise an Arcane Font or Arcanum to deepen the pool.';
+      return 'At cap — further mana is lost. Mana is carried in citizens: grow the population, or raise an Arcane Font or Arcanum to deepen the pool.';
     case 'research':
       return 'At cap — further research is lost. Raise a Library, Observatory or Academy to shelve more.';
     case 'culture':
@@ -830,7 +850,7 @@ export function buildingTooltip(b: BuildingRowView): TooltipContent {
   };
 }
 
-/** Job row tooltip: output + capacity. Jobs no longer consume food (only settlers do). */
+/** Job row tooltip: output + capacity. Jobs no longer consume food (only citizens do). */
 export function jobTooltip(j: JobRowView): TooltipContent {
   return {
     title: j.name,
@@ -905,8 +925,8 @@ export function happinessTooltip(h: HappinessInfo): TooltipContent {
 /** Growth card tooltip — what the bar is filling toward, or why it is paused. */
 export function growthTooltip(g: GrowthInfo): TooltipContent {
   const why: Record<string, string> = {
-    growing: 'A sustainable food surplus and free housing — a settler is on the way.',
-    starving: 'Food has run out. Settlers will be lost until the balance recovers.',
+    growing: 'A sustainable food surplus and free housing — a citizen is on the way.',
+    starving: 'Food has run out. Citizens will be lost until the balance recovers.',
     full: 'Housing is full. Build more homes to grow.',
     unhappy: 'The settlement is unhappy. Raise happiness to resume growth.',
     stalled: 'Growth needs a food surplus in stock and free housing.',
@@ -1043,7 +1063,7 @@ export function setCurriculum(id: CurriculumId | null): void {
 }
 
 // re-export so panels can read the derived idle count if needed
-export { idleSettlers };
+export { idleCitizens };
 
 let running = false;
 let lastFrame = 0; // performance.now() timebase for the rAF loop (module-scoped so it can be re-seeded)

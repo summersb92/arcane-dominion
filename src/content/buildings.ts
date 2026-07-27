@@ -6,9 +6,9 @@
 //     stored; derived each read/tick from the building count (systems/jobs.ts,
 //     systems/production.ts). This split avoids double-counting.
 //
-// The MAGIC HOOK lives here: `animated-tools` is an arcane construct that produces
-// wood with NO population and NO food — only a small mana upkeep. It is the first
-// piece of mundane labour that sorcery fully automates.
+// The MAGIC HOOK lives here: the `arcane-font` opens a Mage's post, and the
+// `enchanted-grove` spends that mana on food the weather cannot touch. It is the first
+// place sorcery buys a settlement out of a constraint the mundane economy cannot.
 //
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
@@ -68,7 +68,10 @@ export type BuildingId =
   | 'amphitheater'
   | 'sacred-grove'
   | 'arcane-font'
-  | 'animated-tools'
+  | 'enchanted-grove'
+  | 'quickwood-stand'
+  | 'stone-garden'
+  | 'alembic'
   // Prismatic: four ATTUNEMENTS (income, one mechanic each) + four ELEMENTAL constructs
   // (sinks) + the two convergence works.
   | 'wind-spire'
@@ -121,7 +124,7 @@ export type BuildingEffect =
   // +N to the CULTURE cap. Culture is remembered, not stored in a barn — the works that
   // keep it (a Temple's records, a Forum's archive) are what let a settlement hold more.
   | { kind: 'cultureCap'; amount: number }
-  // +N to the MANA cap. Mana is otherwise carried in people (one per settler) — these are
+  // +N to the MANA cap. Mana is otherwise carried in people (one per citizen) — these are
   // the works that give it somewhere else to sit.
   | { kind: 'manaCap'; amount: number }
   // +N to the GOLD cap. Gold is uncapped until Currency is researched; from then on the
@@ -179,7 +182,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'hut',
     name: 'House',
-    blurb: 'Four walls, a roof, and opinions about both. Settlers insist on all three.',
+    blurb: 'Four walls, a roof, and opinions about both. Citizens insist on all three.',
     category: 'housing',
     cost: { wood: 10 },
     costGrowth: 1.5,
@@ -754,7 +757,7 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'scriptorium',
     name: 'Scriptorium',
-    blurb: 'Ink-stained fingers, immaculate letters. Held Books sharpen every settler’s curiosity.',
+    blurb: 'Ink-stained fingers, immaculate letters. Held Books sharpen every citizen’s curiosity.',
     category: 'industry',
     cost: { wood: 60, stone: 40 },
     costGrowth: 1.25,
@@ -873,31 +876,83 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'arcane-font',
     name: 'Arcane Font',
-    blurb: 'A wellspring of raw magic. It never runs dry, which worries the sensible.',
+    blurb: 'A wellspring of raw magic. It gives nothing to an empty room.',
     category: 'arcane',
-    cost: { stone: 40 },
+    cost: { stone: 120 },
+    // A Font is no longer something you simply stack: each one is dearer than the last.
+    costGrowth: 1.35,
     requiresFlag: 'magicDiscovered',
     construct: true,
-    // A Font both fills the pool and DEEPENS it. Without this the mana-costed techs would be
-    // unreachable: the Arcanum lifts the ceiling too, but it sits behind Prismatic Theory,
-    // which itself costs 200 mana — a settlement would need 200 settlers to ever afford it.
+    // A Font DEEPENS the pool and opens a post at it — the mana itself is drawn by the MAGE
+    // who works it (content/jobs.ts), so an unstaffed Font produces nothing. Without the
+    // ceiling this raises, the mana-costed techs would be unreachable: the Arcanum lifts it
+    // too, but sits behind Prismatic Theory, which itself costs 200 mana.
     effects: [
-      { kind: 'produce', resource: 'mana', perSec: 0.5 },
+      { kind: 'jobCapacity', job: 'mage', slots: 1 },
       { kind: 'manaCap', amount: 25 },
     ],
   },
   {
-    id: 'animated-tools',
-    name: 'Animated Tools',
-    blurb: 'Enchanted axes that fell timber on their own. The woodcutters watch, and do not applaud.',
+    id: 'enchanted-grove',
+    name: 'Enchanted Grove',
+    blurb: 'A stand of trees coaxed into fruiting out of season. The grove keeps its own summer.',
     category: 'arcane',
-    cost: { wood: 30, mana: 10 },
+    cost: { wood: 60, stone: 20 },
+    costGrowth: 1.35,
     requiresFlag: 'magicDiscovered',
     requiresBuilding: 'arcane-font',
     construct: true,
+    // A CONVERTER, and that is the whole point: converter output is exempt from the season
+    // and the weather (systems/weather.ts), so a grove yields the same two food in the depth
+    // of winter as it does in spring. Buying your way out of the sky is what magic is for.
+    effects: [{ kind: 'convert', consume: { mana: 0.3 }, produce: { food: 2 } }],
+  },
+  // The Font's other three sinks. Each is worth LESS per citizen than the worker it echoes —
+  // a Mage feeding these produces under what a Woodcutter or Stonecutter would. What they buy
+  // instead is production that needs no job slot and no roof: a settlement at its housing cap,
+  // or out of workplaces to staff, can still grow its output.
+  {
+    id: 'quickwood-stand',
+    name: 'Quickwood Stand',
+    blurb: 'A coppice that grows back faster than the axes can take it. The woodcutters find this unnerving.',
+    category: 'arcane',
+    cost: { wood: 40, stone: 40 },
+    costGrowth: 1.35,
+    requiresFlag: 'magicDiscovered',
+    requiresBuilding: 'arcane-font',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { mana: 0.3 }, produce: { wood: 0.5 } }],
+  },
+  {
+    id: 'stone-garden',
+    name: 'Stone Garden',
+    blurb: 'Boulders left to swell overnight, patiently, like bread. Nobody waters them twice.',
+    category: 'arcane',
+    cost: { wood: 80, stone: 20 },
+    costGrowth: 1.35,
+    requiresFlag: 'magicDiscovered',
+    requiresBuilding: 'arcane-font',
+    construct: true,
+    effects: [{ kind: 'convert', consume: { mana: 0.3 }, produce: { stone: 0.5 } }],
+  },
+  {
+    id: 'alembic',
+    name: 'Alembic',
+    blurb: 'Mana, a good dinner and a shelf of jars, distilled to an idea. Usually "try it again".',
+    category: 'arcane',
+    cost: { wood: 60, stone: 40 },
+    costGrowth: 1.35,
+    requiresFlag: 'magicDiscovered',
+    requiresBuilding: 'arcane-font',
+    // Alchemy is the third gate, and it earns its place: this is the first and only thing in
+    // the game that SPENDS Alchemical Components, which until now piled up with nothing to do.
+    requiresTech: 'alchemy',
+    construct: true,
+    // The only construct that eats FOOD as well as mana — insight is not conjured out of
+    // nothing, and it competes with the people at the table. The components draw is what ties
+    // it back to the Hunters and Ranches that render them (each roughly feeds one Alembic).
     effects: [
-      { kind: 'produce', resource: 'wood', perSec: 0.5 },
-      { kind: 'manaUpkeep', perSec: 0.1 },
+      { kind: 'convert', consume: { mana: 0.4, food: 1, alchemical: 0.05 }, produce: { research: 0.3 } },
     ],
   },
   // NATURE magic (Druidry / Seasonal Rites) — mana and life drawn from the living land.
@@ -1005,7 +1060,7 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'manaUpkeep', perSec: 0.2 },
     ],
   },
-  // ---- ELEMENTAL CONSTRUCTS (sinks) — burn one essence for settler-free labour. ----
+  // ---- ELEMENTAL CONSTRUCTS (sinks) — burn one essence for citizen-free labour. ----
   {
     id: 'storm-sails',
     name: 'Storm Sails',
