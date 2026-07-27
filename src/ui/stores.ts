@@ -128,6 +128,9 @@ export interface TechRowView {
   blurb: string;
   cost: number;
   costText: string; // "📜25"
+  /** The cost split per resource, each flagged if THIS resource is the one you're short of,
+   *  so a two-resource tech only reddens the half you can't pay. */
+  costParts: { text: string; short: boolean }[];
   unlocks: string[];
   researched: boolean;
   available: boolean;
@@ -484,12 +487,18 @@ export function toView(state: GameState): UiState {
           : '';
     // Full cost = research plus any material cost, e.g. "Research 10 · Stone 10".
     const fullCost: Partial<Record<ResourceId, number>> = { research: t.cost, ...t.resourceCost };
+    // Per-resource shortfall, matching the engine's affordability tolerance (systems/tech.ts).
+    const costParts = (Object.entries(fullCost) as [ResourceId, number][]).map(([id, amt]) => ({
+      text: `${RESOURCE_BY_ID[id].label} ${fmtCost(amt)}`,
+      short: (run.resources[id] ?? 0) < amt - 1e-6,
+    }));
     return {
       id: t.id,
       name: t.name,
       blurb: t.blurb,
       cost: t.cost,
       costText: costText(fullCost),
+      costParts,
       unlocks: t.unlocks,
       researched: t.researched,
       available: t.available,
@@ -657,7 +666,11 @@ export function jobTooltip(j: JobRowView): TooltipContent {
 /** Tech card tooltip: cost, unlocks, prerequisites BY NAME when unmet, blurb. */
 export function techTooltip(t: TechRowView): TooltipContent {
   const sections: TooltipSection[] = [
-    { label: 'Cost', lines: [{ text: t.costText, cls: t.affordable || t.researched ? undefined : 'life' }] },
+    {
+      label: 'Cost',
+      // One line per resource: only the one you're actually short of reads red.
+      lines: t.costParts.map((p) => ({ text: p.text, cls: p.short && !t.researched ? 'life' : undefined })),
+    },
   ];
   if (t.unlocks.length) {
     sections.push({ label: 'Unlocks', lines: t.unlocks.map((u) => ({ text: u, cls: 'ok' })) });
@@ -682,7 +695,7 @@ export function techTooltip(t: TechRowView): TooltipContent {
 /** Happiness readout tooltip — the full signed breakdown, themed (replaces the native title). */
 export function happinessTooltip(h: HappinessInfo): TooltipContent {
   return {
-    title: 'Happiness',
+    title: 'Moral',
     titleCls: h.status === 'content' ? 'ok' : 'life',
     sections: [
       {

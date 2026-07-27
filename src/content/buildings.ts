@@ -178,7 +178,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Farm House',
     blurb: 'A home with its boots already muddy. The fields are right outside.',
     category: 'housing',
-    cost: { wood: 30 },
+    cost: { wood: 50, stone: 5 },
     costGrowth: 1.4,
     requiresTech: 'agriculture',
     // Housing and a Farm slot only — a farmhouse is somewhere to live and work, not a store.

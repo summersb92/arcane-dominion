@@ -12,6 +12,8 @@ describe('housing tiers', () => {
     const s = newGame(1);
     s.run.tech.push('agriculture');
     s.run.resources.wood = 100;
+    expect(build(s, 'farm-house')).toBe(false); // 50 wood AND 5 stone
+    s.run.resources.stone = 10;
     const popBefore = s.run.popCap;
     expect(build(s, 'farm-house')).toBe(true);
     expect(s.run.popCap).toBe(popBefore + 1);
