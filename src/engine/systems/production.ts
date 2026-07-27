@@ -10,12 +10,12 @@
 // the CLI and UI show. Pure engine, no DOM.
 
 import { POPULATION, TECH_BONUS, KNOWLEDGE, PRISMATIC } from '../../content/config';
-import { BUILDINGS } from '../../content/buildings';
+import { BUILDINGS, type BuildingId } from '../../content/buildings';
 import { JOBS } from '../../content/jobs';
 import { RESOURCE_IDS, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
 import { effectiveCap } from './caps';
-import { activeRecipes, activeCount, convertEffects, isConverter, recipeUnlocked } from './buildings';
+import { activeRecipes, activeCount, convertEffects, isConverter, recipeUnlocked, setRecipeActive } from './buildings';
 import { logEvent } from './chronicle';
 import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
 import { magicYieldMult, oppositionFactor } from './education';
@@ -25,7 +25,9 @@ const EPS = 1e-9;
 
 /** One converter RECIPE-run: how many copies of a building run this recipe, and its per-copy trade. */
 interface ConverterRun {
+  id: BuildingId;
   name: string;
+  recipe: number; // index into the building's convert effects — what setRecipeActive keys off
   copies: number; // copies running this recipe (activation ∩ worker backing)
   consume: Partial<Record<ResourceId, number>>; // per copy, per sec
   produce: Partial<Record<ResourceId, number>>; // per copy, per sec
@@ -58,7 +60,7 @@ function converterRuns(state: GameState): ConverterRun[] {
         workersLeft -= copies;
       }
       if (copies <= 0) continue;
-      out.push({ name: b.name, copies, consume: r.consume, produce: r.produce });
+      out.push({ id: b.id, name: b.name, recipe: i, copies, consume: r.consume, produce: r.produce });
     }
   }
   return out;
@@ -494,6 +496,18 @@ export function runProduction(state: GameState, dt: number): void {
     let units = c.copies * dt; // desired copy-seconds
     for (const [res, per] of Object.entries(c.consume)) {
       if ((per as number) > 0) units = Math.min(units, run.resources[res as ResourceId] / (per as number));
+    }
+    // STARVED copies switch themselves OFF rather than sitting idle burning nothing. Only the
+    // shortfall caused by INPUTS counts: `c.copies` is already worker-limited, so a Steelworks
+    // short of Smelters is not treated as short of fuel. The player must switch them back on,
+    // which is the point — a stood-down building is visible, a silently idle one is not.
+    const affordable = Math.floor(units / dt + EPS);
+    if (affordable < c.copies) {
+      setRecipeActive(state, c.id, c.recipe, affordable);
+      if (run.flags[`stoodDown:${c.id}`] !== true) {
+        run.flags[`stoodDown:${c.id}`] = true;
+        logEvent(state, `${c.name} stands idle — nothing left to feed it.`, 'ev');
+      }
     }
     if (units <= EPS) continue;
     for (const [res, per] of Object.entries(c.consume)) {

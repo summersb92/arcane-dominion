@@ -592,3 +592,55 @@ describe('the House keeps coin, not cargo', () => {
     expect(effectsFor(s, 'hut')).toEqual(['+1 housing', '+100 Gold cap']);
   });
 });
+
+describe('a starved building stands itself down', () => {
+  it('Ward Stones switch off when the mana runs dry, and stay off', () => {
+    const s = newGame(1);
+    s.run.tech.push('folk-lore', 'warding');
+    s.run.population.total = 20; // somewhere to hold the mana
+    s.run.resources.stone = 5000;
+    for (let i = 0; i < 3; i++) expect(build(s, 'ward-stone')).toBe(true);
+    s.run.resources.mana = 20;
+    const morale = happiness(s).value;
+
+    runProduction(s, 1); // plenty of mana — all three keep working
+    expect(activeCount(s, 'ward-stone')).toBe(3);
+    expect(happiness(s).value).toBe(morale);
+
+    s.run.resources.mana = 0;
+    runProduction(s, 1);
+    expect(activeCount(s, 'ward-stone')).toBe(0); // stood down, not silently idle
+    expect(happiness(s).value).toBe(morale - 9); // and the morale goes with them
+    expect(s.run.chronicle.some((c) => c.text.includes('stands idle'))).toBe(true);
+
+    // They do NOT switch themselves back on — that is the player's call.
+    s.run.resources.mana = 50;
+    runProduction(s, 1);
+    expect(activeCount(s, 'ward-stone')).toBe(0);
+  });
+
+  it('only the copies it cannot feed stand down', () => {
+    const s = newGame(1);
+    s.run.tech.push('folk-lore', 'warding');
+    s.run.population.total = 20;
+    s.run.resources.stone = 5000;
+    for (let i = 0; i < 5; i++) build(s, 'ward-stone');
+    // 5 copies want 0.2/s each over a 1s tick = 1.0 mana; only 0.4 is on hand → 2 survive.
+    s.run.resources.mana = 0.4;
+    runProduction(s, 1);
+    expect(activeCount(s, 'ward-stone')).toBe(2);
+  });
+
+  it('a worker shortage is NOT starvation — a Steelworks keeps its copies', () => {
+    const s = newGame(1);
+    s.run.tech.push('steelmaking');
+    s.run.buildings.steelworks = 3;
+    s.run.resources.wood = 500;
+    s.run.resources.iron = 500;
+    s.run.population.total = 1;
+    assignJob(s, 'smelter', 1); // one Smelter for three works
+    runProduction(s, 1);
+    // Fuel is plentiful; only workers are short, so nothing stands down.
+    expect(activeCount(s, 'steelworks')).toBe(3);
+  });
+});
