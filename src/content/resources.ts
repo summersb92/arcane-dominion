@@ -57,10 +57,10 @@ export type MundaneResourceId =
   | 'waterEssence';
 
 /** Display group for the resource column — each renders under its own heading, in
- *  RESOURCES order: raw Materials, refined Goods, Luxury Goods (held for morale), Knowledge
- *  (chain goods + currencies),
+ *  RESOURCES order: Resources (raw stock + the treasury), refined Goods, Luxury Goods (held
+ *  for morale), Knowledge (chain goods + currencies),
  *  and Magic. Purely presentational; the cap machinery keys off MundaneResourceId. */
-export type ResourceGroup = 'materials' | 'goods' | 'luxury' | 'wealth' | 'knowledge' | 'magic' | 'prismatic';
+export type ResourceGroup = 'materials' | 'goods' | 'luxury' | 'knowledge' | 'magic' | 'prismatic';
 
 export interface ResourceDef {
   id: ResourceId;
@@ -71,7 +71,9 @@ export interface ResourceDef {
 }
 
 export const RESOURCES: ResourceDef[] = [
-  // ---- MATERIALS — raw stock gathered, grown, hunted, or dug. ----
+  // ---- RESOURCES — raw stock gathered, grown, hunted or dug, plus the treasury they trade
+  // for. Gold sits here rather than in a section of its own: it buys materials outright at
+  // the market, so it reads as one more thing the settlement has on hand. ----
   { id: 'wood', label: 'Wood', glyph: '🪵', tier: 'mundane', group: 'materials' },
   { id: 'food', label: 'Food', glyph: '🍞', tier: 'mundane', group: 'materials' },
   { id: 'stone', label: 'Stone', glyph: '🪨', tier: 'mundane', group: 'materials' },
@@ -79,6 +81,9 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'iron', label: 'Iron', glyph: '🔩', tier: 'mundane', group: 'materials' },
   // Coal — fuel dug at the Coal Mine or charred from wood at a Charcoal Ground.
   { id: 'coal', label: 'Coal', glyph: '⚫', tier: 'mundane', group: 'materials' },
+  // Gold — the treasury, earned by Harbours, Markets and Banks (the Currency line). Capped
+  // by housing once Currency is in (caps.ts goldCap); uncapped before that.
+  { id: 'gold', label: 'Gold', glyph: '🪙', tier: 'knowledge', group: 'materials' },
   // ---- LUXURY — held, not spent: the stock itself raises morale (systems/happiness.ts). ----
   // Furs are what a Hunter brings in; they also feed the Tannery, which quietly costs morale.
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'luxury' },
@@ -92,9 +97,6 @@ export const RESOURCES: ResourceDef[] = [
   { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane', group: 'goods' },
   // Furniture — a consumer luxury from the Factory; held furniture raises happiness.
   { id: 'furniture', label: 'Furniture', glyph: '🪑', tier: 'mundane', group: 'goods' },
-  // ---- WEALTH — the treasury. Earned by Harbours, Markets and Banks (the Currency line),
-  // spent at the market to buy materials outright. Uncapped, like the other currencies. ----
-  { id: 'gold', label: 'Gold', glyph: '🪙', tier: 'knowledge', group: 'wealth' },
   // ---- KNOWLEDGE — the chain goods (furs → parchment → books → compendiums) + currencies. ----
   { id: 'parchment', label: 'Parchment', glyph: '📃', tier: 'mundane', group: 'knowledge' },
   // Held BOOKS raise research gained per settler.

@@ -46,10 +46,11 @@ describe('cost escalation is legible (the "43 wood / 20-wood Farm" confusion)', 
 });
 
 describe('Gold + the market (Civ 5 Currency line)', () => {
-  it('gold is an uncapped treasury that starts empty', () => {
+  it('gold starts empty, with nowhere yet to keep it', () => {
     const s = newGame(1);
     expect(s.run.resources.gold).toBe(0);
-    expect(effectiveCap(s, 'gold')).toBe(Infinity);
+    // No buildings → no strongbox. The ceiling is real from day one, not gated on Currency.
+    expect(effectiveCap(s, 'gold')).toBe(0);
   });
 
   it('the Market (Currency) and Bank (Banking) earn gold', () => {
@@ -162,25 +163,28 @@ describe('the base workplaces store their own yield and sharpen their own job', 
 });
 
 describe('the treasury is only as big as the housing behind it', () => {
-  it('gold is uncapped until Currency, then 100 per House', () => {
+  it('every House holds 100 and the Harbour 250 — no tech required', () => {
     const s = newGame(1);
     s.run.resources.wood = 500;
     expect(build(s, 'hut')).toBe(true);
     expect(build(s, 'hut')).toBe(true);
-    expect(goldCap(s)).toBe(Infinity); // no coinage yet — nothing to count
-    expect(effectiveCap(s, 'gold')).toBe(Infinity);
-
-    s.run.tech.push('currency');
-    expect(goldCap(s)).toBe(200); // 2 Houses × 100
+    expect(goldCap(s)).toBe(200); // 2 Houses × 100, with no Currency anywhere
+    expect(effectiveCap(s, 'gold')).toBe(200);
     expect(build(s, 'hut')).toBe(true);
     expect(goldCap(s)).toBe(300);
+
+    // The Harbour is a strongbox as well as a jetty.
+    s.run.tech.push('sailing');
+    s.run.resources.wood = 1000;
+    s.run.resources.stone = 500;
+    expect(build(s, 'harbor')).toBe(true);
+    expect(goldCap(s)).toBe(550); // 300 + 250
   });
 
   it('held gold is clamped to the treasury ceiling on a tick', () => {
     const s = newGame(1);
     s.run.resources.wood = 500;
     build(s, 'hut');
-    s.run.tech.push('currency');
     s.run.resources.gold = 5000; // more than one House can hold
     runProduction(s, 1);
     expect(s.run.resources.gold).toBe(100);

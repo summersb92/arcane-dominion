@@ -39,7 +39,7 @@ describe('building tooltips hide effects still behind a tech gate', () => {
   });
 
   it('the House advertises the treasury it underwrites', () => {
-    expect(effectsFor(newGame(1), 'hut')).toContain('+100 Gold cap (with Currency)');
+    expect(effectsFor(newGame(1), 'hut')).toContain('+100 Gold cap');
   });
 
   it('the Farm House is housing and a Farm job — no storage at all', () => {

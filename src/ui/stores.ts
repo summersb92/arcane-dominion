@@ -343,7 +343,7 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
         lines.push({ text: `+${e.amount} ${RESOURCE_BY_ID[e.resource].label} storage`, cls: 'ok' });
         break;
       case 'coinCap':
-        lines.push({ text: `+${e.amount} Gold cap (with Currency)`, cls: 'ok' });
+        lines.push({ text: `+${e.amount} Gold cap`, cls: 'ok' });
         break;
       case 'researchCap':
         // Emitted once, at the first researchCap effect, as the combined total.

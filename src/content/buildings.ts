@@ -413,6 +413,8 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'produce', resource: 'food', perSec: 0.3 },
       { kind: 'produce', resource: 'gold', perSec: 0.15 },
+      // A harbour handles money as well as fish — it holds far more coin than a House.
+      { kind: 'coinCap', amount: 250 },
       { kind: 'cap', amount: 40 },
     ],
   },

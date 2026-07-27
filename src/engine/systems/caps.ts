@@ -29,11 +29,11 @@ export function researchCap(state: GameState): number {
   return cap;
 }
 
-/** The effective GOLD cap. Gold is uncapped until CURRENCY is researched — before coinage
- *  there is nothing to count. From then on the treasury holds only what the settlement's
- *  housing underwrites: the `coinCap` effects of every building × its count. */
+/** The effective GOLD cap — in force from the very first day, not just after Currency. The
+ *  treasury holds only what the settlement can physically keep safe: the `coinCap` effects of
+ *  every building × its count (Houses and the Harbour). With no buildings at all it is 0,
+ *  which is exactly right — there is nowhere to put a coin. */
 export function goldCap(state: GameState): number {
-  if (!(state.run.tech as string[]).includes('currency')) return Infinity;
   let cap = 0;
   for (const b of BUILDINGS) {
     const count = state.run.buildings[b.id] ?? 0;
