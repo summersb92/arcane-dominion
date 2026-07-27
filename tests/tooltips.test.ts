@@ -555,3 +555,15 @@ describe('a building never mentions an attunement you have not researched', () =
     }
   });
 });
+
+describe('the House keeps coin, not cargo', () => {
+  it('raises the Wealth cap and no material ceiling at all', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 500;
+    const before = { ...s.run.caps };
+    expect(build(s, 'hut')).toBe(true);
+    expect(s.run.caps).toEqual(before); // every material ceiling untouched
+    expect(effectiveCap(s, 'gold')).toBe(100);
+    expect(effectsFor(s, 'hut')).toEqual(['+1 housing', '+100 Gold cap']);
+  });
+});

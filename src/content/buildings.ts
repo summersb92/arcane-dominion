@@ -178,9 +178,10 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'housing',
     cost: { wood: 10 },
     costGrowth: 1.5,
+    // Housing and a strongbox — a house is somewhere to live and somewhere to keep coin,
+    // not a warehouse for timber and grain.
     effects: [
       { kind: 'popCap', amount: 1 },
-      { kind: 'cap', amount: STRUCT_CAP },
       { kind: 'coinCap', amount: 100 },
     ],
   },
