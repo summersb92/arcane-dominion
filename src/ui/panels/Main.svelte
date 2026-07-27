@@ -206,27 +206,39 @@
           {#if !gov.unlocked}
             <div class="govlocked">Research <strong>Code of Laws</strong> to govern the settlement.</div>
           {/if}
-          <div class="govmeta">
-            <span>Form <strong>{gov.formLabel}</strong></span>
-            <span>Policies <strong>{gov.used}</strong> / {gov.slots}</span>
-            {#if gov.upkeep > 0}<span>Upkeep <strong>-{gov.upkeep.toFixed(2)} Culture/s</strong></span>{/if}
-          </div>
+          <!-- Nothing about who governs, or how, is on show before there are laws to govern
+               under: no forms, no standing count, no policy list. The section headings stay
+               so the tab keeps its shape and you can see what the space is FOR. -->
+          {#if gov.unlocked}
+            <div class="govmeta">
+              <span>Form <strong>{gov.formLabel}</strong></span>
+              <span>Policies <strong>{gov.used}</strong> / {gov.slots}</span>
+              {#if gov.upkeep > 0}<span>Upkeep <strong>-{gov.upkeep.toFixed(2)} Culture/s</strong></span>{/if}
+            </div>
+          {/if}
 
           <h3 class="govsec">Form of government</h3>
-          <div class="forms">
-            {#each gov.forms as f (f.id)}
-              <span
-                class="formchip"
-                class:on={f.active}
-                class:off={!f.unlocked}
-                title={f.unlocked ? f.bonusText.join(' · ') : `Locked — research ${f.requiresTech.replace(/-/g, ' ')}`}
-              >{f.label}</span>
-            {/each}
-          </div>
-          <div class="govnote">
-            The form in force is the highest governance you have researched. Choosing between
-            forms freely comes later.
-          </div>
+          {#if gov.unlocked}
+            <div class="forms">
+              {#each gov.forms as f (f.id)}
+                <span
+                  class="formchip"
+                  class:on={f.active}
+                  class:off={!f.unlocked}
+                  title={f.unlocked ? f.bonusText.join(' · ') : `Locked — research ${f.requiresTech.replace(/-/g, ' ')}`}
+                >{f.label}</span>
+              {/each}
+            </div>
+            <div class="govnote">
+              The form in force is the highest governance you have researched. Choosing between
+              forms freely comes later.
+            </div>
+          {:else}
+            <div class="govnote">
+              Which offices the settlement keeps, and who holds them, is nobody's business until
+              there is a code to decide it under.
+            </div>
+          {/if}
 
           <h3 class="govsec">Taxes</h3>
           <div class="govnote">
@@ -235,6 +247,10 @@
           </div>
 
           <h3 class="govsec">Policies</h3>
+          {#if !gov.unlocked}
+            <div class="govnote">Standing edicts arrive with the first code of laws.</div>
+          {/if}
+          {#if gov.unlocked}
           {#if gov.formBonusText.length}
             <div class="formbonus">
               {#each gov.formBonusText as line}<span class="good">{line}</span>{/each}
@@ -269,10 +285,11 @@
                 </div>
               {/each}
           </div>
-          <!-- Only meaningful once slots EXIST. With governance still locked there is nothing
+          <!-- Only meaningful once slots EXIST — with none granted yet there is nothing
                "in use", and the line would read as a bug rather than a nudge. -->
           {#if gov.slots > 0 && gov.used >= gov.slots && gov.policies.some((p) => !p.active)}
             <div class="govnote">All policy slots are in use — repeal one, or research further governance.</div>
+          {/if}
           {/if}
         </div>
       </div>
@@ -658,10 +675,6 @@
      so the settlement tab keeps its shape from the first minute. */
   .govcard.locked {
     border-left-color: var(--faint);
-  }
-  .govcard.locked .forms,
-  .govcard.locked .govmeta {
-    opacity: 0.6;
   }
   .govlocked {
     color: var(--gold);
