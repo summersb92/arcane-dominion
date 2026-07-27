@@ -21,8 +21,8 @@ describe('gather actions', () => {
 
   it('respects the storage cap', () => {
     const s = newGame(1);
-    for (let i = 0; i < 250; i++) doGather(s, 'gather-wood');
-    expect(s.run.resources.wood).toBe(200); // clamped to the 200 base wood cap
+    for (let i = 0; i < 600; i++) doGather(s, 'gather-wood');
+    expect(s.run.resources.wood).toBe(500); // clamped to the 500 base wood cap
   });
 
   it('refuses an unknown action', () => {

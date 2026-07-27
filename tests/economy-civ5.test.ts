@@ -90,9 +90,9 @@ describe('Gold + the market (Civ 5 Currency line)', () => {
     const s = newGame(1);
     s.run.tech.push('currency');
     s.run.resources.gold = 10;
-    s.run.resources.wood = 195; // cap is 200; buying 25 overflows
+    s.run.resources.wood = 495; // cap is 500; buying 25 overflows
     expect(buy(s, 'buy-wood')).toBe(true);
-    expect(s.run.resources.wood).toBe(200);
+    expect(s.run.resources.wood).toBe(500);
     expect(s.run.resources.gold).toBe(0);
   });
 });

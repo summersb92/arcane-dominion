@@ -272,6 +272,10 @@ export function normalize(state: GameState): void {
   const defCaps = freshCaps();
   for (const id of MUNDANE_RESOURCE_IDS) {
     if (run.caps[id] === undefined) run.caps[id] = defCaps[id];
+    // A stored cap is the BASE plus whatever Storehouses have added, so it can never
+    // legitimately sit below the current base. Floor it — that way a base-cap rebalance
+    // reaches saves already in flight without ever shrinking someone's hard-won storage.
+    else if (typeof run.caps[id] === 'number' && run.caps[id] < defCaps[id]) run.caps[id] = defCaps[id];
   }
 
   // Population — backfill the container + the jobs map (absent job ids → 0).

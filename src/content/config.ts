@@ -29,10 +29,12 @@ export const STARTING = {
   mana: 0,
   research: 0,
   culture: 0,
-  /** BASE storage cap for each mundane material + furs + mana crystals (raised by Storehouses/Granary). */
-  woodCap: 200,
-  foodCap: 200,
-  stoneCap: 200,
+  /** BASE storage cap for each mundane material + furs + mana crystals (raised by Storehouses/Granary).
+   *  The three BOOTSTRAP materials (wood, food, stone) start with a roomier 500 so the opening
+   *  hand-gathering stretch isn't spent bumping the ceiling; everything later starts at 200. */
+  woodCap: 500,
+  foodCap: 500,
+  stoneCap: 500,
   ironCap: 200,
   coalCap: 200,
   steelCap: 200,
