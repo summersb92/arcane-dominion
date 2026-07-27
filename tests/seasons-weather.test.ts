@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reveal } from './helpers';
 import { newGame } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { build, buildingCost } from '../src/engine/systems/buildings';
@@ -210,6 +211,34 @@ describe('a building whose price changes in KIND partway up the ladder', () => {
     // …and the extra escalates from there, like every other cost.
     s.run.buildings['ward-stone'] = 6;
     expect(buildingCost(s, 'ward-stone').iron!).toBeGreaterThan(sixth.iron!);
+  });
+
+  it('the first five Lodges and Quarries are timber alone; the sixth wants stone', () => {
+    for (const id of ['woodcutters-lodge', 'quarry'] as const) {
+      const s = reveal(newGame(1), 'woodcutters-lodge');
+      s.run.tech.push('masonry');
+      s.run.resources.wood = 1e9;
+      s.run.resources.stone = 1e9;
+      for (let n = 1; n <= 5; n++) {
+        expect(buildingCost(s, id).stone, `${id} #${n}`).toBeUndefined();
+        expect(build(s, id), `${id} #${n}`).toBe(true);
+      }
+      // The sixth is where the price changes in KIND, not merely in size.
+      const sixth = buildingCost(s, id);
+      expect(sixth.stone, `${id} #6`).toBe(20);
+      expect(build(s, id)).toBe(true);
+      expect(buildingCost(s, id).stone!, `${id} #7`).toBeGreaterThan(20); // and escalates
+    }
+  });
+
+  it('a stone-less settlement can still open its first Quarry', () => {
+    // The bootstrapping case: asking for stone to build the thing that MAKES stone would
+    // strand anyone who has not hand-gathered any yet.
+    const s = newGame(1);
+    s.run.tech.push('masonry');
+    s.run.resources.wood = 100;
+    s.run.resources.stone = 0;
+    expect(build(s, 'quarry')).toBe(true);
   });
 
   it('refuses the sixth Ward Stone without the iron, and allows it with', () => {

@@ -294,6 +294,10 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'production',
     cost: { wood: 25 },
     costGrowth: 1.25,
+    // The first five are timber and rope. Past that the easy stands are cut out and a lodge
+    // needs founded stone to sit on — a second resource enters the price, not just a bigger
+    // number of the first.
+    extraCostAfter: { count: 5, cost: { stone: 20 } },
     // Third rung of the opening chain, alongside the Storehouse: once the fields are in,
     // the settlement can spare hands for the forest.
     requiresBuilding: 'forager-hut',
@@ -354,8 +358,12 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Quarry',
     blurb: 'A worked pit where the hill used to be.',
     category: 'production',
-    cost: { wood: 20, stone: 5 },
+    // Timber alone to open a pit — asking for stone to build the thing that MAKES stone is
+    // a bootstrapping tax on a settlement still gathering it by hand. Past the fifth, the
+    // shallow rock is gone and a working pit needs cut stone of its own.
+    cost: { wood: 20 },
     costGrowth: 1.25,
+    extraCostAfter: { count: 5, cost: { stone: 20 } },
     requiresTech: 'masonry',
     effects: [
       { kind: 'jobCapacity', job: 'quarry-worker', slots: 1 },
