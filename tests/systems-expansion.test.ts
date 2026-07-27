@@ -99,13 +99,14 @@ describe('contentment is the master production modifier', () => {
     s.run.population.total = 5;
     s.run.buildings['woodcutters-lodge'] = 5;
     assignJob(s, 'woodcutter', 5);
+    const FIVE_LODGES = 0.5 * 1.1; // 5 Lodges × their own +2%
     expect(happiness(s).value).toBe(100);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(FIVE_LODGES, 6);
 
     // Piling on luxuries can't push happiness past 100, so output never exceeds ×1.00.
     s.run.resources.furs = 1000;
     expect(happiness(s).value).toBe(100);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(FIVE_LODGES, 6);
   });
 
   it('each settler past 5 costs 2 happiness, and that shows up in output', () => {
@@ -116,7 +117,7 @@ describe('contentment is the master production modifier', () => {
     s.run.population.total = 30; // 25 past the buffer → −50 → happiness 50
     assignJob(s, 'woodcutter', 1);
     expect(happiness(s).value).toBe(50);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.6 * 0.5, 6); // 30 Lodges: +60%
   });
 });
 

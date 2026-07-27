@@ -29,9 +29,26 @@ export function researchCap(state: GameState): number {
   return cap;
 }
 
-/** Effective storage cap for a resource: the mundane cap, the derived research cap, or
- *  Infinity for the uncapped currencies (mana / culture). */
+/** The effective GOLD cap. Gold is uncapped until CURRENCY is researched — before coinage
+ *  there is nothing to count. From then on the treasury holds only what the settlement's
+ *  housing underwrites: the `coinCap` effects of every building × its count. */
+export function goldCap(state: GameState): number {
+  if (!(state.run.tech as string[]).includes('currency')) return Infinity;
+  let cap = 0;
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'coinCap') cap += count * eff.amount;
+    }
+  }
+  return cap;
+}
+
+/** Effective storage cap for a resource: the mundane cap, the derived research/gold caps, or
+ *  Infinity for the uncapped currencies (mana / culture / prismatic). */
 export function effectiveCap(state: GameState, id: ResourceId): number {
+  if (id === 'gold') return goldCap(state);
   if (isUncappedResource(id)) return Infinity;
   if (id === 'research') return researchCap(state);
   return state.run.caps[id as MundaneResourceId];

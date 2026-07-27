@@ -323,6 +323,12 @@ function effectLines(id: BuildingId): TooltipLine[] {
       case 'manaUpkeep':
         lines.push({ text: `-${numStr(e.perSec)} Mana/s upkeep`, cls: 'life' });
         break;
+      case 'resourceCap':
+        lines.push({ text: `+${e.amount} ${RESOURCE_BY_ID[e.resource].label} storage`, cls: 'ok' });
+        break;
+      case 'coinCap':
+        lines.push({ text: `+${e.amount} Gold cap (with Currency)`, cls: 'ok' });
+        break;
       case 'researchCap': {
         const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
         lines.push({ text: `+${e.amount} Research cap${gate}`, cls: 'ok' });

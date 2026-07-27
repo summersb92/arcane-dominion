@@ -13,7 +13,7 @@
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
 import type { JobId } from './jobs';
-import type { ResourceId } from './resources';
+import type { MundaneResourceId, ResourceId } from './resources';
 
 export type BuildingId =
   | 'hut'
@@ -113,6 +113,11 @@ export type BuildingEffect =
   // +N to the RESEARCH cap (science buildings; caps.ts). An optional `requiresTech` gates the
   // bonus, which is how the Decimal System DOUBLES the Library: a second, gated +50.
   | { kind: 'researchCap'; amount: number; requiresTech?: string }
+  // +N to the GOLD cap. Gold is uncapped until Currency is researched; from then on the
+  // treasury only holds what your housing can hold (caps.ts goldCap).
+  | { kind: 'coinCap'; amount: number }
+  // +N to ONE material's cap — a workplace stores what it produces, and nothing else.
+  | { kind: 'resourceCap'; resource: MundaneResourceId; amount: number }
   | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
 
 /** Build-tab section a building files under. Constructs render in their own "Arcane
@@ -150,6 +155,9 @@ export interface BuildingDef {
 // stores a little more with every building it raises). Dedicated storage (Storehouse/
 // Granary) and the magic constructs are excluded.
 const STRUCT_CAP = 20;
+/** The three BASE gather workplaces (Farm, Woodcutter's Lodge, Quarry) double as storage
+ *  for THEIR OWN yield — a granary of grain, a woodpile, a stoneyard. */
+const BASE_WORKPLACE_CAP = 100;
 
 export const BUILDINGS: BuildingDef[] = [
   {
@@ -159,7 +167,11 @@ export const BUILDINGS: BuildingDef[] = [
     category: 'housing',
     cost: { wood: 10 },
     costGrowth: 1.5,
-    effects: [{ kind: 'popCap', amount: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'popCap', amount: 1 },
+      { kind: 'cap', amount: STRUCT_CAP },
+      { kind: 'coinCap', amount: 100 },
+    ],
   },
   {
     id: 'farm-house',
@@ -227,7 +239,11 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 25 },
     costGrowth: 1.15,
     // Buildable from the very start, alongside the Farm — the two founding workplaces.
-    effects: [{ kind: 'jobCapacity', job: 'woodcutter', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'jobCapacity', job: 'woodcutter', slots: 1 },
+      { kind: 'resourceCap', resource: 'wood', amount: BASE_WORKPLACE_CAP },
+      { kind: 'jobBoost', job: 'woodcutter', amount: 0.02 },
+    ],
   },
   {
     id: 'forager-hut',
@@ -237,7 +253,11 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 20 },
     costGrowth: 1.15,
     // Buildable from the very start — a settlement knows how to plant before it theorizes.
-    effects: [{ kind: 'jobCapacity', job: 'forager', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'jobCapacity', job: 'forager', slots: 1 },
+      { kind: 'resourceCap', resource: 'food', amount: BASE_WORKPLACE_CAP },
+      { kind: 'jobBoost', job: 'forager', amount: 0.02 },
+    ],
   },
   {
     id: 'ranch',
@@ -270,7 +290,11 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 20, stone: 5 },
     costGrowth: 1.15,
     requiresTech: 'masonry',
-    effects: [{ kind: 'jobCapacity', job: 'quarry-worker', slots: 1 }, { kind: 'cap', amount: STRUCT_CAP }],
+    effects: [
+      { kind: 'jobCapacity', job: 'quarry-worker', slots: 1 },
+      { kind: 'resourceCap', resource: 'stone', amount: BASE_WORKPLACE_CAP },
+      { kind: 'jobBoost', job: 'quarry-worker', amount: 0.02 },
+    ],
   },
   {
     id: 'granary',

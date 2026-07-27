@@ -157,6 +157,8 @@ export function build(state: GameState, id: BuildingId): boolean {
       }
     } else if (eff.kind === 'foodCap') {
       state.run.caps.food += eff.amount;
+    } else if (eff.kind === 'resourceCap') {
+      state.run.caps[eff.resource] += eff.amount;
     }
   }
 

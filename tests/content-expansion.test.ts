@@ -207,19 +207,20 @@ describe('tool-tier efficiency stacks on a gather job', () => {
     assignJob(s, 'woodcutter', 1);
 
     const base = productionRates(s).wood;
-    expect(base).toBeCloseTo(0.5, 6);
+    const LODGE = 0.5 * 1.02; // one Woodcutter's Lodge boosts its own job by 2%
+    expect(base).toBeCloseTo(LODGE, 6);
 
     s.run.tech.push('stone-axe'); // per-tool +25%
     const withStone = productionRates(s).wood;
-    expect(withStone).toBeCloseTo(0.5 * 1.25, 6);
+    expect(withStone).toBeCloseTo(LODGE * 1.25, 6);
 
     s.run.tech.push('iron-working'); // global +50%
     const withIron = productionRates(s).wood;
-    expect(withIron).toBeCloseTo(0.5 * 1.25 * 1.5, 6);
+    expect(withIron).toBeCloseTo(LODGE * 1.25 * 1.5, 6);
 
     s.run.tech.push('steel-axe'); // per-tool +65% (top tier)
     const withSteel = productionRates(s).wood;
-    expect(withSteel).toBeCloseTo(0.5 * 1.25 * 1.5 * 1.65, 6);
+    expect(withSteel).toBeCloseTo(LODGE * 1.25 * 1.5 * 1.65, 6);
 
     // Strictly increasing tiers.
     expect(withStone).toBeGreaterThan(base);

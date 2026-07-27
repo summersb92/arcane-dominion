@@ -474,9 +474,10 @@ export function runProduction(state: GameState, dt: number): void {
   }
 
   // Clamp the capped resources to their effective caps (excess is lost): the mundane
-  // materials + furs + mana crystals, plus RESEARCH (now capped by science buildings).
-  // Mana/culture are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research'] as ResourceId[]) {
+  // materials + furs + mana crystals, plus RESEARCH (capped by science buildings) and GOLD
+  // (capped by housing once Currency is in — effectiveCap returns Infinity before that, so
+  // listing it here is harmless pre-coinage). Mana/culture/prismatic are uncapped.
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }

@@ -8,6 +8,8 @@ import { effectiveCap } from '../src/engine/systems/caps';
 import { safeLoad, SAVE_MAGIC } from '../src/engine/save';
 import { TECH_BY_ID } from '../src/content/tech';
 import { BUILDING_BY_ID } from '../src/content/buildings';
+import { goldCap } from '../src/engine/systems/caps';
+import { jobEffectiveProduces, runProduction } from '../src/engine/systems/production';
 
 describe('House: 10 wood, +1 population', () => {
   it('costs 10 and admits one settler', () => {
@@ -124,6 +126,62 @@ describe('Civ 5 naval line: Sailing → Harbour → Navigation → Seaport', () 
     expect(build(s, 'seaport')).toBe(true);
     expect(productionRates(s).gold).toBeCloseTo(0.15 + 0.5, 6);
     expect(TECH_BY_ID.navigation.requires).toEqual(expect.arrayContaining(['sailing', 'mathematics']));
+  });
+});
+
+describe('the base workplaces store their own yield and sharpen their own job', () => {
+  it('each raises ONLY its own material cap, by 100', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 2000;
+    s.run.resources.stone = 2000;
+    s.run.tech.push('masonry', 'agriculture');
+    s.run.buildings.hut = 1; // workplace prereq
+    const before = { ...s.run.caps };
+    expect(build(s, 'woodcutters-lodge')).toBe(true);
+    expect(s.run.caps.wood).toBe(before.wood + 100);
+    expect(s.run.caps.food).toBe(before.food); // a woodpile holds no grain
+    expect(s.run.caps.stone).toBe(before.stone);
+
+    expect(build(s, 'forager-hut')).toBe(true);
+    expect(s.run.caps.food).toBe(before.food + 100);
+    expect(build(s, 'quarry')).toBe(true);
+    expect(s.run.caps.stone).toBe(before.stone + 100);
+    expect(s.run.caps.wood).toBe(before.wood + 100); // still just the one Lodge's worth
+  });
+
+  it('each adds +2% to its OWN job only, stacking per copy', () => {
+    const s = newGame(1);
+    s.run.buildings['woodcutters-lodge'] = 10;
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.2, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6, 6); // Farmers untouched
+    s.run.buildings['forager-hut'] = 5;
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.1, 6);
+  });
+});
+
+describe('the treasury is only as big as the housing behind it', () => {
+  it('gold is uncapped until Currency, then 100 per House', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 500;
+    expect(build(s, 'hut')).toBe(true);
+    expect(build(s, 'hut')).toBe(true);
+    expect(goldCap(s)).toBe(Infinity); // no coinage yet — nothing to count
+    expect(effectiveCap(s, 'gold')).toBe(Infinity);
+
+    s.run.tech.push('currency');
+    expect(goldCap(s)).toBe(200); // 2 Houses × 100
+    expect(build(s, 'hut')).toBe(true);
+    expect(goldCap(s)).toBe(300);
+  });
+
+  it('held gold is clamped to the treasury ceiling on a tick', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 500;
+    build(s, 'hut');
+    s.run.tech.push('currency');
+    s.run.resources.gold = 5000; // more than one House can hold
+    runProduction(s, 1);
+    expect(s.run.resources.gold).toBe(100);
   });
 });
 

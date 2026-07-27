@@ -87,7 +87,8 @@ describe('Steam Works — mechanization (spend goods → global output)', () => 
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
-    expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
+    const LODGE = 0.5 * 1.02; // the Lodge's own +2% is baked into the baseline
+    expect(productionRates(s).wood).toBeCloseTo(LODGE, 6);
 
     // Build a Steam Works (starts active) with fuel on hand → +20% to every worker.
     s.run.tech.push('industrialization');
@@ -96,16 +97,16 @@ describe('Steam Works — mechanization (spend goods → global output)', () => 
     s.run.resources.engines = 300; // cost 20 + ongoing fuel
     s.run.resources.coal = 300; // ongoing fuel
     expect(build(s, 'steam-works')).toBe(true);
-    expect(productionRates(s).wood).toBeCloseTo(0.5 * 1.2, 6); // mechanized
+    expect(productionRates(s).wood).toBeCloseTo(LODGE * 1.2, 6); // mechanized
 
     // Starve it of coal → the bonus vanishes (unfuelled works grants nothing).
     s.run.resources.coal = 0;
-    expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
+    expect(productionRates(s).wood).toBeCloseTo(LODGE, 6);
 
     // Toggle the works OFF entirely → also no bonus even with fuel restored.
     s.run.resources.coal = 300;
     setActive(s, 'steam-works', 0);
-    expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
+    expect(productionRates(s).wood).toBeCloseTo(LODGE, 6);
   });
 });
 

@@ -106,7 +106,7 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 1)).toBe(1);
 
     const rates = productionRates(s);
-    expect(rates.wood).toBeCloseTo(0.5, 6); // 1 worker × 0.5/s
+    expect(rates.wood).toBeCloseTo(0.5 * 1.02, 6); // 1 worker × 0.5/s × the Lodge's own +2%
     expect(rates.food).toBeCloseTo(-4, 6); // base settler upkeep only — jobs no longer eat food
 
     const woodBefore = s.run.resources.wood;
@@ -147,7 +147,9 @@ describe('buildings: storage bump + escalating cost', () => {
     const capBefore = s.run.caps.wood;
     const costBefore = buildingCost(s, 'woodcutters-lodge').wood as number;
     expect(build(s, 'woodcutters-lodge')).toBe(true);
-    expect(s.run.caps.wood).toBe(capBefore + 20); // +20 storage on top of the job slots
+    // The Lodge stores WOOD specifically (+100) — its own yield, nothing else.
+    expect(s.run.caps.wood).toBe(capBefore + 100);
+    expect(s.run.caps.stone).toBe(500); // untouched: a woodpile holds no stone
     const costAfter = buildingCost(s, 'woodcutters-lodge').wood as number;
     expect(costAfter).toBeGreaterThan(costBefore); // costGrowth escalates per copy
   });
@@ -286,9 +288,9 @@ describe('tech', () => {
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
-    expect(productionRates(s).wood).toBeCloseTo(0.5, 6);
+    expect(productionRates(s).wood).toBeCloseTo(0.5 * 1.02, 6); // one Lodge: +2%
     s.run.tech.push('stone-axe');
-    expect(productionRates(s).wood).toBeCloseTo(0.625, 6); // ×1.25
+    expect(productionRates(s).wood).toBeCloseTo(0.5 * 1.02 * 1.25, 6); // ×1.25
   });
 
   it('gates Naturalism behind Agriculture (the one magic-feeding tech)', () => {
