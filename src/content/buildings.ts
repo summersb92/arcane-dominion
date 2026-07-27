@@ -118,6 +118,9 @@ export type BuildingEffect =
   // +N to the RESEARCH cap (science buildings; caps.ts). An optional `requiresTech` gates the
   // bonus, which is how the Decimal System DOUBLES the Library: a second, gated +50.
   | { kind: 'researchCap'; amount: number; requiresTech?: string }
+  // +N to the MANA cap. Mana is otherwise carried in people (one per settler) — these are
+  // the works that give it somewhere else to sit.
+  | { kind: 'manaCap'; amount: number }
   // +N to the GOLD cap. Gold is uncapped until Currency is researched; from then on the
   // treasury only holds what your housing can hold (caps.ts goldCap).
   | { kind: 'coinCap'; amount: number }
@@ -412,6 +415,7 @@ export const BUILDINGS: BuildingDef[] = [
       { kind: 'yieldBoost', target: 'prismatic', amount: 0.1 },
       { kind: 'jobCapacity', job: 'scholar', slots: 1 },
       { kind: 'researchCap', amount: 300 },
+      { kind: 'manaCap', amount: 100 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
@@ -829,7 +833,13 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { stone: 40 },
     requiresFlag: 'magicDiscovered',
     construct: true,
-    effects: [{ kind: 'produce', resource: 'mana', perSec: 0.5 }],
+    // A Font both fills the pool and DEEPENS it. Without this the mana-costed techs would be
+    // unreachable: the Arcanum lifts the ceiling too, but it sits behind Prismatic Theory,
+    // which itself costs 200 mana — a settlement would need 200 settlers to ever afford it.
+    effects: [
+      { kind: 'produce', resource: 'mana', perSec: 0.5 },
+      { kind: 'manaCap', amount: 25 },
+    ],
   },
   {
     id: 'animated-tools',

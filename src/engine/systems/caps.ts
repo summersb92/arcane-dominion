@@ -49,7 +49,16 @@ export function goldCap(state: GameState): number {
  *  only as deep as the population (POPULATION.manaCapPerSettler each). A settlement with
  *  nobody home holds none. */
 export function manaCap(state: GameState): number {
-  return POPULATION.manaCapPerSettler * state.run.population.total;
+  let cap = POPULATION.manaCapPerSettler * state.run.population.total;
+  // …plus the works built to hold it: an Arcane Font's basin, an Arcanum's vaults.
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'manaCap') cap += count * eff.amount;
+    }
+  }
+  return cap;
 }
 
 /** Effective storage cap for a resource: the mundane cap, the derived research/gold/mana

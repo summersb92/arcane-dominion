@@ -4,7 +4,8 @@ import { simulate } from '../src/engine/tick';
 import { build } from '../src/engine/systems/buildings';
 import { assignJob } from '../src/engine/systems/jobs';
 import { doGather } from '../src/engine/systems/actions';
-import { resourceBreakdown } from '../src/engine/systems/production';
+import { resourceBreakdown, runProduction } from '../src/engine/systems/production';
+import { effectiveCap } from '../src/engine/systems/caps';
 
 describe('population growth', () => {
   it('grows toward popCap under a food surplus', () => {
@@ -92,14 +93,26 @@ describe('the magic hook — automating mundane labour', () => {
     expect(s.run.resources.mana).toBeGreaterThan(before);
   });
 
-  it('an empty settlement can hold NO mana, however much it makes', () => {
+  it('with no settlers and no works, there is nowhere to keep mana at all', () => {
+    const s = newGame(1);
+    s.run.flags.magicDiscovered = true;
+    expect(s.run.population.total).toBe(0);
+    expect(effectiveCap(s, 'mana')).toBe(0);
+    s.run.resources.mana = 50; // handed some anyway
+    runProduction(s, 1);
+    expect(s.run.resources.mana).toBe(0); // it runs straight through their fingers
+  });
+
+  it('a Font DEEPENS the pool as well as filling it, so constructs work unpeopled', () => {
     const s = newGame(1);
     s.run.flags.magicDiscovered = true;
     s.run.resources.stone = 40;
     expect(build(s, 'arcane-font')).toBe(true);
     expect(s.run.population.total).toBe(0);
+    expect(effectiveCap(s, 'mana')).toBe(25); // the Font's own basin
     simulate(s, 60);
-    expect(s.run.resources.mana).toBe(0); // no settlers, no pool
+    expect(s.run.resources.mana).toBeGreaterThan(0);
+    expect(s.run.resources.mana).toBeLessThanOrEqual(25);
   });
 });
 

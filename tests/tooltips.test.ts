@@ -492,3 +492,64 @@ describe('mana is carried in people, so the pool is only as deep as the populati
     expect(s.run.resources.mana).toBe(0);
   });
 })
+
+describe('the works that deepen the mana pool', () => {
+  it('the Arcanum adds 100 and the Font 25, on top of one per settler', () => {
+    const s = newGame(1);
+    s.run.population.total = 8;
+    expect(effectiveCap(s, 'mana')).toBe(8);
+
+    s.run.flags.magicDiscovered = true;
+    s.run.resources.stone = 400;
+    expect(build(s, 'arcane-font')).toBe(true);
+    expect(effectiveCap(s, 'mana')).toBe(33); // 8 settlers + 25
+
+    s.run.tech.push('prismatic-theory');
+    s.run.resources.wood = 400;
+    s.run.resources.manaCrystals = 100;
+    expect(build(s, 'arcanum')).toBe(true);
+    expect(effectiveCap(s, 'mana')).toBe(133); // + the Arcanum's 100
+    expect(effectsFor(s, 'arcanum')).toContain('+100 Mana cap');
+  });
+
+  it('Fonts stack, so the mana-costed techs are actually reachable', () => {
+    const s = newGame(1);
+    s.run.flags.magicDiscovered = true;
+    s.run.resources.stone = 2000;
+    s.run.population.total = 20;
+    for (let i = 0; i < 8; i++) expect(build(s, 'arcane-font')).toBe(true);
+    // 20 settlers + 8 Fonts × 25 = 220, enough to bank Prismatic Theory's 200.
+    expect(effectiveCap(s, 'mana')).toBe(220);
+  });
+});
+
+describe('a building never mentions an attunement you have not researched', () => {
+  it('the Quarry hides its Attune recipe until Earth Attunement is in', () => {
+    const s = newGame(1);
+    s.run.tech.push('masonry');
+    s.run.resources.wood = 500;
+    s.run.resources.stone = 500;
+    expect(build(s, 'quarry')).toBe(true);
+    const before = effectsFor(s, 'quarry');
+    expect(before.some((l) => /Attune|Mana|Earth/i.test(l))).toBe(false);
+
+    s.run.tech.push('folk-lore', 'earth-attunement');
+    expect(effectsFor(s, 'quarry').some((l) => /^Attune:/.test(l))).toBe(true);
+  });
+
+  it('and the same holds for the Harbour, Windmill and Forge', () => {
+    for (const [id, gate] of [
+      ['harbor', 'sailing'],
+      ['windmill', 'milling'],
+      ['forge', 'iron-working'],
+    ] as const) {
+      const s = newGame(1);
+      s.run.tech.push(gate, 'construction', 'engineering');
+      s.run.resources.wood = 2000;
+      s.run.resources.stone = 2000;
+      s.run.resources.tools = 100;
+      expect(build(s, id), `${id} should build`).toBe(true);
+      expect(effectsFor(s, id).some((l) => /^Attune:/.test(l)), `${id} before its tech`).toBe(false);
+    }
+  });
+});

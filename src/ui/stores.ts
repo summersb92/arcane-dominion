@@ -336,6 +336,9 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
         lines.push({ text: `+${numStr(e.perSec)} ${RESOURCE_BY_ID[e.resource].label}/s`, cls: 'ok' });
         break;
       case 'convert':
+        // A locked recipe is invisible, exactly like a locked `produce`: a Quarry says
+        // nothing of attuning until the attunement is researched.
+        if (e.requiresTech && !techs.includes(e.requiresTech)) break;
         lines.push({ text: `${e.label ? `${e.label}: ` : ''}${recipeText(e.consume, e.produce, e.requiresWorker)}` });
         break;
       case 'manaUpkeep':
@@ -343,6 +346,9 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
         break;
       case 'resourceCap':
         lines.push({ text: `+${e.amount} ${RESOURCE_BY_ID[e.resource].label} storage`, cls: 'ok' });
+        break;
+      case 'manaCap':
+        lines.push({ text: `+${e.amount} Mana cap`, cls: 'ok' });
         break;
       case 'coinCap':
         lines.push({ text: `+${e.amount} Gold cap`, cls: 'ok' });
