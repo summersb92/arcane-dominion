@@ -6,6 +6,7 @@ import { assignJob } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, runProduction } from '../src/engine/systems/production';
 import { BUILDINGS } from '../src/content/buildings';
 import { RESOURCES } from '../src/content/resources';
+import { dateAt, calendar } from '../src/engine/systems/calendar';
 
 describe('build-tab categories', () => {
   it('every building carries a category; constructs are all "arcane"', () => {
@@ -64,6 +65,36 @@ describe('effective job rates (the tooltip no longer lies)', () => {
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.625, 6);
     s.run.buildings.workshop = 1; // +10% global
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.25 * 1.1, 6);
+  });
+});
+
+describe('chronicle stamps read as in-world dates', () => {
+  // 2s per day, 100 days per season, 4 seasons per year → 200s a season, 800s a year.
+  it('dateAt maps a PAST playtime to its season and year', () => {
+    expect(dateAt(0)).toMatchObject({ season: 'Spring', year: 1, day: 1 });
+    expect(dateAt(199)).toMatchObject({ season: 'Spring', year: 1, day: 100 });
+    expect(dateAt(200)).toMatchObject({ season: 'Summer', year: 1, day: 1 });
+    expect(dateAt(600)).toMatchObject({ season: 'Winter', year: 1 });
+    expect(dateAt(800)).toMatchObject({ season: 'Spring', year: 2, day: 1 });
+    expect(dateAt(-50)).toMatchObject({ season: 'Spring', year: 1 }); // clamped, never negative
+  });
+
+  it('calendar() still reports the live date and the tech gate', () => {
+    const s = newGame(1);
+    s.playtime = 1000; // Summer, year 2
+    expect(calendar(s)).toMatchObject({ unlocked: false, season: 'Summer', year: 2 });
+    s.run.tech.push('calendar');
+    expect(calendar(s).unlocked).toBe(true);
+  });
+
+  it('an entry keeps the date it was logged at, not the current one', () => {
+    const s = newGame(1);
+    s.playtime = 250; // Summer Y1
+    s.run.resources.wood = 100;
+    build(s, 'hut');
+    const at = s.run.chronicle[s.run.chronicle.length - 1].at;
+    s.playtime = 2000; // much later — the stamp must not drift
+    expect(dateAt(at)).toMatchObject({ season: 'Summer', year: 1 });
   });
 });
 

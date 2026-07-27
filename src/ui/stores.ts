@@ -18,7 +18,7 @@ import { TECH_BY_ID, type TechId } from '../content/tech';
 import { productionRates, foodBalance, resourceBreakdown, jobEffectiveProduces } from '../engine/systems/production';
 import { growthStatus, type GrowthInfo } from '../engine/systems/population';
 import { happiness, type HappinessInfo } from '../engine/systems/happiness';
-import { calendar, type CalendarInfo } from '../engine/systems/calendar';
+import { calendar, dateAt, type CalendarInfo } from '../engine/systems/calendar';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -335,10 +335,12 @@ function effectLines(id: BuildingId): TooltipLine[] {
   if ((def.costGrowth ?? 1) > 1) lines.push({ text: 'Cost rises with each copy' });
   return lines;
 }
-function mmss(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds));
-  const m = Math.floor(s / 60);
-  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+/** Chronicle stamps read as in-world DATES rather than a wall clock — the season and year
+ *  the entry happened in. The Calendar tech still earns its keep: it reveals the precise
+ *  DAY and puts the live date in the header. */
+function stamp(playtimeSeconds: number): string {
+  const d = dateAt(playtimeSeconds);
+  return `${d.season} Y${d.year}`;
 }
 
 // ---- derive the panel view-model from canonical state ----
@@ -527,7 +529,7 @@ export function toView(state: GameState): UiState {
     chronicle: run.chronicle
       .slice(-chronicleLines(state))
       .reverse()
-      .map((c) => ({ t: mmss(c.at), text: c.text, kind: c.kind })),
+      .map((c) => ({ t: stamp(c.at), text: c.text, kind: c.kind })),
     calendar: calendar(state),
     government: governmentView(state),
     trade: tradeView(state).map((p) => ({

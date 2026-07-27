@@ -14,18 +14,26 @@ export interface CalendarInfo {
   year: number; // 1-based
 }
 
-/** Derive the current date from playtime + the Calendar-tech unlock flag. */
-export function calendar(state: GameState): CalendarInfo {
+/** The date at an arbitrary point on the playtime clock. Split out from `calendar` so a
+ *  PAST moment can be dated too — the chronicle stamps its entries this way. */
+export function dateAt(playtimeSeconds: number): Omit<CalendarInfo, 'unlocked'> {
   const { daySeconds, daysPerSeason, seasons } = CALENDAR;
   const yearLen = daysPerSeason * seasons.length;
-  const totalDays = Math.floor(state.playtime / daySeconds);
+  const totalDays = Math.floor(Math.max(0, playtimeSeconds) / daySeconds);
   const seasonIndex = Math.floor(totalDays / daysPerSeason) % seasons.length;
   return {
-    unlocked: (state.run.tech as string[]).includes('calendar'),
     totalDays,
     day: (totalDays % daysPerSeason) + 1,
     seasonIndex,
     season: seasons[seasonIndex],
     year: Math.floor(totalDays / yearLen) + 1,
+  };
+}
+
+/** Derive the current date from playtime + the Calendar-tech unlock flag. */
+export function calendar(state: GameState): CalendarInfo {
+  return {
+    unlocked: (state.run.tech as string[]).includes('calendar'),
+    ...dateAt(state.playtime),
   };
 }
