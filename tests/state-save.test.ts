@@ -17,7 +17,7 @@ describe('newGame shape', () => {
     expect(s.run.resources.mana).toBe(0);
     expect(s.run.resources.research).toBe(0);
     expect(s.run.resources.culture).toBe(0);
-    expect(s.run.caps).toEqual({ wood: 500, food: 500, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
+    expect(s.run.caps).toEqual({ wood: 500, food: 3000, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
     expect(s.run.population).toEqual({ total: 0, jobs: {} });
     expect(s.run.popCap).toBe(0);
     expect(s.run.buildings).toEqual({});
@@ -28,7 +28,7 @@ describe('newGame shape', () => {
   it('every resource id is present in a fresh ledger', () => {
     const r = freshResources();
     for (const id of RESOURCE_IDS) expect(typeof r[id]).toBe('number');
-    expect(freshCaps()).toEqual({ wood: 500, food: 500, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
+    expect(freshCaps()).toEqual({ wood: 500, food: 3000, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
   });
 });
 
@@ -365,7 +365,7 @@ describe('base-cap floor on load', () => {
     const res = safeLoad(JSON.stringify(stale));
     expect(res.ok).toBe(true);
     expect(res.state!.run.caps.wood).toBe(500); // floored up to the new base
-    expect(res.state!.run.caps.food).toBe(500);
+    expect(res.state!.run.caps.food).toBe(3000); // the deep-barn rebalance reaches saves in flight
     expect(res.state!.run.caps.stone).toBe(900); // Storehouse gains survive untouched
   });
 });
@@ -383,7 +383,7 @@ describe('normalize backfill', () => {
     };
     normalize(partial);
     expect(partial.settings).toBeDefined();
-    expect(partial.run.caps).toEqual({ wood: 500, food: 500, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
+    expect(partial.run.caps).toEqual({ wood: 500, food: 3000, stone: 500, iron: 200, coal: 200, steel: 200, tools: 200, engines: 200, furniture: 200, parchment: 200, books: 200, compendiums: 200, furs: 200, alchemical: 200, manaCrystals: 200, airEssence: 100, earthEssence: 100, fireEssence: 100, waterEssence: 100 });
     expect(partial.run.population).toEqual({
       total: 0,
       jobs: Object.fromEntries(JOB_IDS.map((j) => [j, 0])),

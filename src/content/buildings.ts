@@ -269,22 +269,23 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Storehouse',
     blurb: 'Shelves, hooks, and a door that locks. Everything keeps better indoors.',
     category: 'storage',
-    cost: { wood: 20, stone: 10 },
+    // Storage is a real building project, priced like one — and it gives back in proportion.
+    cost: { wood: 60, stone: 30 },
     costGrowth: 1.55,
     // Third rung of the opening chain: a settlement that is housed and fed starts
     // wondering where to put things.
     requiresBuilding: 'forager-hut',
-    effects: [{ kind: 'cap', amount: 50 }],
+    effects: [{ kind: 'cap', amount: 150 }],
   },
   {
     id: 'warehouse',
     name: 'Warehouse',
     blurb: 'Row upon row of crates. The food goes elsewhere, by popular demand.',
     category: 'storage',
-    cost: { wood: 60, stone: 40 },
+    cost: { wood: 180, stone: 120 },
     costGrowth: 1.55,
     requiresTech: 'masonry',
-    effects: [{ kind: 'capExceptFood', amount: 100 }],
+    effects: [{ kind: 'capExceptFood', amount: 300 }],
   },
   {
     id: 'woodcutters-lodge',
@@ -374,10 +375,12 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Granary',
     blurb: 'Dry, sealed, and defended against mice with mixed results.',
     category: 'storage',
-    cost: { wood: 30, stone: 10 },
+    // A barn is the biggest thing an early settlement builds, and the most worth building:
+    // against a 3000 base larder it adds a serious fraction, not a rounding error.
+    cost: { wood: 90, stone: 30 },
     costGrowth: 1.55,
     requiresTech: 'pottery',
-    effects: [{ kind: 'foodCap', amount: 400 }],
+    effects: [{ kind: 'foodCap', amount: 1200 }],
   },
   {
     id: 'library',

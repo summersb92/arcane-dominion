@@ -31,10 +31,14 @@ export const STARTING = {
   research: 0,
   culture: 0,
   /** BASE storage cap for each mundane material + furs + mana crystals (raised by Storehouses/Granary).
-   *  The three BOOTSTRAP materials (wood, food, stone) start with a roomier 500 so the opening
-   *  hand-gathering stretch isn't spent bumping the ceiling; everything later starts at 200. */
+   *  Wood and stone start at a roomier 500 so the opening hand-gathering stretch isn't spent
+   *  bumping the ceiling; everything later starts at 200. */
   woodCap: 500,
-  foodCap: 500,
+  /** FOOD starts far higher than anything else. It is the one store whose ceiling decides
+   *  whether the settlement lives: a small larder means a good season is thrown away and the
+   *  next bad one empties it, which is how early settlements were starving. A deep barn lets
+   *  a surplus actually bank into a buffer. */
+  foodCap: 3000,
   stoneCap: 500,
   ironCap: 200,
   coalCap: 200,
@@ -121,8 +125,13 @@ export const WEATHER = {
 
 /** Once a resource's storage cap reaches this, hand-gathering that resource is RETIRED
  *  (the manual button turns off) — by then jobs/constructs out-produce a click, so the
- *  bootstrap is no longer needed. Per-resource: each retires as its own cap crosses this. */
-export const MANUAL_GATHER_RETIRE_CAP = 4000;
+ *  bootstrap is no longer needed. Per-resource: each retires as its own cap crosses this.
+ *
+ *  Held at ~8× the food larder's starting size, the ratio this was originally calibrated at.
+ *  It matters most for FOOD: press-and-hold gathers faster than a Farmer works, which makes
+ *  it a settlement's best emergency answer to a famine. Retiring that the moment someone
+ *  raises their first barn would take the lever away exactly when it is needed. */
+export const MANUAL_GATHER_RETIRE_CAP = 12000;
 
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
 export const POPULATION = {

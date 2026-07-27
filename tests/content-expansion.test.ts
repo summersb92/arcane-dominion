@@ -231,31 +231,31 @@ describe('tool-tier efficiency stacks on a gather job', () => {
 });
 
 describe('new building effects', () => {
-  it('the Warehouse raises every material cap EXCEPT food (+100), gated by Masonry', () => {
+  it('the Warehouse raises every material cap EXCEPT food (+300), gated by Masonry', () => {
     const s = newGame(1);
     expect(build(s, 'warehouse')).toBe(false); // needs Masonry first
     s.run.tech.push('masonry');
-    s.run.resources.wood = 100;
-    s.run.resources.stone = 100;
+    s.run.resources.wood = 200;
+    s.run.resources.stone = 200;
     const before = { ...s.run.caps };
     expect(build(s, 'warehouse')).toBe(true);
-    expect(s.run.caps.wood).toBe(before.wood + 100);
-    expect(s.run.caps.stone).toBe(before.stone + 100);
-    expect(s.run.caps.iron).toBe(before.iron + 100);
-    expect(s.run.caps.furs).toBe(before.furs + 100);
-    expect(s.run.caps.manaCrystals).toBe(before.manaCrystals + 100);
+    expect(s.run.caps.wood).toBe(before.wood + 300);
+    expect(s.run.caps.stone).toBe(before.stone + 300);
+    expect(s.run.caps.iron).toBe(before.iron + 300);
+    expect(s.run.caps.furs).toBe(before.furs + 300);
+    expect(s.run.caps.manaCrystals).toBe(before.manaCrystals + 300);
     expect(s.run.caps.food).toBe(before.food); // food is the ONE exception (use a Granary)
   });
 
-  it('the Granary raises the Food cap only (+400)', () => {
+  it('the Granary raises the Food cap only (+1200)', () => {
     const s = newGame(1);
     s.run.tech.push('pottery');
-    s.run.resources.wood = 30;
-    s.run.resources.stone = 10;
+    s.run.resources.wood = 90;
+    s.run.resources.stone = 30;
     const foodCapBefore = s.run.caps.food;
     const woodCapBefore = s.run.caps.wood;
     expect(build(s, 'granary')).toBe(true);
-    expect(s.run.caps.food).toBe(foodCapBefore + 400);
+    expect(s.run.caps.food).toBe(foodCapBefore + 1200);
     expect(s.run.caps.wood).toBe(woodCapBefore); // wood/stone caps untouched
   });
 

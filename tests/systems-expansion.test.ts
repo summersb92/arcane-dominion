@@ -210,12 +210,12 @@ describe('furs luxury resource + Hunter', () => {
     const s = newGame(1);
     expect(effectiveCap(s, 'furs')).toBe(200);
 
-    // A Storehouse's `cap` effect (+50 each) raises the furs cap too.
+    // A Storehouse's `cap` effect (+150 each) raises the furs cap too.
     reveal(s, 'storehouse'); // the opening chain: House → Farm → Storehouse
     s.run.resources.wood = 100;
     s.run.resources.stone = 100;
     expect(build(s, 'storehouse')).toBe(true);
-    expect(effectiveCap(s, 'furs')).toBe(250);
+    expect(effectiveCap(s, 'furs')).toBe(350);
 
     // Producing past the cap clamps (excess lost). The Lodge adds +20 cap, so read it live.
     s.run.tech.push('archery'); // Lodge gated behind Archery

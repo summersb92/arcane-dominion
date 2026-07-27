@@ -7,6 +7,7 @@ import { growthStatus } from '../src/engine/systems/population';
 import { calendar } from '../src/engine/systems/calendar';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { BUILDING_BY_ID } from '../src/content/buildings';
+import { MANUAL_GATHER_RETIRE_CAP } from '../src/content/config';
 import { assignJob, unassignJob, jobCapacity, idleSettlers } from '../src/engine/systems/jobs';
 import { research } from '../src/engine/systems/tech';
 import { productionRates, resourceBreakdown } from '../src/engine/systems/production';
@@ -204,18 +205,20 @@ describe('calendar (100 days/season, 2s/day, 4 seasons; hidden until unlocked)',
   });
 });
 
-describe('manual gather retires at a 4000 cap', () => {
-  it('turns off hand-gathering for a resource once its cap reaches 4000', () => {
+describe('manual gather retires once storage has outgrown it', () => {
+  it('turns off hand-gathering for a resource once its cap reaches the threshold', () => {
     const s = newGame(1);
     expect(doGather(s, 'gather-wood')).toBe(true); // works at the base 500 cap
-    s.run.caps.wood = 3999; // just short — still worth a click
+    // Read the threshold from the constant, not a literal: this pacing gets retuned, and a
+    // hardcoded figure turns a deliberate rebalance into a mystery failure.
+    s.run.caps.wood = MANUAL_GATHER_RETIRE_CAP - 1; // just short — still worth a click
     expect(actionsView(s).find((a) => a.resource === 'wood')!.retired).toBe(false);
-    s.run.caps.wood = 4000; // storage scaled up — production now covers it
+    s.run.caps.wood = MANUAL_GATHER_RETIRE_CAP; // storage scaled up — production covers it
     const wood = actionsView(s).find((a) => a.resource === 'wood')!;
     expect(wood.retired).toBe(true);
     expect(wood.available).toBe(false);
     expect(doGather(s, 'gather-wood')).toBe(false); // manual earning is off
-    // Other resources still hand-gatherable while their cap is below 4000.
+    // Other resources still hand-gatherable while their cap is below the threshold.
     expect(actionsView(s).find((a) => a.resource === 'stone')!.retired).toBe(false);
     expect(doGather(s, 'quarry-stone')).toBe(true);
   });
