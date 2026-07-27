@@ -10,7 +10,7 @@ import type { PolicyId } from '../content/policies';
 import type { CurriculumId } from '../content/education';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 13; // v13: added the `gold` treasury (Currency line; backfills → 0)
+export const SAVE_VERSION = 14; // v14: added `alchemical` components (Naturalism; backfills → 0)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -90,6 +90,7 @@ export function freshResources(): Record<ResourceId, number> {
   r.books = STARTING.books;
   r.compendiums = STARTING.compendiums;
   r.furs = STARTING.furs;
+  r.alchemical = STARTING.alchemical;
   r.manaCrystals = STARTING.manaCrystals;
   r.mana = STARTING.mana;
   r.airEssence = STARTING.airEssence;
@@ -119,6 +120,7 @@ export function freshCaps(): Record<MundaneResourceId, number> {
     books: STARTING.booksCap,
     compendiums: STARTING.compendiumsCap,
     furs: STARTING.fursCap,
+    alchemical: STARTING.alchemicalCap,
     manaCrystals: STARTING.manaCrystalsCap,
     airEssence: STARTING.essenceCap,
     earthEssence: STARTING.essenceCap,

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { build } from '../src/engine/systems/buildings';
+import { assignJob } from '../src/engine/systems/jobs';
+import { jobEffectiveProduces, productionRates, runProduction } from '../src/engine/systems/production';
+import { TECH_BY_ID } from '../src/content/tech';
 import { toView, buildingTooltip, techTooltip } from '../src/ui/stores';
 
 /** Pull the "Effects" lines a card's tooltip would render for one building. */
@@ -133,5 +136,60 @@ describe('build costs colour per resource, exactly as research does', () => {
     expect(effectsFor(s, 'woodcutters-lodge')).toContain('+1 Woodcutter job');
     s.run.tech.push('writing');
     expect(effectsFor(s, 'academy')).toContain('+2 Scholar jobs'); // pluralized
+  });
+});
+
+describe('Alchemy reveals alchemical components', () => {
+  it('the tech hangs off Mathematics and costs 900', () => {
+    expect(TECH_BY_ID.alchemy.cost).toBe(900);
+    expect(TECH_BY_ID.alchemy.requires).toContain('mathematics');
+  });
+
+  it('Hunters and Ranches only save components once Alchemy is in', () => {
+    const s = newGame(1);
+    s.run.tech.push('archery', 'animal-husbandry');
+    s.run.resources.wood = 500;
+    s.run.resources.stone = 500;
+    expect(build(s, 'hunters-lodge')).toBe(true);
+    expect(build(s, 'ranch')).toBe(true);
+    s.run.population.total = 1;
+    assignJob(s, 'hunter', 1);
+
+    expect(jobEffectiveProduces(s, 'hunter').alchemical).toBeUndefined();
+    expect(productionRates(s).alchemical).toBeCloseTo(0, 6);
+
+    s.run.tech.push('alchemy');
+    expect(jobEffectiveProduces(s, 'hunter').alchemical).toBeCloseTo(0.05, 6);
+    // 0.05 from the Hunter + 0.05 from the Ranch.
+    expect(productionRates(s).alchemical).toBeCloseTo(0.1, 6);
+    // The Hunter's existing output is untouched.
+    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6);
+    expect(jobEffectiveProduces(s, 'hunter').furs).toBeCloseTo(0.15, 6);
+  });
+
+  it('components accumulate on a tick and are capped at 200', () => {
+    const s = newGame(1);
+    s.run.tech.push('animal-husbandry', 'alchemy');
+    s.run.resources.wood = 500;
+    s.run.resources.stone = 500;
+    build(s, 'ranch');
+    runProduction(s, 100); // 0.05/s × 100s
+    expect(s.run.resources.alchemical).toBeCloseTo(5, 6);
+    s.run.resources.alchemical = 10_000;
+    runProduction(s, 1);
+    expect(s.run.resources.alchemical).toBe(200);
+  });
+
+  it('the Ranch stores nothing and the Library shelves only research', () => {
+    const s = newGame(1);
+    s.run.tech.push('animal-husbandry', 'writing');
+    s.run.resources.wood = 500;
+    s.run.resources.stone = 500;
+    const before = { ...s.run.caps };
+    expect(build(s, 'ranch')).toBe(true);
+    expect(s.run.caps).toEqual(before);
+    expect(build(s, 'library')).toBe(true);
+    expect(s.run.caps).toEqual(before); // research is a DERIVED cap, not a stored one
+    expect(effectsFor(s, 'library')).toContain('+50 Research cap');
   });
 });

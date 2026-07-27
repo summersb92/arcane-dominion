@@ -19,6 +19,7 @@ export const STARTING = {
   books: 0,
   compendiums: 0,
   furs: 0,
+  alchemical: 0,
   manaCrystals: 0,
   airEssence: 0,
   earthEssence: 0,
@@ -45,6 +46,7 @@ export const STARTING = {
   booksCap: 200,
   compendiumsCap: 200,
   fursCap: 200,
+  alchemicalCap: 200,
   manaCrystalsCap: 200,
   /** The four elemental essences are SCARCE — a smaller base cap than the materials. */
   essenceCap: 100,

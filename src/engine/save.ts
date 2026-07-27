@@ -123,6 +123,9 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *            caps default to 100 (normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS). Documents the bump.
  *   v11 → v12: added `curriculum` (the Arcanum's chosen discipline). Backfills to null (normalize).
  *   v12 → v13: added the `gold` treasury (the Currency line). Uncapped; backfills to 0 (normalize).
+ *   v13 → v14: added `alchemical` components (Naturalism teaches Hunters + Ranches to save them).
+ *            Defaults to 0 with a 200 cap; normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS loops
+ *            backfill both, so this rung only documents the bump.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;

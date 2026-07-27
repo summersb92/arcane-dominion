@@ -36,6 +36,7 @@ export type TechId =
   | 'masonry'
   | 'writing'
   | 'decimal-system'
+  | 'alchemy'
   | 'bookbinding'
   | 'compendia'
   | 'calendar'
@@ -259,6 +260,14 @@ export const TECHS: TechDef[] = [
     cost: 700,
     requires: ['writing', 'masonry'], // a classic combination tech
     unlocks: ['Observatory (building)', 'Academy (building)'],
+  },
+  {
+    id: 'alchemy',
+    name: 'Alchemy',
+    blurb: 'Measure, distil, repeat. The parts of a beast turn out to be worth more than the beast.',
+    cost: 900,
+    requires: ['mathematics'],
+    unlocks: ['Alchemical Components (good)', 'Hunters + Ranches save components'],
   },
   {
     id: 'decimal-system',

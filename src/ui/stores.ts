@@ -423,6 +423,10 @@ export function toView(state: GameState): UiState {
       // Luxury good — revealed only once discovered (held or being produced). A Hunter at
       // the Hunter's Lodge is what first yields it.
       show = amount > EPS || rates.furs > EPS;
+    } else if (def.id === 'alchemical') {
+      // Revealed by the ALCHEMY tech itself — the point of the tech is learning that these
+      // are worth keeping — and thereafter by holding or producing any.
+      show = state.run.tech.includes('alchemy' as never) || amount > EPS || rates.alchemical > EPS;
     }
     return {
       id: def.id,

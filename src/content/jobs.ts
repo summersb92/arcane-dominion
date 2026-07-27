@@ -29,6 +29,10 @@ export interface JobDef {
   blurb: string;
   /** Per-worker, per-second gross output. */
   produces: Partial<Record<ResourceId, number>>;
+  /** Extra per-worker output that only flows once `tech` is researched — the same idea as
+   *  a building's tech-gated `produce` effect (Alchemy teaches Hunters to save the
+   *  alchemically useful parts). Merged into `produces` by systems/production.ts. */
+  producesWithTech?: { tech: string; produces: Partial<Record<ResourceId, number>> };
   /** The building whose count × slots-per grants this job's assignable capacity. */
   requiresBuildingCapacity: BuildingId;
 }
@@ -53,6 +57,7 @@ export const JOBS: JobDef[] = [
     name: 'Hunter',
     blurb: 'Hunts and traps from the lodge. Comes back with dinner and a story.',
     produces: { food: 0.3, furs: 0.15 },
+    producesWithTech: { tech: 'alchemy', produces: { alchemical: 0.05 } },
     requiresBuildingCapacity: 'hunters-lodge',
   },
   {

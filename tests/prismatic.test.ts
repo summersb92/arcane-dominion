@@ -258,7 +258,7 @@ describe('save migration v10 → v11', () => {
     const res = safeLoad(JSON.stringify(v10));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(10);
-    expect(res.state!.version).toBe(13);
+    expect(res.state!.version).toBe(14);
     expect(res.state!.run.resources.airEssence).toBe(0);
     expect(res.state!.run.resources.prismatic).toBe(0);
     expect(res.state!.run.resources.mana).toBe(7); // preserved

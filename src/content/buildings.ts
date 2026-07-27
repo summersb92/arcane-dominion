@@ -267,9 +267,11 @@ export const BUILDINGS: BuildingDef[] = [
     cost: { wood: 60, stone: 20 },
     costGrowth: 1.15,
     requiresTech: 'animal-husbandry',
+    // Pasture, not a pantry — no storage of its own. Alchemy teaches the hands to render
+    // down what the herd yields besides meat.
     effects: [
       { kind: 'produce', resource: 'food', perSec: 0.4 },
-      { kind: 'cap', amount: STRUCT_CAP },
+      { kind: 'produce', resource: 'alchemical', perSec: 0.05, requiresTech: 'alchemy' },
     ],
   },
   {
@@ -317,10 +319,10 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'jobCapacity', job: 'scholar', slots: 1 },
       { kind: 'produce', resource: 'research', perSec: 0.1 },
+      // A Library shelves RESEARCH and nothing else — no general storage.
       { kind: 'researchCap', amount: 50 },
       // The Decimal System doubles what every Library holds — a second +50 per copy.
       { kind: 'researchCap', amount: 50, requiresTech: 'decimal-system' },
-      { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
   {

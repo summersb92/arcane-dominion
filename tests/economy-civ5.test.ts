@@ -267,7 +267,7 @@ describe('save migration v12 → v13', () => {
     const res = safeLoad(JSON.stringify(v12));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(12);
-    expect(res.state!.version).toBe(13);
+    expect(res.state!.version).toBe(14);
     expect(res.state!.run.resources.gold).toBe(0);
   });
 });

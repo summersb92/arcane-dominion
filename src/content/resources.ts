@@ -19,6 +19,7 @@ export type ResourceId =
   | 'books'
   | 'compendiums'
   | 'furs'
+  | 'alchemical'
   | 'manaCrystals'
   | 'mana'
   | 'airEssence'
@@ -48,6 +49,7 @@ export type MundaneResourceId =
   | 'books'
   | 'compendiums'
   | 'furs'
+  | 'alchemical'
   | 'manaCrystals'
   | 'airEssence'
   | 'earthEssence'
@@ -79,6 +81,10 @@ export const RESOURCES: ResourceDef[] = [
   // Furs — a luxury good hunters bring in; held furs raise happiness, or feed the Tannery.
   { id: 'furs', label: 'Furs', glyph: '🦊', tier: 'mundane', group: 'materials' },
   // ---- GOODS — refined and manufactured (Steelworks + the Age of Steam chains). ----
+  // Alchemical Components — gland, herb and horn, rendered down. The ALCHEMY tech (off
+  // Mathematics) reveals them and teaches Hunters and Ranches to save them. Nothing consumes
+  // them YET; they are stock for a later chain.
+  { id: 'alchemical', label: 'Alchemical Components', glyph: '⚗️', tier: 'mundane', group: 'goods' },
   { id: 'steel', label: 'Steel', glyph: '⚙️', tier: 'mundane', group: 'goods' },
   { id: 'tools', label: 'Tools', glyph: '🛠️', tier: 'mundane', group: 'goods' },
   { id: 'engines', label: 'Engines', glyph: '🔧', tier: 'mundane', group: 'goods' },
@@ -130,6 +136,7 @@ export const MUNDANE_RESOURCE_IDS: MundaneResourceId[] = [
   'books',
   'compendiums',
   'furs',
+  'alchemical',
   'manaCrystals',
   'airEssence',
   'earthEssence',

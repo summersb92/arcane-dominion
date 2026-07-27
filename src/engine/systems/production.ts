@@ -163,6 +163,18 @@ function jobEfficiency(state: GameState, jobId: string): number {
   return m;
 }
 
+/** A job's per-worker BASE output, including any tech-gated extras whose tech is in.
+ *  One place, so the tick, the tooltip and the breakdown can never disagree. */
+function jobProduces(state: GameState, def: (typeof JOBS)[number]): Partial<Record<ResourceId, number>> {
+  const extra = def.producesWithTech;
+  if (!extra || !state.run.tech.includes(extra.tech as never)) return def.produces;
+  const out: Partial<Record<ResourceId, number>> = { ...def.produces };
+  for (const [res, per] of Object.entries(extra.produces)) {
+    out[res as ResourceId] = (out[res as ResourceId] ?? 0) + (per as number);
+  }
+  return out;
+}
+
 /** A job's EFFECTIVE per-worker output — base `produces` × the live efficiency multiplier
  *  (tool techs + Workshop/Forge/Steam Works). The read model for job tooltips, so the
  *  number on screen matches what a settler actually makes. */
@@ -171,7 +183,7 @@ export function jobEffectiveProduces(state: GameState, jobId: string): Partial<R
   if (!def) return {};
   const eff = jobEfficiency(state, jobId);
   const out: Partial<Record<ResourceId, number>> = {};
-  for (const [res, per] of Object.entries(def.produces)) {
+  for (const [res, per] of Object.entries(jobProduces(state, def))) {
     out[res as ResourceId] = (per as number) * eff;
   }
   return out;
@@ -237,7 +249,7 @@ function flows(state: GameState): Flows {
     const workers = run.population.jobs[job.id] ?? 0;
     if (workers <= 0) continue;
     const eff = jobEfficiency(state, job.id);
-    for (const [res, per] of Object.entries(job.produces)) {
+    for (const [res, per] of Object.entries(jobProduces(state, job))) {
       gross[res as ResourceId] += workers * (per as number) * eff;
     }
   }
@@ -335,7 +347,7 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
   for (const job of JOBS) {
     const workers = run.population.jobs[job.id] ?? 0;
     if (workers <= 0) continue;
-    const per = (job.produces as Partial<Record<ResourceId, number>>)[id];
+    const per = jobProduces(state, job)[id];
     if (per) producers.push({ label: `${job.name}${times(workers)}`, amount: workers * per * jobEfficiency(state, job.id) });
   }
   // Constructs that produce this resource (count × per-second, no pop/food).
@@ -416,6 +428,7 @@ export function runProduction(state: GameState, dt: number): void {
   run.resources.books += f.gross.books * dt;
   run.resources.compendiums += f.gross.compendiums * dt;
   run.resources.furs += f.gross.furs * dt; // luxury; clamped below like the other capped materials
+  run.resources.alchemical += f.gross.alchemical * dt; // Naturalism's by-product (Hunter + Ranch)
   // Prismatic: the four essences (capped) and the fused light (uncapped).
   run.resources.airEssence += f.gross.airEssence * dt;
   run.resources.earthEssence += f.gross.earthEssence * dt;
@@ -476,7 +489,7 @@ export function runProduction(state: GameState, dt: number): void {
   // materials + furs + mana crystals, plus RESEARCH (capped by science buildings) and GOLD
   // (capped by housing once Currency is in — effectiveCap returns Infinity before that, so
   // listing it here is harmless pre-coinage). Mana/culture/prismatic are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'alchemical', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
   }
@@ -498,4 +511,5 @@ const RESOURCE_FIRSTS: [ResourceId, string, string][] = [
   ['books', 'firstBook', 'The first book is bound. Two settlers can read it.'],
   ['compendiums', 'firstCompendium', 'A compendium is finished. It settles three arguments and starts five.'],
   ['prismatic', 'firstPrismatic', 'The lens holds. Prismatic light pools like water that forgot to fall.'],
+  ['alchemical', 'firstAlchemical', 'Jars of gland and herb line a shelf. Nobody is quite sure what for — yet.'],
 ];
