@@ -9,15 +9,21 @@
   <summary><span class="chtitle">Chronicle</span></summary>
   <ul class="chron">
     {#each $game.chronicle as c}
-      <li>
-        <span class:ev={c.kind === 'ev'} class:found={c.kind === 'found'}>{c.text}</span>
-      </li>
+      {#if c.kind === 'season'}
+        <!-- A dated rule between two stretches of log, written once the Calendar lands. -->
+        <li class="sdiv"><span class="slabel">{c.text}</span></li>
+      {:else}
+        <li>
+          <span class:ev={c.kind === 'ev'} class:found={c.kind === 'found'}>{c.text}</span>
+        </li>
+      {/if}
     {/each}
   </ul>
 </details>
 
 <style>
   .chronbox {
+    margin-top: 18px;
     margin-bottom: 16px;
     border: 1px solid var(--edge);
     border-radius: 8px;
@@ -66,6 +72,28 @@
   ul.chron :global(li + li) {
     border-top: 1px solid var(--edge);
     padding-top: 6px;
+  }
+  /* The season divider: a centred, dated rule rather than a log line. The label sits on the
+     rule itself, so a long stretch of log reads as chapters. */
+  ul.chron :global(li.sdiv) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 6px;
+  }
+  ul.chron :global(li.sdiv)::before,
+  ul.chron :global(li.sdiv)::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--edge);
+  }
+  .slabel {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--label);
+    white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
     summary::before {

@@ -30,6 +30,14 @@ export function dateAt(playtimeSeconds: number): Omit<CalendarInfo, 'unlocked'> 
   };
 }
 
+/** The ABSOLUTE season number since the run began (0, 1, 2, … — not the 0..3 index within a
+ *  year). The chronicle's season roll-up keys off this so it can tell Spring Year 1 from
+ *  Spring Year 2. */
+export function currentSeasonOrdinal(playtimeSeconds: number): number {
+  const { daySeconds, daysPerSeason } = CALENDAR;
+  return Math.floor(Math.floor(Math.max(0, playtimeSeconds) / daySeconds) / daysPerSeason);
+}
+
 /** Derive the current date from playtime + the Calendar-tech unlock flag. */
 export function calendar(state: GameState): CalendarInfo {
   return {

@@ -11,6 +11,7 @@
 // free actions; the ongoing upkeep is the price. Pure engine, no DOM.
 
 import { POLICIES, POLICY_BY_ID, type PolicyDef, type PolicyId } from '../../content/policies';
+import type { TechId } from '../../content/tech';
 import type { GameState } from '../state';
 import { logEvent } from './chronicle';
 
@@ -145,11 +146,25 @@ export interface PolicyRowView {
   canEnact: boolean; // available + a free slot
   effects: { text: string; good: boolean }[]; // human-readable effect lines
 }
+/** One selectable form on the Government panel. Forms are still LINEAR — the highest
+ *  governance tech researched is the form in force — so `active` is derived, not chosen.
+ *  The row exists so the panel can show the whole ladder and what each rung is worth. */
+export interface FormRowView {
+  id: GovernmentForm;
+  label: string;
+  active: boolean;
+  unlocked: boolean;
+  /** The tech that grants this form, named so a locked rung explains itself. */
+  requiresTech: string;
+  bonusText: string[];
+}
+
 export interface GovernmentView {
   unlocked: boolean;
   form: GovernmentForm;
   formLabel: string;
   formBonusText: string[]; // the current form's passive, as lines
+  forms: FormRowView[]; // the governance ladder (council → monarchy → republic)
   slots: number;
   used: number;
   suspended: boolean; // culture is dry — everything enacted is dormant
@@ -169,6 +184,13 @@ export function policyEffectLines(def: PolicyDef): { text: string; good: boolean
   return out;
 }
 
+/** The governance ladder, in the order it is climbed, with the tech that opens each rung. */
+const FORM_LADDER: { id: Exclude<GovernmentForm, 'none'>; requiresTech: TechId; bonusText: string[] }[] = [
+  { id: 'council', requiresTech: 'code-of-laws', bonusText: ['+1 policy slot'] },
+  { id: 'monarchy', requiresTech: 'monarchy', bonusText: ['+5% worker output', '+1 policy slot'] },
+  { id: 'republic', requiresTech: 'republic', bonusText: ['+25% Culture production', '+5 happiness', '+1 policy slot'] },
+];
+
 export function governmentView(state: GameState): GovernmentView {
   const unlocked = governanceUnlocked(state);
   const form = currentForm(state);
@@ -184,6 +206,14 @@ export function governmentView(state: GameState): GovernmentView {
     form,
     formLabel: FORM_LABELS[form],
     formBonusText,
+    forms: FORM_LADDER.map((f) => ({
+      id: f.id,
+      label: FORM_LABELS[f.id],
+      active: form === f.id,
+      unlocked: state.run.tech.includes(f.requiresTech),
+      requiresTech: f.requiresTech,
+      bonusText: f.bonusText,
+    })),
     slots,
     used,
     suspended: used > 0 && policiesSuspended(state),

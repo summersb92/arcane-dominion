@@ -70,6 +70,11 @@ export const HAPPINESS = {
   crowdingPerSettler: 2, // −2 happiness per settler ABOVE the free buffer
   cultureWorkerBonus: 5, // + morale per assigned Entertainer (the Amphitheater's job)
   growthThreshold: 50, // growth pauses while happiness is below this
+  /** LUXURY goods scale with the settlement. The per-point costs below are quoted for a
+   *  settlement of this size; a bigger town needs proportionally more of a luxury to feel
+   *  the same lift, so a wardrobe that delighted a hamlet barely registers in a city.
+   *  At or below this population nothing is scaled up. */
+  luxuryPopBaseline: 10,
   /** Furs are a LUXURY: held furs raise happiness — +1 per this many furs held… */
   fursPerHappiness: 10,
   /** …capped at this much total happiness from furs (accumulating more is future trade). */
@@ -87,6 +92,31 @@ export const CALENDAR = {
   daySeconds: 2, // real/sim seconds per in-game day
   daysPerSeason: 100, // days in a season
   seasons: ['Spring', 'Summer', 'Autumn', 'Winter'] as const, // 4 seasons → a year
+};
+
+/** SEASONS bite (systems/weather.ts). Spring is the growing season and lifts EVERY food
+ *  source; Winter starves the fields but not the woods — Hunters are exempt, which is the
+ *  whole reason to keep a Lodge staffed through the cold. Summer and Autumn are neutral. */
+export const SEASON = {
+  /** × to all food production in Spring. */
+  springFoodMult: 1.5,
+  /** × to NON-HUNTER food production in Winter (Hunters keep their full yield). */
+  winterFoodMult: 0.5,
+};
+
+/** WEATHER (systems/weather.ts) — a short-lived swing on top of the season, derived
+ *  deterministically from the seed and the day, so it survives save/load and offline
+ *  catch-up without being stored. Most spells are ordinary; the extremes are rare and
+ *  worth a chronicle line. Later: elemental-affinity policies that bias the roll. */
+export const WEATHER = {
+  /** How many in-game DAYS one spell of weather lasts (a season is 100 days). */
+  periodDays: 20,
+  /** The possible swings, as a ± fraction of food production, in 5% increments. */
+  steps: [-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15],
+  /** Relative likelihood of each step, aligned to `steps` — fair weather dominates. */
+  weights: [1, 2, 4, 20, 4, 2, 1],
+  /** A swing at least this large is a MAJOR event: it earns a chronicle line. */
+  majorThreshold: 0.15,
 };
 
 /** Once a resource's storage cap reaches this, hand-gathering that resource is RETIRED
@@ -115,6 +145,11 @@ export const POPULATION = {
    *  keeping people happy is itself a food policy (systems/production.ts idleFoodPerSettler
    *  × happiness/100). */
   idleFoodPerSettler: 4.2,
+  /** A full granary is itself a reason to grow. While the food store sits at or above this
+   *  FRACTION of its cap, the settlement keeps growing even on a negative net rate — it is
+   *  eating into a surplus it already banked, which is what a surplus is for. Below it,
+   *  growth needs a non-negative rate again. */
+  growthReserveFraction: 0.25,
   /** Seconds of sustained food surplus (and free housing) to gain one settler. */
   growthIntervalSec: 8,
   /** Seconds of sustained starvation before one settler is lost. */

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { newGame } from '../src/engine/state';
+import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { build } from '../src/engine/systems/buildings';
 import { jobEffectiveProduces, productionRates } from '../src/engine/systems/production';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import {
   educationUnlocked,
   setCurriculum,
@@ -157,7 +158,7 @@ describe('opposition — the stronger element drowns out the weaker, asymptotica
     const factor = 1 - 0.9 * (400 / 460);
     expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(1 * (1 + 0.4 * factor), 6);
     // Water's own empowerment is untouched (it is the stronger side).
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.5, 6); // capped at +50%
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.5 * foodEnvMult(s), 6); // capped at +50%
   });
 });
 
@@ -215,7 +216,7 @@ describe('save migration v11 → v12', () => {
     const res = safeLoad(JSON.stringify(v11));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(11);
-    expect(res.state!.version).toBe(14);
+    expect(res.state!.version).toBe(SAVE_VERSION);
     expect(res.state!.run.curriculum).toBe(null);
   });
 });

@@ -15,10 +15,17 @@ import {
 import { JOB_BY_ID, type JobId } from '../content/jobs';
 import { BUILDING_BY_ID, type BuildingCategory, type BuildingEffect, type BuildingId } from '../content/buildings';
 import { TECH_BY_ID, type TechId } from '../content/tech';
-import { productionRates, foodBalance, resourceBreakdown, jobEffectiveProduces } from '../engine/systems/production';
-import { growthStatus, type GrowthInfo } from '../engine/systems/population';
+import {
+  productionRates,
+  foodBalance,
+  resourceBreakdown,
+  jobEffectiveProduces,
+  type MultiplierLine,
+} from '../engine/systems/production';
+import { growthStatus, foodAllowsGrowth, type GrowthInfo } from '../engine/systems/population';
 import { happiness, type HappinessInfo } from '../engine/systems/happiness';
 import { calendar, type CalendarInfo } from '../engine/systems/calendar';
+import { weather, type WeatherInfo } from '../engine/systems/weather';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -69,6 +76,10 @@ export interface ResourceView {
   magic: boolean;
   group: ResourceGroup; // display section in the resource column
   show: boolean; // progressive reveal — hide magic rows until discovered
+  /** This resource is actively BLOCKING something (today: food holding back population
+   *  growth) — the row shows a `!`. Distinct from atCap, which is about waste, not stalling. */
+  warn?: boolean;
+  warnText?: string; // hover title for the `!`
 }
 export interface PopulationView {
   total: number;
@@ -166,7 +177,8 @@ export interface TradeRowView {
 }
 export interface ChronicleView {
   text: string;
-  kind?: 'ev' | 'found';
+  /** 'season' renders as a dated divider rule rather than a log line. */
+  kind?: 'ev' | 'found' | 'season';
 }
 export interface UiState {
   resources: ResourceView[];
@@ -178,6 +190,7 @@ export interface UiState {
   tabs: { id: string; label: string; visible: boolean; locked: boolean; badge?: number }[];
   chronicle: ChronicleView[];
   calendar: CalendarInfo; // current date; the SEASON always shows, day/year need the tech
+  weather: WeatherInfo; // the current spell and its swing on food (systems/weather.ts)
   government: GovernmentView; // forms + policies (systems/government.ts)
   trade: TradeRowView[]; // market stalls unlocked by Currency / Banking (systems/trade.ts)
   education: EducationView; // Arcanum yield, curriculum focus, opposition (systems/education.ts)
@@ -354,7 +367,8 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
         lines.push({ text: `+${e.amount} Mana cap`, cls: 'ok' });
         break;
       case 'coinCap':
-        lines.push({ text: `+${e.amount} Gold cap`, cls: 'ok' });
+        // The treasury resource is labelled "Wealth" everywhere else — say the same here.
+        lines.push({ text: `+${e.amount} Wealth cap`, cls: 'ok' });
         break;
       case 'researchCap':
         // Emitted once, at the first researchCap effect, as the combined total.
@@ -368,6 +382,54 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
     }
   };
   for (const e of def.effects) push(e);
+  return lines;
+}
+
+/**
+ * What ONE copy of a building is actually worth per second, all in: passive output, plus
+ * every running converter recipe's trade (output minus input), minus mana upkeep. The
+ * Effects list above itemizes; this answers the question the itemization doesn't — "so does
+ * this thing put me ahead or not?" Tech-gated effects stay out until their tech is in.
+ */
+function netProduceLines(id: BuildingId, techs: readonly string[] = []): TooltipLine[] {
+  const def = BUILDING_BY_ID[id];
+  if (!def) return [];
+  const net: Partial<Record<ResourceId, number>> = {};
+  const bump = (res: ResourceId, amt: number): void => {
+    net[res] = (net[res] ?? 0) + amt;
+  };
+  for (const e of def.effects) {
+    if (e.kind === 'produce') {
+      if (e.requiresTech && !techs.includes(e.requiresTech)) continue;
+      bump(e.resource, e.perSec);
+    } else if (e.kind === 'convert') {
+      if (e.requiresTech && !techs.includes(e.requiresTech)) continue;
+      for (const [res, per] of Object.entries(e.produce)) bump(res as ResourceId, per as number);
+      for (const [res, per] of Object.entries(e.consume)) bump(res as ResourceId, -(per as number));
+    } else if (e.kind === 'manaUpkeep') {
+      bump('mana', -e.perSec);
+    }
+  }
+  const entries = (Object.entries(net) as [ResourceId, number][]).filter(([, v]) => Math.abs(v) > EPS);
+  const lines: TooltipLine[] = entries.map(([res, v]) => ({
+    text: `${RESOURCE_BY_ID[res].label}  ${signedRate(v)}`,
+    cls: v > 0 ? 'ok' : 'life',
+  }));
+
+  // A WORKPLACE produces nothing on its own — it opens a job. Saying "nothing" would be
+  // useless on a Farm, so report what a copy is worth once STAFFED, at the settlement's
+  // current multipliers. That is the number the build decision actually turns on.
+  for (const e of def.effects) {
+    if (e.kind !== 'jobCapacity') continue;
+    const per = jobEffectiveProduces(getState(), e.job);
+    for (const [res, amt] of Object.entries(per) as [ResourceId, number][]) {
+      if (Math.abs(amt) <= EPS) continue;
+      lines.push({
+        text: `${RESOURCE_BY_ID[res].label}  ${signedRate(amt * e.slots)}  (staffed)`,
+        cls: amt > 0 ? 'ok' : 'life',
+      });
+    }
+  }
   return lines;
 }
 
@@ -441,6 +503,9 @@ export function toView(state: GameState): UiState {
       // are worth keeping — and thereafter by holding or producing any.
       show = state.run.tech.includes('alchemy' as never) || amount > EPS || rates.alchemical > EPS;
     }
+    // Food carries a growth warning: when neither a surplus nor a deep enough reserve is
+    // there, the settlement simply stops growing — and that is invisible from the rate alone.
+    const warn = def.id === 'food' && !foodAllowsGrowth(state);
     return {
       id: def.id,
       label: def.label,
@@ -453,6 +518,8 @@ export function toView(state: GameState): UiState {
       magic,
       group: def.group,
       show,
+      warn,
+      warnText: warn ? 'Population growth is paused — food is neither in surplus nor deeply stocked.' : undefined,
     };
   });
 
@@ -583,6 +650,7 @@ export function toView(state: GameState): UiState {
       .reverse()
       .map((c) => ({ text: c.text, kind: c.kind })),
     calendar: calendar(state),
+    weather: weather(state),
     government: governmentView(state),
     trade: tradeView(state).map((p) => ({
       id: p.id,
@@ -619,7 +687,48 @@ export function openTip(e: Event, content: TooltipContent): void {
   showTooltip(content, { left: r.left, top: r.top, right: r.right, bottom: r.bottom });
 }
 
-/** Resource row tooltip: net rate + storage note. */
+/** Render one multiplier line: a true factor as `×1.25`, an additive share of a stacking
+ *  group as `+6%`. Both are "this much more", written the way the mechanic actually works. */
+function multText(m: MultiplierLine): string {
+  if (m.add !== undefined) {
+    const pct = m.add * 100;
+    return `${pct >= 0 ? '+' : ''}${+pct.toFixed(1)}%  ${m.label}`;
+  }
+  return `×${(m.mult ?? 1).toFixed(2)}  ${m.label}`;
+}
+
+/** Whether a multiplier line HELPS (green) or hurts (red) — a winter or a sour mood is a
+ *  penalty and should not read like a bonus. */
+function multCls(m: MultiplierLine): string {
+  const good = m.add !== undefined ? m.add >= 0 : (m.mult ?? 1) >= 1;
+  return good ? 'ok' : 'life';
+}
+
+/** What to do about a full store, named for the resource — the advice has to be actionable.
+ *  Mana in particular is carried in PEOPLE, so "build a Storehouse" is simply wrong for it. */
+function atCapNote(id: ResourceId): string {
+  switch (id) {
+    case 'mana':
+      return 'At cap — further mana is lost. Mana is carried in settlers: grow the population, or raise an Arcane Font or Arcanum to deepen the pool.';
+    case 'research':
+      return 'At cap — further research is lost. Raise a Library, Observatory or Academy to shelve more.';
+    case 'culture':
+      return 'At cap — further culture is forgotten. Civic works (Temple, Forum, Monastery) are what let a settlement hold more.';
+    case 'gold':
+      return 'At cap — further wealth has nowhere to sit. Houses and a Harbour hold the treasury.';
+    case 'food':
+      return 'At cap — further food spoils. Build a Granary.';
+    case 'airEssence':
+    case 'earthEssence':
+    case 'fireEssence':
+    case 'waterEssence':
+      return 'At cap — further essence disperses. Spend it, or raise storage.';
+    default:
+      return 'At cap — further gains are wasted. Build a Storehouse.';
+  }
+}
+
+/** Resource row tooltip: who makes it, what boosts it, who eats it, and the net. */
 export function resourceTooltip(r: ResourceView): TooltipContent {
   // Show the MATH: who produces this resource, who consumes it, and the net /s.
   const bd = resourceBreakdown(getState(), r.id);
@@ -630,10 +739,24 @@ export function resourceTooltip(r: ResourceView): TooltipContent {
       lines: bd.producers.map((p) => ({ text: `${p.label}  ${signedRate(p.amount)}`, cls: 'ok' })),
     });
   }
+  // The boosts already baked into those figures — the "why is my Farm worth more than it
+  // says on the tin" line the build cards can't show.
+  if (bd.producerMults.length) {
+    sections.push({
+      label: 'Multipliers',
+      lines: bd.producerMults.map((m) => ({ text: multText(m), cls: multCls(m) })),
+    });
+  }
   if (bd.consumers.length) {
     sections.push({
       label: 'Consumed by',
       lines: bd.consumers.map((c) => ({ text: `${c.label}  ${signedRate(c.amount)}`, cls: 'life' })),
+    });
+  }
+  if (bd.consumerMults.length) {
+    sections.push({
+      label: 'Multipliers',
+      lines: bd.consumerMults.map((m) => ({ text: multText(m), cls: multCls(m) })),
     });
   }
   sections.push({
@@ -645,11 +768,8 @@ export function resourceTooltip(r: ResourceView): TooltipContent {
       },
     ],
   });
-  if (r.capped) {
-    // Exact on hover — the compact row floors its figure, this is the precise one.
-    sections.push({ label: 'Stored', lines: [{ text: `${fmtCost(+r.amount.toFixed(2))} / ${fmtCost(r.cap)}` }] });
-  }
-  const note = r.atCap ? 'At cap — further gains are wasted. Build a Storehouse.' : undefined;
+  // No "Stored" section: the row itself already reads `amount / cap` right beside the cursor.
+  const note = r.atCap ? atCapNote(r.id) : undefined;
   return { title: r.label, titleCls: resToken(r.id), sections, note };
 }
 
@@ -677,7 +797,10 @@ export function buildingTooltip(b: BuildingRowView): TooltipContent {
   ];
   const fx = effectLines(b.id, b.techs);
   if (fx.length) sections.push({ label: 'Effects', lines: fx });
-  sections.push({ label: 'Built', lines: [{ text: String(b.count) }] });
+  // The bottom line, always: what a copy nets per second once its inputs and upkeep are
+  // paid. (The count already sits on the card as a ×N chip, so no "Built" row here.)
+  const net = netProduceLines(b.id, b.techs);
+  if (net.length) sections.push({ label: 'Net per copy', lines: net });
   const note = b.maxed ? 'Built to its maximum.' : !b.affordable ? "You can't afford this yet." : undefined;
   return {
     title: b.construct ? `${b.name} · construct` : b.name,
@@ -738,8 +861,10 @@ export function happinessTooltip(h: HappinessInfo): TooltipContent {
       {
         label: 'Breakdown',
         lines: h.breakdown.map((b) => ({
-          text: `${b.label}  ${b.amount >= 0 ? '+' : ''}${Math.round(b.amount * 10) / 10}`,
-          cls: b.amount >= 0 ? 'ok' : 'life',
+          // A luxury that isn't stocked deeply enough to pay its full bonus reads AMBER,
+          // not green: it IS helping, but there is morale left on the table.
+          text: `${b.label}  ${b.amount >= 0 ? '+' : ''}${Math.round(b.amount * 10) / 10}${b.short ? ' ⚠' : ''}`,
+          cls: b.short ? 'warn' : b.amount >= 0 ? 'ok' : 'life',
         })),
       },
       {

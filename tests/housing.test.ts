@@ -3,6 +3,7 @@ import { newGame } from '../src/engine/state';
 import { build } from '../src/engine/systems/buildings';
 import { jobCapacity } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, productionRates } from '../src/engine/systems/production';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import { techView, research } from '../src/engine/systems/tech';
 import { BUILDING_BY_ID } from '../src/content/buildings';
 import { TECH_BY_ID } from '../src/content/tech';
@@ -104,7 +105,7 @@ describe('the founding workplaces and the early tech openers', () => {
     expect(s.run.resources.stone).toBe(60);
 
     const withHoe = jobEffectiveProduces(s, 'forager').food!;
-    expect(withHoe).toBeCloseTo(6 * 1.25, 6); // the Hoe is the Farmer upgrade
+    expect(withHoe).toBeCloseTo(6 * 1.25 * foodEnvMult(s), 6); // the Hoe is the Farmer upgrade
     expect(research(s, 'agriculture')).toBe(true); // now revealed, 150 research
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(withHoe, 6); // gateway only
   });
@@ -122,8 +123,8 @@ describe('the founding workplaces and the early tech openers', () => {
 
     // FLAT food: no settlers, no workers, no inputs.
     expect(s.run.population.total).toBe(0);
-    expect(productionRates(s).food).toBeCloseTo(0.4, 6);
+    expect(productionRates(s).food).toBeCloseTo(0.4 * foodEnvMult(s), 6);
     expect(build(s, 'ranch')).toBe(true); // stacks per copy
-    expect(productionRates(s).food).toBeCloseTo(0.8, 6);
+    expect(productionRates(s).food).toBeCloseTo(0.8 * foodEnvMult(s), 6);
   });
 });

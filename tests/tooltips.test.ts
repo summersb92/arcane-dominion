@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { build, setRecipeActive, setActive, activeCount } from '../src/engine/systems/buildings';
 import { happiness } from '../src/engine/systems/happiness';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import { effectiveCap } from '../src/engine/systems/caps';
 import { assignJob } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, productionRates, runProduction } from '../src/engine/systems/production';
@@ -42,7 +43,7 @@ describe('building tooltips hide effects still behind a tech gate', () => {
   });
 
   it('the House advertises the treasury it underwrites', () => {
-    expect(effectsFor(newGame(1), 'hut')).toContain('+100 Gold cap');
+    expect(effectsFor(newGame(1), 'hut')).toContain('+100 Wealth cap');
   });
 
   it('the Farm House is housing and a Farm job — no storage at all', () => {
@@ -166,7 +167,7 @@ describe('Alchemy reveals alchemical components', () => {
     // 0.05 from the Hunter + 0.05 from the Ranch.
     expect(productionRates(s).alchemical).toBeCloseTo(0.1, 6);
     // The Hunter's existing output is untouched.
-    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6);
+    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3 * foodEnvMult(s, true), 6);
     expect(jobEffectiveProduces(s, 'hunter').furs).toBeCloseTo(0.15, 6);
   });
 
@@ -247,6 +248,7 @@ describe('the Entertainer draws on the treasury', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 400;
     s.run.resources.stone = 400;
+    s.run.resources.gold = 400; // the Amphitheater is bought with stone and coin now
     expect(build(s, 'amphitheater')).toBe(true);
     expect(build(s, 'amphitheater')).toBe(true);
     s.run.population.total = 2;
@@ -589,7 +591,7 @@ describe('the House keeps coin, not cargo', () => {
     expect(build(s, 'hut')).toBe(true);
     expect(s.run.caps).toEqual(before); // every material ceiling untouched
     expect(effectiveCap(s, 'gold')).toBe(100);
-    expect(effectsFor(s, 'hut')).toEqual(['+1 housing', '+100 Gold cap']);
+    expect(effectsFor(s, 'hut')).toEqual(['+1 housing', '+100 Wealth cap']);
   });
 });
 

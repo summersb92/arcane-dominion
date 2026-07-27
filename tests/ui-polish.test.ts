@@ -99,13 +99,13 @@ describe('chronicle stamps read as in-world dates', () => {
 });
 
 describe('chronicle quips', () => {
-  it('the FIRST copy of a building logs a story beat; the second logs a plain receipt', () => {
+  it('the FIRST copy of a building logs a story beat; repeats log nothing at all', () => {
     const s = newGame(1);
     s.run.resources.wood = 100;
     expect(build(s, 'hut')).toBe(true);
     expect(s.run.chronicle.some((c) => c.text.includes('It leans, but it stands'))).toBe(true);
     expect(build(s, 'hut')).toBe(true);
-    expect(s.run.chronicle.filter((c) => c.text === 'Built House.').length).toBe(1);
+    expect(s.run.chronicle.filter((c) => c.text.startsWith('Built ')).length).toBe(0);
   });
 
   it('population milestones log once (10 settlers)', () => {

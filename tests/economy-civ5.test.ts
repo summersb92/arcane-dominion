@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { newGame } from '../src/engine/state';
+import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { build, buildingCost, buildingsView } from '../src/engine/systems/buildings';
 import { productionRates } from '../src/engine/systems/production';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import { research } from '../src/engine/systems/tech';
 import { buy, canBuy, tradeView } from '../src/engine/systems/trade';
 import { effectiveCap } from '../src/engine/systems/caps';
@@ -23,11 +24,12 @@ describe('House: 10 wood, +1 population', () => {
 });
 
 describe('cost escalation is legible (the "43 wood / 20-wood Farm" confusion)', () => {
-  it('repeatable workplaces now grow gently (1.15), not steeply (1.30)', () => {
+  it('repeatable workplaces still grow gently (1.25), not steeply', () => {
     // The old 1.3 curve made the 4th Farm cost 44 — more than double the first — which read
-    // as a bug. 1.15 keeps a farm belt affordable while still curving.
+    // as a bug. 1.25 keeps a farm belt affordable while still curving, a touch more sharply
+    // than the 1.15 it replaced.
     for (const id of ['forager-hut', 'woodcutters-lodge', 'quarry', 'mine', 'harbor'] as const) {
-      expect(BUILDING_BY_ID[id].costGrowth, id).toBe(1.15);
+      expect(BUILDING_BY_ID[id].costGrowth, id).toBe(1.25);
     }
     const s = newGame(1);
     s.run.resources.wood = 100_000;
@@ -36,8 +38,9 @@ describe('cost escalation is legible (the "43 wood / 20-wood Farm" confusion)', 
       ladder.push(buildingCost(s, 'forager-hut').wood as number);
       build(s, 'forager-hut');
     }
-    expect(ladder).toEqual([20, 23, 27, 31]); // was [20, 26, 34, 44]
-    // 43 wood — the exact amount from the report — now buys the 4th Farm.
+    expect(ladder).toEqual([20, 25, 32, 40]); // was [20, 23, 27, 31] on the 1.15 curve
+    // The 4th Farm is 40 wood — still under the 43 from the original report, so the
+    // complaint that prompted this curve stays fixed even after the sharpening.
     const t = newGame(1);
     t.run.buildings['forager-hut'] = 3;
     t.run.resources.wood = 43;
@@ -112,7 +115,7 @@ describe('Civ 5 naval line: Sailing → Harbour → Navigation → Seaport', () 
     const capBefore = s.run.caps.wood;
     expect(build(s, 'harbor')).toBe(true);
     const r = productionRates(s);
-    expect(r.food).toBeCloseTo(0.3, 6);
+    expect(r.food).toBeCloseTo(0.3 * foodEnvMult(s), 6); // × season/weather
     expect(r.gold).toBeCloseTo(0.15, 6);
     expect(s.run.caps.wood).toBe(capBefore + 40); // and storage
     expect(TECH_BY_ID.sailing.requires).toContain('pottery');
@@ -156,9 +159,9 @@ describe('the base workplaces store their own yield and sharpen their own job', 
     const s = newGame(1);
     s.run.buildings['woodcutters-lodge'] = 10;
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.2, 6);
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6, 6); // Farmers untouched
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * foodEnvMult(s), 6); // Farmers untouched
     s.run.buildings['forager-hut'] = 5;
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.1, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.1 * foodEnvMult(s), 6);
   });
 });
 
@@ -273,7 +276,7 @@ describe('save migration v12 → v13', () => {
     const res = safeLoad(JSON.stringify(v12));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(12);
-    expect(res.state!.version).toBe(14);
+    expect(res.state!.version).toBe(SAVE_VERSION);
     expect(res.state!.run.resources.gold).toBe(0);
   });
 });

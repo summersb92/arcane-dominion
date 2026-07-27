@@ -10,7 +10,7 @@ import type { PolicyId } from '../content/policies';
 import type { CurriculumId } from '../content/education';
 import { seedFrom } from './rng';
 
-export const SAVE_VERSION = 14; // v14: added `alchemical` components (Naturalism; backfills → 0)
+export const SAVE_VERSION = 15; // v15: added `seasonTally` (per-season birth/death chronicle roll-up)
 
 // Re-export the content-owned resource types so engine/save/cli import them from state
 // (the historical import site) without reaching into content directly.
@@ -25,7 +25,19 @@ export interface Population {
 export interface ChronicleEntry {
   at: number; // simulated-playtime seconds
   text: string;
-  kind?: 'ev' | 'found';
+  /** 'season' is a DIVIDER, not an event — the dated rule between two stretches of the log
+   *  (only written once the Calendar tech makes dates meaningful). */
+  kind?: 'ev' | 'found' | 'season';
+}
+
+/** Births and deaths for the season currently underway. The chronicle reports the SEASON,
+ *  not the settler: individual arrivals are noise, "four born, one lost" is a story. Flushed
+ *  into a single line when the season turns (systems/chronicle.ts runChronicleWatch). */
+export interface SeasonTally {
+  /** Absolute season ordinal since the run began (not the 0..3 index within a year). */
+  index: number;
+  born: number;
+  died: number;
 }
 
 export interface RunState {
@@ -53,6 +65,8 @@ export interface RunState {
   growthProgress: number;
   flags: Record<string, boolean>;
   chronicle: ChronicleEntry[];
+  /** Births/deaths accumulating for the season underway (see SeasonTally). */
+  seasonTally: SeasonTally;
 }
 
 export interface Settings {
@@ -160,6 +174,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       growthProgress: 0,
       flags: {},
       chronicle: [{ at: 0, text: OPENINGS[(seed >>> 0) % OPENINGS.length] }],
+      seasonTally: { index: 0, born: 0, died: 0 },
     },
     settings: { notation: 'suffix', theme: 'kittens', chronicleLines: 8, font: 'mono', fontScale: 100 },
     playtime: 0,

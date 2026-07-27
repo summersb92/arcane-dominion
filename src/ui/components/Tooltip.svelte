@@ -137,6 +137,10 @@
   .tip-line.life {
     color: var(--life);
   }
+  /* Helping, but not as much as it could — a luxury too thinly spread for the settlement. */
+  .tip-line.warn {
+    color: var(--gold);
+  }
   .tip-net {
     display: flex;
     justify-content: space-between;

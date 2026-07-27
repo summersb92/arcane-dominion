@@ -14,6 +14,7 @@
 // out-of-range) rather than loading a broken run.
 
 import { JOB_IDS } from '../content/jobs';
+import { currentSeasonOrdinal } from './systems/calendar';
 import { MUNDANE_RESOURCE_IDS, RESOURCE_IDS, type MundaneResourceId } from '../content/resources';
 import {
   SAVE_VERSION,
@@ -126,6 +127,9 @@ export const fromFileString = (text: string): GameState => deserialize(text);
  *   v13 → v14: added `alchemical` components (Naturalism teaches Hunters + Ranches to save them).
  *            Defaults to 0 with a 200 cap; normalize's RESOURCE_IDS + MUNDANE_RESOURCE_IDS loops
  *            backfill both, so this rung only documents the bump.
+ *   v14 → v15: added `seasonTally` (the per-season birth/death roll-up the chronicle reports).
+ *            Backfilled by normalize to the season the save's playtime actually falls in, so a
+ *            loaded save doesn't immediately flush a phantom "season turned" line.
  */
 function migrate(state: GameState, fromVersion: number): void {
   if (!state || typeof state !== 'object') return;
@@ -308,6 +312,16 @@ export function normalize(state: GameState): void {
 
   // Curriculum — absent means no discipline chosen (general studies).
   if (run.curriculum === undefined) run.curriculum = null;
+
+  // Season tally — seed it to the season this save's playtime ACTUALLY sits in, so a v14
+  // save doesn't report a season turning the instant it loads.
+  const t = run.seasonTally;
+  if (!t || typeof t !== 'object' || typeof t.index !== 'number' || !Number.isFinite(t.index)) {
+    run.seasonTally = { index: currentSeasonOrdinal(state.playtime ?? 0), born: 0, died: 0 };
+  } else {
+    if (typeof t.born !== 'number' || !Number.isFinite(t.born) || t.born < 0) t.born = 0;
+    if (typeof t.died !== 'number' || !Number.isFinite(t.died) || t.died < 0) t.died = 0;
+  }
 }
 
 /** Structural + finiteness check — guards against NaN/garbage silently loading. */

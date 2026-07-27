@@ -20,6 +20,7 @@ import { logEvent } from './chronicle';
 import { formBonuses, policyMults, policyUpkeep, policiesSuspended } from './government';
 import { magicYieldMult, oppositionFactor } from './education';
 import { happiness } from './happiness';
+import { foodEnvLines, foodEnvMult } from './weather';
 
 const EPS = 1e-9;
 
@@ -131,6 +132,104 @@ function essenceBoost(state: GameState, jobId: string): number {
   return 1 + raw * oppositionFactor(state, res);
 }
 
+/** One line of the "why is this rate what it is" multiplier list. Exactly one of `mult`
+ *  (a multiplicative factor, e.g. a tool tech) and `add` (an ADDITIVE share of a stacking
+ *  group, e.g. one Farm's +2% among several) is set, so the UI can render `×1.25` or `+6%`
+ *  without the engine pretending an additive stack is a product. */
+export interface MultiplierLine {
+  label: string;
+  mult?: number;
+  add?: number;
+  /** True when the line applies to EVERY source of the resource, not just one job. */
+  global?: boolean;
+}
+
+/** The per-job TECH multipliers, one line each — the same set jobEfficiency applies. */
+function techMultLines(state: GameState, jobId: string): MultiplierLine[] {
+  const tech = state.run.tech;
+  const out: MultiplierLine[] = [];
+  const add = (on: boolean, label: string, mult: number): void => {
+    if (on) out.push({ label, mult });
+  };
+  add(jobId === 'woodcutter' && tech.includes('stone-axe'), 'Stone Axe', TECH_BONUS.stoneAxe);
+  add(jobId === 'forager' && tech.includes('stone-hoe'), 'Stone Hoe', TECH_BONUS.stoneHoe);
+  add(jobId === 'quarry-worker' && tech.includes('stone-pick'), 'Stone Pick', TECH_BONUS.stonePick);
+  add(jobId === 'woodcutter' && tech.includes('steel-axe'), 'Steel Axe', TECH_BONUS.steelAxe);
+  add(jobId === 'forager' && tech.includes('steel-hoe'), 'Steel Hoe', TECH_BONUS.steelHoe);
+  add(jobId === 'quarry-worker' && tech.includes('steel-pick'), 'Steel Pick', TECH_BONUS.steelPick);
+  add(GATHER_JOBS.has(jobId) && tech.includes('iron-working'), 'Iron Working', TECH_BONUS.ironWorking);
+  add(jobId === 'forager' && tech.includes('irrigation'), 'Irrigation', TECH_BONUS.irrigation);
+  add(jobId === 'forager' && tech.includes('fertilizer'), 'Fertilizer', TECH_BONUS.fertilizer);
+  add(jobId === 'miner' && tech.includes('bloomery'), 'Bloomery', TECH_BONUS.bloomery);
+  add(jobId === 'scholar' && tech.includes('optics'), 'Optics', TECH_BONUS.optics);
+  add(GATHER_JOBS.has(jobId) && tech.includes('wheelbarrows'), 'Wheelbarrows', TECH_BONUS.wheelbarrows);
+  return out;
+}
+
+/**
+ * Every multiplier standing behind one job's output, as display lines. The product of the
+ * `mult` lines and (1 + Σ `add`) equals jobEfficiency — the tooltip and the tick cannot
+ * disagree because both read the same constants.
+ */
+export function jobEfficiencyLines(state: GameState, jobId: string): MultiplierLine[] {
+  const out: MultiplierLine[] = techMultLines(state, jobId);
+
+  // Per-job workplace boosts (Farm → Farmer, Aqueduct → Farmer). These STACK ADDITIVELY,
+  // so each building reports its own share rather than a fake product.
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'jobBoost' && eff.job === jobId) {
+        out.push({ label: `${b.name}${count > 1 ? ` ×${count}` : ''}`, add: count * eff.amount });
+      }
+    }
+  }
+
+  // Held elemental essence empowering its matching job.
+  const essence = essenceBoost(state, jobId);
+  if (essence !== 1) {
+    const res = ESSENCE_JOB[jobId];
+    out.push({ label: `${RESOURCE_LABELS[res] ?? 'Essence'} essence held`, mult: essence });
+  }
+
+  // Global building boosts (Workshop / Forge / Steam Works / Prismatic Spire) — also additive.
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    const m = b.effects.find((e) => e.kind === 'jobOutputMult');
+    if (!m || m.kind !== 'jobOutputMult') continue;
+    let copies = count;
+    if (isConverter(b)) {
+      copies = activeCount(state, b.id);
+      const fuelled = convertEffects(b).every((c) =>
+        Object.entries(c.consume).every(
+          ([res, per]) => (per as number) <= 0 || state.run.resources[res as ResourceId] > EPS,
+        ),
+      );
+      if (!fuelled) copies = 0;
+    }
+    if (copies > 0) out.push({ label: `${b.name}${copies > 1 ? ` ×${copies}` : ''}`, add: copies * m.amount, global: true });
+  }
+
+  // Governance + contentment apply to every worker alike.
+  const form = formBonuses(state).workerMult;
+  if (form !== 1) out.push({ label: 'Government', mult: form, global: true });
+  const pol = policyMults(state).worker;
+  if (pol !== 1) out.push({ label: 'Policies', mult: pol, global: true });
+  const cont = contentment(state);
+  if (cont !== 1) out.push({ label: 'Contentment', mult: cont, global: true });
+  return out;
+}
+
+/** Resource labels for multiplier lines, without importing the UI's content map. */
+const RESOURCE_LABELS: Record<string, string> = {
+  airEssence: 'Air',
+  earthEssence: 'Earth',
+  fireEssence: 'Fire',
+  waterEssence: 'Water',
+};
+
 /** Tech-driven output multiplier for a job. The STONE and STEEL tools are PER-JOB (Axe →
  *  Woodcutter, Hoe → Farmer, Pick → Stonecutter — each +25% (stone) / +65% (steel) to only that
  *  job); Iron Working is the one GLOBAL tool tier, stacking on all gather jobs (incl. Miners).
@@ -178,16 +277,24 @@ function jobProduces(state: GameState, def: (typeof JOBS)[number]): Partial<Reco
   return out;
 }
 
+/** The ENVIRONMENT multiplier for one resource from one source. Only FOOD is weather-bound:
+ *  season × weather (systems/weather.ts), with Hunters exempt from the winter penalty.
+ *  Everything else is 1 — a quarry does not care what the sky is doing. */
+function envMult(state: GameState, res: ResourceId, jobId?: string): number {
+  if (res !== 'food') return 1;
+  return foodEnvMult(state, jobId === 'hunter');
+}
+
 /** A job's EFFECTIVE per-worker output — base `produces` × the live efficiency multiplier
- *  (tool techs + Workshop/Forge/Steam Works). The read model for job tooltips, so the
- *  number on screen matches what a settler actually makes. */
+ *  (tool techs + Workshop/Forge/Steam Works) × the season/weather environment. The read
+ *  model for job tooltips, so the number on screen matches what a settler actually makes. */
 export function jobEffectiveProduces(state: GameState, jobId: string): Partial<Record<ResourceId, number>> {
   const def = JOBS.find((j) => j.id === jobId);
   if (!def) return {};
   const eff = jobEfficiency(state, jobId);
   const out: Partial<Record<ResourceId, number>> = {};
   for (const [res, per] of Object.entries(jobProduces(state, def))) {
-    out[res as ResourceId] = (per as number) * eff;
+    out[res as ResourceId] = (per as number) * eff * envMult(state, res as ResourceId, jobId);
   }
   return out;
 }
@@ -257,7 +364,7 @@ function flows(state: GameState): Flows {
     if (workers <= 0) continue;
     const eff = jobEfficiency(state, job.id);
     for (const [res, per] of Object.entries(jobProduces(state, job))) {
-      gross[res as ResourceId] += workers * (per as number) * eff;
+      gross[res as ResourceId] += workers * (per as number) * eff * envMult(state, res as ResourceId, job.id);
     }
     // Upkeep is NOT scaled by efficiency — a performer's fee doesn't fall because the
     // settlement bought better axes.
@@ -268,7 +375,7 @@ function flows(state: GameState): Flows {
 
   // Idle (unassigned) settlers forage for themselves — at a rate that scales with how
   // CONTENT the settlement is (full rate at 100 happiness, half at 50, nothing at 0).
-  gross.food += POPULATION.idleFoodPerSettler * idleCount(run) * contentment(state);
+  gross.food += POPULATION.idleFoodPerSettler * idleCount(run) * contentment(state) * envMult(state, 'food');
 
   // Constructs: passive production + mana upkeep, scaled by building count. NO food, NO pop.
   for (const b of BUILDINGS) {
@@ -279,7 +386,7 @@ function flows(state: GameState): Flows {
         // Tech-gated construct output (e.g. the Mine's crystals behind Crystallurgy) stays dry
         // until the tech is researched.
         if (eff.requiresTech && !run.tech.includes(eff.requiresTech as never)) continue;
-        gross[eff.resource] += count * eff.perSec;
+        gross[eff.resource] += count * eff.perSec * envMult(state, eff.resource);
       } else if (eff.kind === 'manaUpkeep') manaUpkeep += count * eff.perSec;
     }
   }
@@ -329,11 +436,60 @@ export interface BreakdownLine {
   label: string;
   amount: number; // + produces, − consumes
 }
-/** The full producer/consumer decomposition of a resource's net rate (for the hover tooltip). */
+/** The full producer/consumer decomposition of a resource's net rate (for the hover tooltip).
+ *  Producer/consumer amounts are EFFECTIVE (every multiplier already applied), so they add up
+ *  to `net` exactly; the `*Mults` lists say WHICH boosts are baked into those figures. */
 export interface ResourceBreakdown {
   producers: BreakdownLine[];
+  /** The multipliers standing behind the producer figures (already included in them). */
+  producerMults: MultiplierLine[];
   consumers: BreakdownLine[];
+  /** The multipliers standing behind the consumer figures. */
+  consumerMults: MultiplierLine[];
   net: number;
+}
+
+/** Collect the multiplier lines behind a resource's PRODUCTION. Job-specific lines are
+ *  tagged with the job when more than one job feeds the resource; global lines appear once. */
+function producerMultipliers(state: GameState, id: ResourceId): MultiplierLine[] {
+  const run = state.run;
+  const out: MultiplierLine[] = [];
+  const seen = new Set<string>();
+
+  const producingJobs = JOBS.filter((j) => (run.population.jobs[j.id] ?? 0) > 0 && jobProduces(state, j)[id]);
+  for (const job of producingJobs) {
+    for (const line of jobEfficiencyLines(state, job.id)) {
+      if (line.global) {
+        if (seen.has(line.label)) continue;
+        seen.add(line.label);
+        out.push(line);
+      } else {
+        out.push({ ...line, label: producingJobs.length > 1 ? `${line.label} → ${job.name}` : line.label });
+      }
+    }
+  }
+
+  // FOOD is weather-bound: the season and the current spell scale every source alike.
+  if (id === 'food') {
+    for (const e of foodEnvLines(state)) out.push({ label: e.label, mult: e.mult, global: true });
+  }
+  // Stream-wide governance multipliers.
+  if (id === 'mana') {
+    const m = policyMults(state).mana;
+    if (m !== 1) out.push({ label: 'Policies', mult: m, global: true });
+  }
+  if (id === 'culture') {
+    const m = formBonuses(state).cultureMult;
+    if (m !== 1) out.push({ label: 'Government', mult: m, global: true });
+  }
+  if (id === 'research') {
+    const m = policyMults(state).researchPerPop;
+    if (m !== 1) out.push({ label: 'Policies (settler trickle)', mult: m, global: true });
+  }
+  // The Arcanum's teaching lifts every magical stream.
+  const magic = magicYieldMult(state, id);
+  if (magic !== 1) out.push({ label: 'Arcanum teaching', mult: magic, global: true });
+  return out;
 }
 
 /** Decompose a resource's net /s into who produces and who consumes it — the "show the math"
@@ -363,7 +519,12 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     const workers = run.population.jobs[job.id] ?? 0;
     if (workers <= 0) continue;
     const per = jobProduces(state, job)[id];
-    if (per) producers.push({ label: `${job.name}${times(workers)}`, amount: workers * per * jobEfficiency(state, job.id) });
+    if (per) {
+      producers.push({
+        label: `${job.name}${times(workers)}`,
+        amount: workers * per * jobEfficiency(state, job.id) * envMult(state, id, job.id),
+      });
+    }
   }
   // Jobs whose UPKEEP draws on this resource.
   for (const job of JOBS) {
@@ -377,7 +538,10 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (count <= 0) continue;
     for (const e of b.effects) {
       if (e.kind === 'produce' && e.resource === id && (!e.requiresTech || run.tech.includes(e.requiresTech as never))) {
-        producers.push({ label: `${b.name}${times(count)}`, amount: count * e.perSec * magicYieldMult(state, id) });
+        producers.push({
+          label: `${b.name}${times(count)}`,
+          amount: count * e.perSec * magicYieldMult(state, id) * envMult(state, id),
+        });
       }
     }
   }
@@ -388,7 +552,7 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     if (idle > 0) {
       producers.push({
         label: `Idle settlers${times(idle)}`,
-        amount: POPULATION.idleFoodPerSettler * idle * contentment(state),
+        amount: POPULATION.idleFoodPerSettler * idle * contentment(state) * envMult(state, 'food'),
       });
     }
   }
@@ -425,7 +589,20 @@ export function resourceBreakdown(state: GameState, id: ResourceId): ResourceBre
     }
   }
 
-  return { producers, consumers, net: productionRates(state)[id] };
+  // Consumption-side multipliers: Rationing is the only one so far, trimming food upkeep.
+  const consumerMults: MultiplierLine[] = [];
+  if (id === 'food') {
+    const m = policyMults(state).foodUpkeep;
+    if (m !== 1) consumerMults.push({ label: 'Policies', mult: m, global: true });
+  }
+
+  return {
+    producers,
+    producerMults: producers.length ? producerMultipliers(state, id) : [],
+    consumers,
+    consumerMults,
+    net: productionRates(state)[id],
+  };
 }
 
 /**

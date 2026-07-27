@@ -197,24 +197,56 @@
       {/if}
       </div>
 
-      {#if gov.unlocked}
-        <div class="jobscol">
-          <div class="govcard">
-            <h2>Government</h2>
-            <div class="govmeta">
-              <span>Form <strong>{gov.formLabel}</strong></span>
-              <span>Policies <strong>{gov.used}</strong> / {gov.slots}</span>
-              {#if gov.upkeep > 0}<span>Upkeep <strong>-{gov.upkeep.toFixed(2)} Culture/s</strong></span>{/if}
+      <!-- Government occupies the right half of the settlement tab from day one. Before
+           Code of Laws it is a PLACEHOLDER — the three sections are visible and explain what
+           will fill them, so the space reads as "not yet" rather than "not here". -->
+      <div class="jobscol">
+        <div class="govcard" class:locked={!gov.unlocked}>
+          <h2>Government</h2>
+          {#if !gov.unlocked}
+            <div class="govlocked">Research <strong>Code of Laws</strong> to govern the settlement.</div>
+          {/if}
+          <div class="govmeta">
+            <span>Form <strong>{gov.formLabel}</strong></span>
+            <span>Policies <strong>{gov.used}</strong> / {gov.slots}</span>
+            {#if gov.upkeep > 0}<span>Upkeep <strong>-{gov.upkeep.toFixed(2)} Culture/s</strong></span>{/if}
+          </div>
+
+          <h3 class="govsec">Form of government</h3>
+          <div class="forms">
+            {#each gov.forms as f (f.id)}
+              <span
+                class="formchip"
+                class:on={f.active}
+                class:off={!f.unlocked}
+                title={f.unlocked ? f.bonusText.join(' · ') : `Locked — research ${f.requiresTech.replace(/-/g, ' ')}`}
+              >{f.label}</span>
+            {/each}
+          </div>
+          <div class="govnote">
+            The form in force is the highest governance you have researched. Choosing between
+            forms freely comes later.
+          </div>
+
+          <h3 class="govsec">Taxes</h3>
+          <div class="govnote">
+            A tax rate — trading settler morale for a cut of the settlement's wealth — is not
+            yet levied. Coming with the treasury rework.
+          </div>
+
+          <h3 class="govsec">Policies</h3>
+          {#if gov.formBonusText.length}
+            <div class="formbonus">
+              {#each gov.formBonusText as line}<span class="good">{line}</span>{/each}
             </div>
-            {#if gov.formBonusText.length}
-              <div class="formbonus">
-                {#each gov.formBonusText as line}<span class="good">{line}</span>{/each}
-              </div>
-            {/if}
-            {#if gov.suspended}
-              <div class="suspended">⚠ Culture has run dry — every policy is suspended until it flows again.</div>
-            {/if}
-            <div class="policies">
+          {/if}
+          {#if gov.suspended}
+            <div class="suspended">⚠ Culture has run dry — every policy is suspended until it flows again.</div>
+          {/if}
+          {#if gov.policies.length === 0}
+            <div class="govnote">No standing edicts are available yet.</div>
+          {/if}
+          <div class="policies">
               {#each gov.policies as p (p.id)}
                 <div class="prow" class:on={p.active} class:dormant={p.active && gov.suspended}>
                   <div class="pmain">
@@ -236,13 +268,14 @@
                   {/if}
                 </div>
               {/each}
-            </div>
-            {#if gov.used >= gov.slots && gov.policies.some((p) => !p.active)}
-              <div class="govnote">All policy slots are in use — repeal one, or research further governance.</div>
-            {/if}
           </div>
+          <!-- Only meaningful once slots EXIST. With governance still locked there is nothing
+               "in use", and the line would read as a bug rather than a nudge. -->
+          {#if gov.slots > 0 && gov.used >= gov.slots && gov.policies.some((p) => !p.active)}
+            <div class="govnote">All policy slots are in use — repeal one, or research further governance.</div>
+          {/if}
         </div>
-      {/if}
+      </div>
       </div>
     </section>
   {:else if $activeTab === 'research'}
@@ -620,6 +653,54 @@
   }
   .govcard h2 {
     margin-bottom: 6px;
+  }
+  /* Before Code of Laws the panel is a promise, not a control surface — dimmed, but present,
+     so the settlement tab keeps its shape from the first minute. */
+  .govcard.locked {
+    border-left-color: var(--faint);
+  }
+  .govcard.locked .forms,
+  .govcard.locked .govmeta {
+    opacity: 0.6;
+  }
+  .govlocked {
+    color: var(--gold);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .govlocked strong {
+    color: var(--ink);
+  }
+  .govsec {
+    margin: 12px 0 5px;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--label);
+  }
+  .forms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .formchip {
+    font-size: 11.5px;
+    color: var(--dim);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    padding: 1px 9px;
+    white-space: nowrap;
+    cursor: help;
+  }
+  .formchip.on {
+    color: var(--ink);
+    border-color: var(--accent);
+    background: var(--card-active);
+    font-weight: 600;
+  }
+  .formchip.off {
+    opacity: 0.45;
   }
   .govmeta {
     display: flex;

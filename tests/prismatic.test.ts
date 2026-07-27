@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { newGame } from '../src/engine/state';
+import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { simulate } from '../src/engine/tick';
 import { build, buildingsView } from '../src/engine/systems/buildings';
 import { jobEffectiveProduces, productionRates } from '../src/engine/systems/production';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import { effectiveCap } from '../src/engine/systems/caps';
 import { research } from '../src/engine/systems/tech';
 import { safeLoad, SAVE_MAGIC } from '../src/engine/save';
@@ -41,11 +42,11 @@ describe('Sewers struck; the Windmill replaces it', () => {
     expect(build(s, 'windmill')).toBe(false); // needs Milling
     s.run.tech.push('milling', 'construction', 'engineering');
     expect(build(s, 'windmill')).toBe(true);
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.15, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.15 * foodEnvMult(s), 6);
     expect(build(s, 'windmill')).toBe(true); // stacks per copy
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.3, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.3 * foodEnvMult(s), 6);
     expect(build(s, 'aqueduct')).toBe(true); // and with the Aqueduct's +10%
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.4, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.4 * foodEnvMult(s), 6);
     expect(TECH_BY_ID.milling.requires).toEqual(expect.arrayContaining(['the-wheel', 'agriculture']));
   });
 });
@@ -103,7 +104,7 @@ describe('sink 1 — held essence empowers its matching job', () => {
     const air = newGame(1);
     air.run.resources.airEssence = 50; // 50 × 0.004 = +20%
     expect(jobEffectiveProduces(air, 'woodcutter').wood).toBeCloseTo(base.wood * 1.2, 6);
-    expect(jobEffectiveProduces(air, 'forager').food).toBeCloseTo(base.food, 6); // air ≠ Farmer
+    expect(jobEffectiveProduces(air, 'forager').food).toBeCloseTo(base.food * foodEnvMult(air), 6); // air ≠ Farmer
 
     const earth = newGame(1);
     earth.run.resources.earthEssence = 25; // +10%
@@ -117,7 +118,7 @@ describe('sink 1 — held essence empowers its matching job', () => {
 
     const water = newGame(1);
     water.run.resources.waterEssence = 50; // +20% Farmer
-    expect(jobEffectiveProduces(water, 'forager').food).toBeCloseTo(base.food * 1.2, 6);
+    expect(jobEffectiveProduces(water, 'forager').food).toBeCloseTo(base.food * 1.2 * foodEnvMult(water), 6);
   });
 });
 
@@ -258,7 +259,7 @@ describe('save migration v10 → v11', () => {
     const res = safeLoad(JSON.stringify(v10));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(10);
-    expect(res.state!.version).toBe(14);
+    expect(res.state!.version).toBe(SAVE_VERSION);
     expect(res.state!.run.resources.airEssence).toBe(0);
     expect(res.state!.run.resources.prismatic).toBe(0);
     expect(res.state!.run.resources.mana).toBe(7); // preserved

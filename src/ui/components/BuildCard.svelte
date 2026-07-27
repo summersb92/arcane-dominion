@@ -38,10 +38,10 @@
       <span class="nm">{b.name}</span>
       <span class="chip" class:construct={b.construct}>×{b.count}</span>
     </span>
-    <!-- At-a-glance cost. Once one copy stands the price has ESCALATED, so the line says so
-         explicitly — the cost shown is always for the NEXT copy, never the base. -->
+    <!-- At-a-glance cost. It is ALWAYS the price of the next copy, so it needs no label
+         saying so — the ×count chip above already tells you where on the ladder you are. -->
     <span class="cost">
-      {#if b.count > 0}<span class="nextlbl">next</span> {/if}{#each b.costParts as p, i (p.text)}{#if i > 0}<span
+      {#each b.costParts as p, i (p.text)}{#if i > 0}<span
             class="dot"
           >
             ·
@@ -135,18 +135,6 @@
   }
   .cost .dot {
     padding: 0 3px;
-  }
-  .nextlbl {
-    display: inline-block;
-    margin-right: 5px;
-    padding: 0 4px;
-    font-size: 9.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--label);
-    border: 1px solid var(--edge);
-    border-radius: 3px;
-    vertical-align: 1px;
   }
   /* Converter toggles — a footer set apart from the build action by a divider. */
   .conv {

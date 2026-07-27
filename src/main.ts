@@ -40,13 +40,18 @@ if (loaded.ok && loaded.state) {
 applyFont(getState().settings.font);
 
 // ---- offline catch-up ----
+/** Below this, a return isn't "coming back" — it's tabbing away for a moment, and a modal
+ *  recap of ninety seconds of wood is an interruption, not a reward. The catch-up still
+ *  RUNS (the time is simulated either way); only the panel is withheld. */
+const OFFLINE_RECAP_MIN_MS = 5 * 60 * 1000;
+
 function catchUp(where: string): void {
   const summary = applyOffline(getState());
   if (summary.appliedMs > 1000 && Object.keys(summary.gains).length > 0) {
     const mins = Math.round(summary.appliedMs / 60000);
     console.info(`[offline] ${where} ~${mins} min${summary.capped ? ' (capped)' : ''}:`, summary.gains);
-    // Publish for the "While you were away…" panel (T-006b builds the UI from this).
-    offlineSummary.set(summary);
+    // Publish for the "While you were away…" panel — only for a real absence.
+    if (summary.elapsedMs >= OFFLINE_RECAP_MIN_MS) offlineSummary.set(summary);
   }
 }
 catchUp('away');

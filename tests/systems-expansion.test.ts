@@ -7,6 +7,7 @@ import { research, canAffordTech } from '../src/engine/systems/tech';
 import { productionRates, runProduction, jobEffectiveProduces } from '../src/engine/systems/production';
 import { effectiveCap, researchCap } from '../src/engine/systems/caps';
 import { happiness } from '../src/engine/systems/happiness';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import { growthStatus } from '../src/engine/systems/population';
 import { TECH_BY_ID } from '../src/content/tech';
 
@@ -143,6 +144,7 @@ describe('happiness gates growth', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 400;
     s.run.resources.stone = 400;
+    s.run.resources.gold = 200; // the Amphitheater is bought with stone and coin now
     expect(build(s, 'amphitheater')).toBe(true);
     // The stage itself does nothing — the morale is in the performance.
     expect(happiness(s).value).toBe(before);
@@ -176,6 +178,7 @@ describe('happiness gates growth', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 400;
     s.run.resources.stone = 400;
+    s.run.resources.gold = 200; // the Amphitheater is bought with stone and coin now
     expect(build(s, 'amphitheater')).toBe(true);
     expect(build(s, 'amphitheater')).toBe(true);
     // An empty stage is worth nothing — staff both to clear the growth threshold.
@@ -197,7 +200,8 @@ describe('furs luxury resource + Hunter', () => {
     s.run.population.total = 1;
     expect(assignJob(s, 'hunter', 1)).toBe(1);
     const r = productionRates(s);
-    expect(r.food).toBeCloseTo(0.3 - 4, 6); // +0.3 hunter food − 4 settler upkeep
+    // +0.3 hunter food (× the season/weather environment) − 4 settler upkeep.
+    expect(r.food).toBeCloseTo(0.3 * foodEnvMult(s, true) - 4, 6);
     expect(r.furs).toBeCloseTo(0.15, 6); // +0.15 furs
   });
 
@@ -224,13 +228,15 @@ describe('furs luxury resource + Hunter', () => {
     expect(s.run.resources.furs).toBe(cap);
   });
 
-  it('held furs raise happiness (+1 per 10, capped at +15) and show in the breakdown', () => {
+  it('held furs raise happiness, at a per-point cost that scales with the population', () => {
     const s = newGame(1);
     s.run.population.total = 20; // crowding 2×(20−5) = 30 → happiness 70
     expect(happiness(s).value).toBe(70);
 
-    s.run.resources.furs = 50; // 50 / 10 = +5
-    expect(happiness(s).value).toBe(75);
+    // A luxury is a PER-HEAD comfort: at 20 settlers (2× the 10-settler baseline) it takes
+    // 20 furs — not 10 — to buy one point. 50 furs therefore pays +2, not +5.
+    s.run.resources.furs = 50;
+    expect(happiness(s).value).toBe(72);
     expect(happiness(s).breakdown.some((b) => b.label.startsWith('Furs'))).toBe(true);
 
     s.run.resources.furs = 1000; // would be +100 but the bonus caps at +15
@@ -246,6 +252,7 @@ describe('culture resource', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 400;
     s.run.resources.stone = 400;
+    s.run.resources.gold = 200; // the Amphitheater is bought with stone and coin now
     expect(build(s, 'amphitheater')).toBe(true);
     expect(effectiveCap(s, 'culture')).toBe(150);
   });
@@ -264,6 +271,7 @@ describe('culture resource', () => {
     s.run.tech.push('philosophy', 'the-arts');
     s.run.resources.wood = 2000;
     s.run.resources.stone = 2000;
+    s.run.resources.gold = 200; // the Amphitheater is bought with stone and coin now
     expect(build(s, 'forum')).toBe(true);
     expect(effectiveCap(s, 'culture')).toBe(200); // 100 base + the Forum's 100
     expect(build(s, 'amphitheater')).toBe(true);
@@ -275,6 +283,7 @@ describe('culture resource', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 200;
     s.run.resources.stone = 200;
+    s.run.resources.gold = 200; // stone and coin
     expect(build(s, 'amphitheater')).toBe(true);
     s.run.population.total = 1;
     expect(assignJob(s, 'bard', 1)).toBe(1);

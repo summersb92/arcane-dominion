@@ -116,7 +116,7 @@ export const JOBS: JobDef[] = [
     id: 'scholar',
     name: 'Scholar',
     blurb: 'Studies wherever there are shelves. Produces questions, then answers.',
-    produces: { research: 0.2 },
+    produces: { research: 0.5 },
     requiresBuildingCapacity: 'library',
   },
   {

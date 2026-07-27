@@ -106,6 +106,16 @@ export function buildingCost(state: GameState, id: BuildingId): Partial<Record<R
   for (const [res, amt] of Object.entries(def.cost)) {
     out[res as ResourceId] = growth === 1 ? (amt as number) : Math.ceil((amt as number) * mult);
   }
+  // A late-arriving EXTRA cost (the Ward Stone's iron, from the sixth copy on). It escalates
+  // from the copy it first applies to, so the sixth pays the base and the seventh pays growth×.
+  const extra = def.extraCostAfter;
+  if (extra && count >= extra.count) {
+    const extraMult = growth === 1 ? 1 : Math.pow(growth, count - extra.count);
+    for (const [res, amt] of Object.entries(extra.cost)) {
+      const add = growth === 1 ? (amt as number) : Math.ceil((amt as number) * extraMult);
+      out[res as ResourceId] = (out[res as ResourceId] ?? 0) + add;
+    }
+  }
   return out;
 }
 
@@ -181,10 +191,10 @@ export function build(state: GameState, id: BuildingId): boolean {
     }
   }
 
-  // The FIRST of a building is a story beat, not a receipt; repeats keep the plain line.
+  // The FIRST of a building is a story beat. Repeats are NOT logged at all — the chronicle
+  // is a record of what happened to the settlement, not a receipt for every hut raised.
   const quip = count === 0 ? FIRST_BUILD_QUIPS[id] : undefined;
   if (quip) logEvent(state, quip, 'ev');
-  else logEvent(state, `Built ${def.name}.`);
   // Magic-tier milestone: the first construct raised is a story beat (skipped when the
   // building already told its own first-build story above).
   if (def.construct && state.run.flags.firstConstruct !== true) {

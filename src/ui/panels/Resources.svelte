@@ -61,6 +61,8 @@
             {fmtHeld(r.amount)}{#if r.capped}<span class="lockt"> / {fmtHeld(r.cap)}</span>{/if}
           </span>
           <span class="rt" class:drain={draining(r)}>{fmtRate(r.rate)}</span>
+          <!-- A blocking condition the rate alone can't show (food stalling growth). -->
+          {#if r.warn}<span class="warn" title={r.warnText}>!</span>{/if}
         </span>
       </div>
     {/each}
@@ -133,6 +135,13 @@
   }
   .val {
     white-space: nowrap;
+  }
+  /* The growth-blocked marker. Sits after the rate so it never shifts the number column. */
+  .warn {
+    margin-left: 5px;
+    color: var(--life);
+    font-weight: 700;
+    cursor: help;
   }
   @media (prefers-reduced-motion: reduce) {
     .row,

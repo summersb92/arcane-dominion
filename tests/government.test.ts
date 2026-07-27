@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { newGame } from '../src/engine/state';
+import { newGame, SAVE_VERSION } from '../src/engine/state';
 import { build } from '../src/engine/systems/buildings';
 import { assignJob } from '../src/engine/systems/jobs';
 import { productionRates, jobEffectiveProduces, runProduction } from '../src/engine/systems/production';
 import { happiness } from '../src/engine/systems/happiness';
+import { foodEnvMult } from '../src/engine/systems/weather';
 import {
   governanceUnlocked,
   currentForm,
@@ -19,9 +20,12 @@ import { TECH_BY_ID } from '../src/content/tech';
 describe('mini-step techs — per-job boosts', () => {
   it('Animal Husbandry is an ENABLER — it opens the Ranch and boosts no job', () => {
     const s = newGame(1);
-    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6);
+    // Food output carries the season/weather environment, so derive it rather than
+    // hard-coding a figure that only holds in a neutral season.
+    const env = 0.3 * foodEnvMult(s, true);
+    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(env, 6);
     s.run.tech.push('animal-husbandry');
-    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6); // Hunters unchanged
+    expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(env, 6); // Hunters unchanged
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1, 6);
     expect(TECH_BY_ID['animal-husbandry'].unlocks).toEqual(['Ranch (building)']);
   });
@@ -30,17 +34,17 @@ describe('mini-step techs — per-job boosts', () => {
     const s = newGame(1);
     // Agriculture is an ENABLER only — it opens the Farm and multiplies nothing.
     s.run.tech.push('agriculture');
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6, 6);
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * foodEnvMult(s), 6);
     s.run.tech.push('stone-hoe', 'irrigation', 'fertilizer');
-    // 6 × 1.25 (hoe) × 1.25 (irrigation) × 1.5 (fertilizer)
-    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.25 * 1.25 * 1.5, 6);
+    // 6 × 1.25 (hoe) × 1.25 (irrigation) × 1.5 (fertilizer), × season/weather
+    expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.25 * 1.25 * 1.5 * foodEnvMult(s), 6);
   });
 
   it('Bloomery boosts the Miner; Optics the Scholar; Wheelbarrows every gather job', () => {
     const s = newGame(1);
     s.run.tech.push('bloomery', 'optics', 'wheelbarrows');
     expect(jobEffectiveProduces(s, 'miner').iron).toBeCloseTo(0.4 * 1.25 * 1.1, 6); // bloomery × wheelbarrows
-    expect(jobEffectiveProduces(s, 'scholar').research).toBeCloseTo(0.2 * 1.25, 6); // optics only (not a gather job)
+    expect(jobEffectiveProduces(s, 'scholar').research).toBeCloseTo(0.5 * 1.25, 6); // optics only (not a gather job)
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.1, 6); // wheelbarrows
   });
 });
@@ -102,7 +106,8 @@ describe('governance — forms and slots', () => {
     s.run.tech.push('the-arts');
     s.run.resources.wood = 200;
     s.run.resources.stone = 200;
-    build(s, 'amphitheater');
+    s.run.resources.gold = 200; // the Amphitheater is bought with stone and coin now
+    expect(build(s, 'amphitheater')).toBe(true);
     s.run.population.total = 1;
     assignJob(s, 'bard', 1);
     expect(productionRates(s).culture).toBeCloseTo(0.2 * 1.25, 6);
@@ -126,7 +131,7 @@ describe('policies — enact, revoke, slots, and effects', () => {
     // contentment, so derive the expectation from the live happiness rather than a constant.
     s.run.population.total = 10;
     const hap = happiness(s).value / 100;
-    expect(productionRates(s).food).toBeCloseTo(-(10 * 4 * 0.75) + 10 * 4.2 * hap, 6);
+    expect(productionRates(s).food).toBeCloseTo(-(10 * 4 * 0.75) + 10 * 4.2 * hap * foodEnvMult(s), 6);
   });
 
   it('policies drain culture upkeep and SUSPEND when the jar runs dry', () => {
@@ -197,7 +202,7 @@ describe('governance techs + save migration', () => {
     const res = safeLoad(JSON.stringify(v9));
     expect(res.ok).toBe(true);
     expect(res.migratedFrom).toBe(9);
-    expect(res.state!.version).toBe(14);
+    expect(res.state!.version).toBe(SAVE_VERSION);
     expect(res.state!.run.policies).toEqual([]);
   });
 });

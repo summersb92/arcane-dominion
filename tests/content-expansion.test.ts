@@ -246,7 +246,7 @@ describe('new building effects', () => {
     expect(s.run.caps.food).toBe(before.food); // food is the ONE exception (use a Granary)
   });
 
-  it('the Granary raises the Food cap only (+150)', () => {
+  it('the Granary raises the Food cap only (+400)', () => {
     const s = newGame(1);
     s.run.tech.push('pottery');
     s.run.resources.wood = 30;
@@ -254,7 +254,7 @@ describe('new building effects', () => {
     const foodCapBefore = s.run.caps.food;
     const woodCapBefore = s.run.caps.wood;
     expect(build(s, 'granary')).toBe(true);
-    expect(s.run.caps.food).toBe(foodCapBefore + 150);
+    expect(s.run.caps.food).toBe(foodCapBefore + 400);
     expect(s.run.caps.wood).toBe(woodCapBefore); // wood/stone caps untouched
   });
 

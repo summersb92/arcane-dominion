@@ -132,11 +132,22 @@ body {
   border: 1px solid var(--edge); border-radius: 10px;
   overflow: hidden; background: var(--panel); box-shadow: 0 20px 60px #0006;
 }
+/* Three zones: title left, the DATE + WEATHER dead centre, vitals and controls right.
+   A grid (not flex) is what actually centres the middle zone — with justify-content the
+   date drifts with the width of whatever sits either side of it. */
 header {
   flex: none;
   padding: 9px 14px; background: linear-gradient(180deg, var(--head), var(--panel));
-  border-bottom: 1px solid var(--edge); display: flex; justify-content: space-between;
-  align-items: baseline; gap: 12px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--edge); display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline; gap: 12px;
+}
+header .who { justify-self: end; }
+header .midbar { justify-self: center; }
+@media (max-width: 860px) {
+  /* Too narrow to hold three zones on one line — stack and let each sit left. */
+  header { grid-template-columns: 1fr; }
+  header .who, header .midbar { justify-self: start; }
 }
 .title { font-size: 15px; letter-spacing: .14em; color: var(--ink); font-weight: 600; }
 .title .tag { color: var(--faint); font-weight: 400; letter-spacing: .02em; font-size: 11.5px; }
@@ -198,12 +209,14 @@ h2.mt { margin-top: 16px; }
 ul.chron { padding-left: 0; margin: 6px 0 0; } .chron li { margin-bottom: 6px; list-style: none; }
 
 /* task cards on a grid — whole card is the button */
-/* align-items:start keeps short cards short — a converter card's toggle rows no longer
-   inflate every neighbour in its row. */
-.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 10px; margin-top: 6px; align-items: start; }
+/* align-items:stretch makes every card in a row the SAME height: a two-line name (the
+   Woodcutter's Lodge) no longer stands taller than its one-line neighbour (the Farm). The
+   min-height reserves room for that second line so short cards don't look starved, and the
+   name is allowed to wrap — never clipped. */
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 10px; margin-top: 6px; align-items: stretch; }
 .tcard {
   border: 1px solid var(--edge); border-left: 3px solid var(--edge); border-radius: 8px; padding: 7px 10px;
-  background: var(--card); display: flex; flex-direction: column; gap: 4px; min-height: 52px; text-align: left;
+  background: var(--card); display: flex; flex-direction: column; gap: 4px; min-height: 64px; text-align: left;
   cursor: pointer; transition: border-color .12s, transform .05s, box-shadow .12s; color: var(--ink);
   font-family: inherit; font-size: inherit; width: 100%;
 }

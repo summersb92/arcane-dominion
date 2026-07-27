@@ -7,12 +7,27 @@
 
 import { POPULATION, HAPPINESS } from '../../content/config';
 import type { GameState } from '../state';
-import { logEvent } from './chronicle';
+import { logEvent, tallyBirth, tallyDeath } from './chronicle';
 import { foodBalance } from './production';
 import { happiness } from './happiness';
 import { idleSettlers, removeSettler } from './jobs';
+import { effectiveCap } from './caps';
 
 const EPS = 1e-9;
+
+/**
+ * Does the FOOD situation permit growth? Either the settlement is running a non-negative
+ * net rate, or it is sitting on a deep enough reserve to spend down (POPULATION
+ * .growthReserveFraction of the food cap) — a full granary should feed new arrivals, not
+ * merely sit there while growth stalls on a rate technicality.
+ */
+export function foodAllowsGrowth(state: GameState): boolean {
+  const food = state.run.resources.food;
+  if (food <= EPS) return false;
+  if (foodBalance(state) >= -EPS) return true;
+  const cap = effectiveCap(state, 'food');
+  return Number.isFinite(cap) && cap > 0 && food / cap >= POPULATION.growthReserveFraction;
+}
 
 /** Once-per-run chronicle beats for milestone populations (keyed by the new total). */
 const POP_MILESTONES: Record<number, string> = {
@@ -38,17 +53,16 @@ export function runPopulation(state: GameState, dt: number): void {
   const run = state.run;
   const starving = run.flags.starving === true;
   const hasRoom = run.population.total < run.popCap;
-  const netFood = foodBalance(state);
-  const foodInStock = run.resources.food > EPS;
   const happy = happiness(state).value >= HAPPINESS.growthThreshold;
-  const canGrow = hasRoom && foodInStock && netFood >= -EPS && happy;
+  const canGrow = hasRoom && foodAllowsGrowth(state) && happy;
 
   if (starving && run.population.total > 0) {
     run.growthProgress -= dt;
     if (run.growthProgress <= -POPULATION.starveIntervalSec) {
       if (removeSettler(state)) {
         run.growthProgress += POPULATION.starveIntervalSec;
-        logEvent(state, 'A settler is lost to hunger.');
+        // Reported as a SEASON total, not one line per loss (systems/chronicle.ts).
+        tallyDeath(state);
       } else {
         run.growthProgress = 0;
       }
@@ -59,13 +73,15 @@ export function runPopulation(state: GameState, dt: number): void {
       run.growthProgress -= POPULATION.growthIntervalSec;
       const wasEmpty = run.population.total === 0;
       run.population.total += 1;
-      // Milestone populations get a story beat; ordinary arrivals keep the plain line.
+      // Ordinary arrivals are counted, not narrated — the season reports them in one line.
+      // Only the FIRST settler and the milestone populations earn their own beat.
+      tallyBirth(state);
       const milestone = POP_MILESTONES[run.population.total];
-      if (wasEmpty) logEvent(state, 'The first settler joins the camp.');
+      if (wasEmpty) logEvent(state, 'The first settler joins the camp.', 'ev');
       else if (milestone && run.flags[`popBeat${run.population.total}`] !== true) {
         run.flags[`popBeat${run.population.total}`] = true;
         logEvent(state, milestone, 'ev');
-      } else logEvent(state, 'A new settler arrives.');
+      }
     }
   } else {
     run.growthProgress = decayToZero(run.growthProgress, dt);
@@ -97,8 +113,7 @@ export function growthStatus(state: GameState): GrowthInfo {
     return { status: 'starving', progress: clamp01(-run.growthProgress / POPULATION.starveIntervalSec) };
   }
   if (run.popCap > 0 && total >= run.popCap) return { status: 'full', progress: 0 };
-  const netFood = foodBalance(state);
-  const foodOk = run.resources.food > EPS && netFood >= -EPS;
+  const foodOk = foodAllowsGrowth(state);
   const happy = happiness(state).value >= HAPPINESS.growthThreshold;
   if (hasRoom && foodOk && happy) {
     return { status: 'growing', progress: clamp01(run.growthProgress / POPULATION.growthIntervalSec) };

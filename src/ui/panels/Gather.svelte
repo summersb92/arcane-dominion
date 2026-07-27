@@ -73,8 +73,10 @@
 {/if}
 
 <style>
+  /* Breathing room above the buttons — the rail reads as separate blocks, not one column
+     of controls butted together. */
   .gather {
-    margin-top: 10px;
+    margin-top: 18px;
   }
   /* One button PER ROW, full width and deliberately large — these are clicked hundreds of
      times in the opening minutes, so they must be an easy target. They retire on their own

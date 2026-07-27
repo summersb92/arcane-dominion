@@ -15,6 +15,30 @@ import { FORM_LABELS, currentForm, formBonuses, effectivePolicies } from './gove
 export interface HappinessLine {
   label: string;
   amount: number; // + raises, − lowers
+  /** A LUXURY that isn't stocked deeply enough to pay its full morale bonus — the UI
+   *  warns on it, because the fix (hold more) is not obvious from the number alone. */
+  short?: boolean;
+}
+
+/** How much of a luxury buys one point of happiness AT THE CURRENT SIZE. A luxury is a
+ *  per-head comfort: the same pile spread over twice the settlers is half the comfort, so
+ *  the per-point cost grows with the population past HAPPINESS.luxuryPopBaseline. */
+export function luxuryPerPoint(state: GameState, basePerPoint: number): number {
+  const pop = state.run.population.total;
+  return basePerPoint * Math.max(1, pop / HAPPINESS.luxuryPopBaseline);
+}
+
+/** A luxury's happiness contribution + whether the store falls short of the full bonus. */
+function luxuryBonus(
+  state: GameState,
+  held: number,
+  basePerPoint: number,
+  max: number,
+): { amount: number; perPoint: number; needed: number; short: boolean } {
+  const perPoint = luxuryPerPoint(state, basePerPoint);
+  const amount = Math.min(max, Math.floor(held / perPoint));
+  const needed = max * perPoint; // what it would take to pay the FULL bonus
+  return { amount, perPoint, needed, short: amount < max };
 }
 export interface HappinessInfo {
   value: number; // 0..100, clamped
@@ -57,20 +81,31 @@ export function happiness(state: GameState): HappinessInfo {
     }
   }
 
-  // Furs are a LUXURY good: held furs lift spirits — +1 happiness per `fursPerHappiness`
-  // furs, capped at `fursHappinessMax`. (Furs keep accumulating past the cap for future trade.)
+  // Furs are a LUXURY good: held furs lift spirits, at a per-point cost that grows with the
+  // population. (Furs keep accumulating past the cap for future trade.)
   const furs = run.resources.furs ?? 0;
-  const furBonus = Math.min(HAPPINESS.fursHappinessMax, Math.floor(furs / HAPPINESS.fursPerHappiness));
-  if (furBonus > 0) breakdown.push({ label: `Furs (${Math.floor(furs)})`, amount: furBonus });
+  const furLux = luxuryBonus(state, furs, HAPPINESS.fursPerHappiness, HAPPINESS.fursHappinessMax);
+  const furBonus = furLux.amount;
+  if (furs > 0) {
+    breakdown.push({
+      label: `Furs (${Math.floor(furs)} / ${Math.ceil(furLux.needed)})`,
+      amount: furBonus,
+      short: furLux.short,
+    });
+  }
 
-  // Furniture is a stronger industrial-era LUXURY good (from the Factory): +1 per fewer held,
-  // capped higher than furs.
+  // Furniture is a stronger industrial-era LUXURY good (from the Factory): fewer needed per
+  // point than furs, capped higher — and scaling with the population just the same.
   const furniture = run.resources.furniture ?? 0;
-  const furnitureBonus = Math.min(
-    HAPPINESS.furnitureHappinessMax,
-    Math.floor(furniture / HAPPINESS.furniturePerHappiness),
-  );
-  if (furnitureBonus > 0) breakdown.push({ label: `Furniture (${Math.floor(furniture)})`, amount: furnitureBonus });
+  const furnLux = luxuryBonus(state, furniture, HAPPINESS.furniturePerHappiness, HAPPINESS.furnitureHappinessMax);
+  const furnitureBonus = furnLux.amount;
+  if (furniture > 0) {
+    breakdown.push({
+      label: `Furniture (${Math.floor(furniture)} / ${Math.ceil(furnLux.needed)})`,
+      amount: furnitureBonus,
+      short: furnLux.short,
+    });
+  }
 
   // Governance: the form's passive and each LIVE policy's happiness effect (suspended
   // policies contribute nothing).

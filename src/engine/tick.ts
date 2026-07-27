@@ -6,6 +6,7 @@ import type { GameState } from './state';
 import { runProduction } from './systems/production';
 import { runPopulation } from './systems/population';
 import { checkMagicDiscovery } from './systems/magic';
+import { runChronicleWatch } from './systems/chronicle';
 
 export const TICK = 0.1; // seconds per fixed step
 export const MAX_CATCHUP_STEPS = 100_000; // bounds a single advance()
@@ -18,12 +19,16 @@ export const MAX_CATCHUP_STEPS = 100_000; // bounds a single advance()
  * clamps, and sets the starving flag), THEN population reads that fresh food stock to
  * decide growth vs. starvation. Magic discovery runs last, reading the freshly-updated
  * resources/buildings to see whether any of its three paths tripped this tick.
+ *
+ * The chronicle watcher runs LAST, after the clock has advanced, so "has the season turned"
+ * and "has the weather changed" are asked of the moment the tick just arrived at.
  */
 export function step(state: GameState, dt: number): void {
   runProduction(state, dt);
   runPopulation(state, dt);
   checkMagicDiscovery(state);
   state.playtime += dt;
+  runChronicleWatch(state, dt);
 }
 
 /**
