@@ -187,6 +187,7 @@ export const TECHS: TechDef[] = [
     name: 'Warding',
     blurb: 'Cut the right marks and the stone will hold a little peace in it.',
     cost: 200,
+    resourceCost: { mana: 5 }, // the marks have to be charged before they hold anything
     requires: ['folk-lore'],
     unlocks: ['Ward Stone (building)'],
   },

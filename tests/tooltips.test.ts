@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/engine/state';
 import { build, setRecipeActive, activeCount } from '../src/engine/systems/buildings';
 import { happiness } from '../src/engine/systems/happiness';
+import { effectiveCap } from '../src/engine/systems/caps';
 import { assignJob } from '../src/engine/systems/jobs';
 import { jobEffectiveProduces, productionRates, runProduction } from '../src/engine/systems/production';
 import { TECH_BY_ID } from '../src/content/tech';
@@ -305,8 +306,8 @@ describe('the Shrine — the first building, and the first culture', () => {
     expect(effectsFor(s, 'wayside-shrine')).toEqual(['+0.01 Culture/s']); // mana stays hidden
 
     s.run.tech.push('folk-lore');
-    expect(productionRates(s).mana).toBeCloseTo(0.2, 6); // 0.1 per Shrine
-    expect(effectsFor(s, 'wayside-shrine')).toContain('+0.10 Mana/s');
+    expect(productionRates(s).mana).toBeCloseTo(0.02, 6); // 0.01 per Shrine
+    expect(effectsFor(s, 'wayside-shrine')).toContain('+0.01 Mana/s');
   });
 
   it('Folk Lore costs 10 research AND 10 culture, and needs no prerequisite', () => {
@@ -342,7 +343,7 @@ describe('the Shrine — the first building, and the first culture', () => {
     expect(s.run.resources.culture).toBeCloseTo(10, 6);
     expect(s.run.resources.research).toBeGreaterThanOrEqual(10);
     expect(research(s, 'folk-lore')).toBe(true);
-    expect(productionRates(s).mana).toBeCloseTo(0.5, 6);
+    expect(productionRates(s).mana).toBeCloseTo(0.05, 6); // 5 Shrines × 0.01
   });
 });
 
@@ -457,3 +458,37 @@ describe('the Academy is where mana starts having kinds', () => {
     }
   });
 });
+
+describe('mana is carried in people, so the pool is only as deep as the population', () => {
+  it('the cap is one per settler and moves with the population', () => {
+    const s = newGame(1);
+    expect(effectiveCap(s, 'mana')).toBe(0); // nobody home
+    s.run.population.total = 12;
+    expect(effectiveCap(s, 'mana')).toBe(12);
+    s.run.population.total = 3;
+    expect(effectiveCap(s, 'mana')).toBe(3);
+  });
+
+  it('a tick clamps the pool down when settlers are lost', () => {
+    const s = newGame(1);
+    s.run.population.total = 20;
+    s.run.resources.mana = 20;
+    s.run.population.total = 5; // famine, say
+    runProduction(s, 1);
+    expect(s.run.resources.mana).toBe(5);
+  });
+
+  it('Warding costs 5 mana as well as 200 research', () => {
+    expect(TECH_BY_ID.warding.cost).toBe(200);
+    expect(TECH_BY_ID.warding.resourceCost).toEqual({ mana: 5 });
+
+    const s = newGame(1);
+    s.run.tech.push('folk-lore');
+    s.run.population.total = 10; // room to hold the mana
+    s.run.resources.research = 500;
+    expect(research(s, 'warding')).toBe(false); // research alone won't do it
+    s.run.resources.mana = 5;
+    expect(research(s, 'warding')).toBe(true);
+    expect(s.run.resources.mana).toBe(0);
+  });
+})

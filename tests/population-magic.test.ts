@@ -83,10 +83,23 @@ describe('the magic hook — automating mundane labour', () => {
     const s = newGame(1);
     s.run.flags.magicDiscovered = true;
     s.run.resources.stone = 40;
+    s.run.popCap = 10;
+    s.run.population.total = 10; // mana is carried in people — with nobody home it cannot pool
+    s.run.resources.food = 500;
     expect(build(s, 'arcane-font')).toBe(true);
     const before = s.run.resources.mana;
     simulate(s, 10);
     expect(s.run.resources.mana).toBeGreaterThan(before);
+  });
+
+  it('an empty settlement can hold NO mana, however much it makes', () => {
+    const s = newGame(1);
+    s.run.flags.magicDiscovered = true;
+    s.run.resources.stone = 40;
+    expect(build(s, 'arcane-font')).toBe(true);
+    expect(s.run.population.total).toBe(0);
+    simulate(s, 60);
+    expect(s.run.resources.mana).toBe(0); // no settlers, no pool
   });
 });
 

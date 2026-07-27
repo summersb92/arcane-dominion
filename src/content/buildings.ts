@@ -189,7 +189,7 @@ export const BUILDINGS: BuildingDef[] = [
     // of Culture before The Arts. Folk Lore then teaches it to draw mana as well.
     effects: [
       { kind: 'produce', resource: 'culture', perSec: 0.01 },
-      { kind: 'produce', resource: 'mana', perSec: 0.1, requiresTech: 'folk-lore' },
+      { kind: 'produce', resource: 'mana', perSec: 0.01, requiresTech: 'folk-lore' },
     ],
   },
   {

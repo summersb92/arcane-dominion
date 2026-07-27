@@ -101,6 +101,9 @@ export const POPULATION = {
    *  begins with your very first settler, so Research (the tech currency) accrues from
    *  the start, before any Scholars. Scholars add more on top. */
   researchPerSettler: 0.02,
+  /** Mana the settlement can HOLD per settler. Mana has no warehouse — it is carried in
+   *  people, so the pool is only as deep as the population. With nobody home it is zero. */
+  manaCapPerSettler: 1,
   /** Mana each settler draws per second ONCE the Meditation tech is researched — the first
    *  mana income that doesn't depend on a building. Small on purpose; Shrines still carry it. */
   manaPerSettler: 0.005,

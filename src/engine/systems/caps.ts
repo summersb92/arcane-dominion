@@ -4,7 +4,7 @@
 // buildings (Scholar's Study, Library). Mana and culture stay UNCAPPED (Infinity). Pure
 // engine, no DOM.
 
-import { STARTING, KNOWLEDGE } from '../../content/config';
+import { STARTING, KNOWLEDGE, POPULATION } from '../../content/config';
 import { BUILDINGS } from '../../content/buildings';
 import { isUncappedResource, type MundaneResourceId, type ResourceId } from '../../content/resources';
 import type { GameState } from '../state';
@@ -45,10 +45,18 @@ export function goldCap(state: GameState): number {
   return cap;
 }
 
-/** Effective storage cap for a resource: the mundane cap, the derived research/gold caps, or
- *  Infinity for the uncapped currencies (mana / culture / prismatic). */
+/** The effective MANA cap. Mana has no warehouse — it is carried in people, so the pool is
+ *  only as deep as the population (POPULATION.manaCapPerSettler each). A settlement with
+ *  nobody home holds none. */
+export function manaCap(state: GameState): number {
+  return POPULATION.manaCapPerSettler * state.run.population.total;
+}
+
+/** Effective storage cap for a resource: the mundane cap, the derived research/gold/mana
+ *  caps, or Infinity for the uncapped currencies (culture / prismatic). */
 export function effectiveCap(state: GameState, id: ResourceId): number {
   if (id === 'gold') return goldCap(state);
+  if (id === 'mana') return manaCap(state);
   if (isUncappedResource(id)) return Infinity;
   if (id === 'research') return researchCap(state);
   return state.run.caps[id as MundaneResourceId];
