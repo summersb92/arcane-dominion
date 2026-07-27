@@ -194,7 +194,7 @@ describe('Steel Tools research (split per tool; a steel sink + top per-job tier)
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
     s.run.tech.push('iron-working'); // the one global tier
-    const beforeTool = productionRates(s).wood; // 0.5 × 1.5
+    const beforeTool = productionRates(s).wood; // 1 × 1.5 × the Lodge
 
     // Research Steel Axe (needs the prereq + research + 40 steel).
     s.run.tech.push('steelmaking');

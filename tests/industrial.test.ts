@@ -87,7 +87,7 @@ describe('Steam Works — mechanization (spend goods → global output)', () => 
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
-    const LODGE = 0.5 * 1.02; // the Lodge's own +2% is baked into the baseline
+    const LODGE = 1 * 1.02; // the Lodge's own +2% is baked into the baseline
     expect(productionRates(s).wood).toBeCloseTo(LODGE, 6);
 
     // Build a Steam Works (starts active) with fuel on hand → +20% to every worker.

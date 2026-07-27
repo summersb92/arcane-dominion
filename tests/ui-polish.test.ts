@@ -60,11 +60,11 @@ describe('recipe view carries per-copy rates', () => {
 describe('effective job rates (the tooltip no longer lies)', () => {
   it('jobEffectiveProduces reflects tool techs and the Workshop', () => {
     const s = newGame(1);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1, 6);
     s.run.tech.push('stone-axe'); // +25%
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.625, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1.25, 6);
     s.run.buildings.workshop = 1; // +10% global
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.25 * 1.1, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.25 * 1.1, 6);
   });
 });
 

@@ -106,7 +106,7 @@ describe('jobs', () => {
     expect(assignJob(s, 'woodcutter', 1)).toBe(1);
 
     const rates = productionRates(s);
-    expect(rates.wood).toBeCloseTo(0.5 * 1.02, 6); // 1 worker × 0.5/s × the Lodge's own +2%
+    expect(rates.wood).toBeCloseTo(1 * 1.02, 6); // 1 worker × 0.5/s × the Lodge's own +2%
     expect(rates.food).toBeCloseTo(-4, 6); // base settler upkeep only — jobs no longer eat food
 
     const woodBefore = s.run.resources.wood;
@@ -288,9 +288,9 @@ describe('tech', () => {
     build(s, 'woodcutters-lodge');
     s.run.population.total = 1;
     assignJob(s, 'woodcutter', 1);
-    expect(productionRates(s).wood).toBeCloseTo(0.5 * 1.02, 6); // one Lodge: +2%
+    expect(productionRates(s).wood).toBeCloseTo(1 * 1.02, 6); // one Lodge: +2%
     s.run.tech.push('stone-axe');
-    expect(productionRates(s).wood).toBeCloseTo(0.5 * 1.02 * 1.25, 6); // ×1.25
+    expect(productionRates(s).wood).toBeCloseTo(1 * 1.02 * 1.25, 6); // ×1.25
   });
 
   it('gates Naturalism behind Agriculture (the one magic-feeding tech)', () => {

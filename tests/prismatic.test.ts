@@ -98,7 +98,7 @@ describe('sink 1 — held essence empowers its matching job', () => {
   // Each element is tested ALONE (its opposite at zero) so this covers the raw scaling and
   // its ceiling; the opposition damping has its own coverage in education.test.ts.
   it('each essence boosts one job, capped at +50%', () => {
-    const base = { wood: 0.5, iron: 0.4, stone: 0.4, food: 6 };
+    const base = { wood: 1, iron: 0.4, stone: 1, food: 6 };
 
     const air = newGame(1);
     air.run.resources.airEssence = 50; // 50 × 0.004 = +20%

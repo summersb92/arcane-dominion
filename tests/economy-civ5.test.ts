@@ -152,7 +152,7 @@ describe('the base workplaces store their own yield and sharpen their own job', 
   it('each adds +2% to its OWN job only, stacking per copy', () => {
     const s = newGame(1);
     s.run.buildings['woodcutters-lodge'] = 10;
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.2, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.2, 6);
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6, 6); // Farmers untouched
     s.run.buildings['forager-hut'] = 5;
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.1, 6);

@@ -99,7 +99,7 @@ describe('contentment is the master production modifier', () => {
     s.run.population.total = 5;
     s.run.buildings['woodcutters-lodge'] = 5;
     assignJob(s, 'woodcutter', 5);
-    const FIVE_LODGES = 0.5 * 1.1; // 5 Lodges × their own +2%
+    const FIVE_LODGES = 1 * 1.1; // 5 Lodges × their own +2%
     expect(happiness(s).value).toBe(100);
     expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(FIVE_LODGES, 6);
 
@@ -117,7 +117,7 @@ describe('contentment is the master production modifier', () => {
     s.run.population.total = 30; // 25 past the buffer → −50 → happiness 50
     assignJob(s, 'woodcutter', 1);
     expect(happiness(s).value).toBe(50);
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.6 * 0.5, 6); // 30 Lodges: +60%
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.6 * 0.5, 6); // 30 Lodges: +60%
   });
 });
 

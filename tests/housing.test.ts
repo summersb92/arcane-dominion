@@ -59,7 +59,7 @@ describe('Aqueduct rework — repeatable Farmer infrastructure', () => {
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(base * 1.2, 6);
 
     // Farmer-only: the Woodcutter is untouched.
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1, 6);
   });
 });
 

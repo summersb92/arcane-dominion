@@ -38,7 +38,7 @@ export const JOBS: JobDef[] = [
     id: 'woodcutter',
     name: 'Woodcutter',
     blurb: 'Fells timber at the lodge, one honest tree at a time.',
-    produces: { wood: 0.5 },
+    produces: { wood: 1 },
     requiresBuildingCapacity: 'woodcutters-lodge',
   },
   {
@@ -59,7 +59,7 @@ export const JOBS: JobDef[] = [
     id: 'quarry-worker',
     name: 'Stonecutter',
     blurb: 'Hews stone at the Quarry. The hill objects, gradually.',
-    produces: { stone: 0.4 },
+    produces: { stone: 1 },
     requiresBuildingCapacity: 'quarry',
   },
   {

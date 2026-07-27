@@ -207,7 +207,7 @@ describe('tool-tier efficiency stacks on a gather job', () => {
     assignJob(s, 'woodcutter', 1);
 
     const base = productionRates(s).wood;
-    const LODGE = 0.5 * 1.02; // one Woodcutter's Lodge boosts its own job by 2%
+    const LODGE = 1 * 1.02; // one Woodcutter's Lodge boosts its own job by 2%
     expect(base).toBeCloseTo(LODGE, 6);
 
     s.run.tech.push('stone-axe'); // per-tool +25%

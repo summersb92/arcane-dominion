@@ -150,12 +150,12 @@ describe('opposition — the stronger element drowns out the weaker, asymptotica
     const s = newGame(1);
     // Fire alone: 100 held → +40% (0.004 × 100), undamped.
     s.run.resources.fireEssence = 100;
-    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(0.4 * 1.4, 6);
+    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(1 * 1.4, 6);
 
     // Now flood Water: diff 400 → factor 1 − 0.9 × 400/460 ≈ 0.2174, so +40% → ~+8.7%.
     s.run.resources.waterEssence = 500;
     const factor = 1 - 0.9 * (400 / 460);
-    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(0.4 * (1 + 0.4 * factor), 6);
+    expect(jobEffectiveProduces(s, 'quarry-worker').stone).toBeCloseTo(1 * (1 + 0.4 * factor), 6);
     // Water's own empowerment is untouched (it is the stronger side).
     expect(jobEffectiveProduces(s, 'forager').food).toBeCloseTo(6 * 1.5, 6); // capped at +50%
   });

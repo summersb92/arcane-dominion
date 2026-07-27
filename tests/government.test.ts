@@ -22,7 +22,7 @@ describe('mini-step techs — per-job boosts', () => {
     expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6);
     s.run.tech.push('animal-husbandry');
     expect(jobEffectiveProduces(s, 'hunter').food).toBeCloseTo(0.3, 6); // Hunters unchanged
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1, 6);
     expect(TECH_BY_ID['animal-husbandry'].unlocks).toEqual(['Ranch (building)']);
   });
 
@@ -41,7 +41,7 @@ describe('mini-step techs — per-job boosts', () => {
     s.run.tech.push('bloomery', 'optics', 'wheelbarrows');
     expect(jobEffectiveProduces(s, 'miner').iron).toBeCloseTo(0.4 * 1.25 * 1.1, 6); // bloomery × wheelbarrows
     expect(jobEffectiveProduces(s, 'scholar').research).toBeCloseTo(0.2 * 1.25, 6); // optics only (not a gather job)
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.1, 6); // wheelbarrows
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.1, 6); // wheelbarrows
   });
 });
 
@@ -69,7 +69,7 @@ describe('mini-step buildings', () => {
   it('the Guild Hall boosts every worker (+5%)', () => {
     const s = newGame(1);
     s.run.buildings['guild-hall'] = 1;
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.05, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.05, 6);
   });
 });
 
@@ -93,10 +93,10 @@ describe('governance — forms and slots', () => {
   it('Monarchy grants +5% worker output; the Republic +25% culture and +5 happiness', () => {
     const s = newGame(1);
     s.run.tech.push('code-of-laws', 'monarchy');
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5 * 1.05, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1 * 1.05, 6);
 
     s.run.tech.push('republic'); // replaces the monarchy passive
-    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(0.5, 6);
+    expect(jobEffectiveProduces(s, 'woodcutter').wood).toBeCloseTo(1, 6);
     expect(happiness(s).breakdown.some((b) => b.label === 'Republic')).toBe(true);
     // Culture production ×1.25: one Bard (0.2/s base).
     s.run.tech.push('the-arts');
