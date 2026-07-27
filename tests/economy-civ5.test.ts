@@ -102,10 +102,12 @@ describe('Gold + the market (Civ 5 Currency line)', () => {
 describe('Civ 5 naval line: Sailing → Harbour → Navigation → Seaport', () => {
   it('the Harbour mixes food, gold and storage', () => {
     const s = newGame(1);
-    s.run.resources.wood = 300;
+    s.run.resources.wood = 300; // 400 wood is the price — not enough yet
     s.run.resources.stone = 300;
     expect(build(s, 'harbor')).toBe(false); // needs Sailing
     s.run.tech.push('sailing');
+    expect(build(s, 'harbor')).toBe(false); // …and the full 400 wood
+    s.run.resources.wood = 500;
     const capBefore = s.run.caps.wood;
     expect(build(s, 'harbor')).toBe(true);
     const r = productionRates(s);
@@ -118,7 +120,7 @@ describe('Civ 5 naval line: Sailing → Harbour → Navigation → Seaport', () 
   it('the Seaport needs Navigation AND a standing Harbour', () => {
     const s = newGame(1);
     s.run.tech.push('sailing', 'navigation');
-    s.run.resources.wood = 600;
+    s.run.resources.wood = 1200;
     s.run.resources.stone = 600;
     s.run.resources.tools = 100;
     expect(build(s, 'seaport')).toBe(false); // no Harbour yet

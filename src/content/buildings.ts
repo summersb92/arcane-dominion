@@ -407,7 +407,7 @@ export const BUILDINGS: BuildingDef[] = [
     name: 'Harbour',
     blurb: 'Boats, nets, and a jetty that smells of the tide. Half the town suddenly has business here.',
     category: 'production',
-    cost: { wood: 80, stone: 40 },
+    cost: { wood: 400, stone: 120 },
     costGrowth: 1.15,
     requiresTech: 'sailing',
     effects: [
