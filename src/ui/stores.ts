@@ -355,9 +355,9 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
     }
   };
   for (const e of def.effects) push(e);
-  if ((def.costGrowth ?? 1) > 1) lines.push({ text: 'Cost rises with each copy' });
   return lines;
 }
+
 // ---- derive the panel view-model from canonical state ----
 export function toView(state: GameState): UiState {
   const run = state.run;
