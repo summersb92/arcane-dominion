@@ -45,6 +45,20 @@ export function goldCap(state: GameState): number {
   return cap;
 }
 
+/** The effective CULTURE cap: a small base plus the civic works that keep records. Without
+ *  those, a settlement simply forgets faster than it can accumulate. */
+export function cultureCap(state: GameState): number {
+  let cap = STARTING.cultureCap;
+  for (const b of BUILDINGS) {
+    const count = state.run.buildings[b.id] ?? 0;
+    if (count <= 0) continue;
+    for (const eff of b.effects) {
+      if (eff.kind === 'cultureCap') cap += count * eff.amount;
+    }
+  }
+  return cap;
+}
+
 /** The effective MANA cap. Mana has no warehouse — it is carried in people, so the pool is
  *  only as deep as the population (POPULATION.manaCapPerSettler each). A settlement with
  *  nobody home holds none. */
@@ -66,6 +80,7 @@ export function manaCap(state: GameState): number {
 export function effectiveCap(state: GameState, id: ResourceId): number {
   if (id === 'gold') return goldCap(state);
   if (id === 'mana') return manaCap(state);
+  if (id === 'culture') return cultureCap(state);
   if (isUncappedResource(id)) return Infinity;
   if (id === 'research') return researchCap(state);
   return state.run.caps[id as MundaneResourceId];

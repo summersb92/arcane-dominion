@@ -347,6 +347,9 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
       case 'resourceCap':
         lines.push({ text: `+${e.amount} ${RESOURCE_BY_ID[e.resource].label} storage`, cls: 'ok' });
         break;
+      case 'cultureCap':
+        lines.push({ text: `+${e.amount} Culture cap`, cls: 'ok' });
+        break;
       case 'manaCap':
         lines.push({ text: `+${e.amount} Mana cap`, cls: 'ok' });
         break;

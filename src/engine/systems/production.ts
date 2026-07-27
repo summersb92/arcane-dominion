@@ -508,7 +508,7 @@ export function runProduction(state: GameState, dt: number): void {
   // materials + furs + mana crystals, plus RESEARCH (capped by science buildings) and GOLD
   // (capped by housing once Currency is in — effectiveCap returns Infinity before that, so
   // listing it here is harmless pre-coinage). Mana/culture/prismatic are uncapped.
-  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'alchemical', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold', 'mana'] as ResourceId[]) {
+  for (const id of ['wood', 'food', 'stone', 'iron', 'coal', 'steel', 'tools', 'engines', 'furniture', 'parchment', 'books', 'compendiums', 'furs', 'alchemical', 'manaCrystals', 'airEssence', 'earthEssence', 'fireEssence', 'waterEssence', 'research', 'gold', 'mana', 'culture'] as ResourceId[]) {
     const cap = effectiveCap(state, id);
     if (run.resources[id] > cap) run.resources[id] = cap;
     // A stock can never be negative — job upkeep simply stops taking once the store is dry.

@@ -239,9 +239,35 @@ describe('furs luxury resource + Hunter', () => {
 });
 
 describe('culture resource', () => {
-  it('is uncapped (accumulates without a ceiling)', () => {
+  it('starts with a ceiling of 100, raised by the works that keep records', () => {
     const s = newGame(1);
-    expect(effectiveCap(s, 'culture')).toBe(Infinity);
+    expect(effectiveCap(s, 'culture')).toBe(100);
+
+    s.run.tech.push('the-arts');
+    s.run.resources.wood = 400;
+    s.run.resources.stone = 400;
+    expect(build(s, 'amphitheater')).toBe(true);
+    expect(effectiveCap(s, 'culture')).toBe(150);
+  });
+
+  it('a tick clamps culture to the ceiling', () => {
+    const s = newGame(1);
+    s.run.resources.culture = 5000;
+    runProduction(s, 1);
+    expect(s.run.resources.culture).toBe(100);
+  });
+
+  it('the ladder of culture-costing techs stays reachable', () => {
+    // Printing Press asks 200 culture — the base 100 alone could never buy it, so the
+    // Forum/Theatre line has to lift the ceiling as the costs climb.
+    const s = newGame(1);
+    s.run.tech.push('philosophy', 'the-arts');
+    s.run.resources.wood = 2000;
+    s.run.resources.stone = 2000;
+    expect(build(s, 'forum')).toBe(true);
+    expect(effectiveCap(s, 'culture')).toBe(200); // 100 base + the Forum's 100
+    expect(build(s, 'amphitheater')).toBe(true);
+    expect(effectiveCap(s, 'culture')).toBe(250);
   });
 
   it('a Bard at the Amphitheater produces culture', () => {

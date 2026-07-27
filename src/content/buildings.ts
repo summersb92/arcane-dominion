@@ -118,6 +118,9 @@ export type BuildingEffect =
   // +N to the RESEARCH cap (science buildings; caps.ts). An optional `requiresTech` gates the
   // bonus, which is how the Decimal System DOUBLES the Library: a second, gated +50.
   | { kind: 'researchCap'; amount: number; requiresTech?: string }
+  // +N to the CULTURE cap. Culture is remembered, not stored in a barn — the works that
+  // keep it (a Temple's records, a Forum's archive) are what let a settlement hold more.
+  | { kind: 'cultureCap'; amount: number }
   // +N to the MANA cap. Mana is otherwise carried in people (one per settler) — these are
   // the works that give it somewhere else to sit.
   | { kind: 'manaCap'; amount: number }
@@ -191,8 +194,9 @@ export const BUILDINGS: BuildingDef[] = [
     // No tech at all — this is one of the first things a camp can raise, and the only source
     // of Culture before The Arts. Folk Lore then teaches it to draw mana as well.
     effects: [
-      { kind: 'produce', resource: 'culture', perSec: 0.01 },
-      { kind: 'produce', resource: 'mana', perSec: 0.01, requiresTech: 'folk-lore' },
+      { kind: 'produce', resource: 'culture', perSec: 0.02 },
+      { kind: 'produce', resource: 'mana', perSec: 0.02, requiresTech: 'folk-lore' },
+      { kind: 'cultureCap', amount: 10 },
     ],
   },
   {
@@ -539,6 +543,7 @@ export const BUILDINGS: BuildingDef[] = [
     requiresTech: 'theology',
     effects: [
       { kind: 'produce', resource: 'culture', perSec: 0.25 },
+      { kind: 'cultureCap', amount: 100 },
       { kind: 'happiness', amount: 5 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
@@ -554,6 +559,7 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'jobCapacity', job: 'bard', slots: 1 },
       { kind: 'produce', resource: 'culture', perSec: 0.5 },
+      { kind: 'cultureCap', amount: 150 },
       { kind: 'produce', resource: 'gold', perSec: 0.2 },
       { kind: 'happiness', amount: 8 },
       { kind: 'cap', amount: STRUCT_CAP },
@@ -570,6 +576,7 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'jobCapacity', job: 'bard', slots: 1 },
       { kind: 'produce', resource: 'culture', perSec: 0.3 },
+      { kind: 'cultureCap', amount: 100 },
       { kind: 'happiness', amount: 5 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
@@ -586,6 +593,7 @@ export const BUILDINGS: BuildingDef[] = [
     requiresTech: 'mysticism',
     effects: [
       { kind: 'produce', resource: 'culture', perSec: 0.2 },
+      { kind: 'cultureCap', amount: 50 },
       { kind: 'happiness', amount: 4 },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
@@ -810,7 +818,10 @@ export const BUILDINGS: BuildingDef[] = [
     requiresTech: 'the-arts',
     // An empty stage lifts nobody: the morale comes from the ENTERTAINERS you staff it with
     // (+5 each, systems/happiness.ts), who draw a fee from the treasury. It stores nothing.
-    effects: [{ kind: 'jobCapacity', job: 'bard', slots: 1 }],
+    effects: [
+      { kind: 'jobCapacity', job: 'bard', slots: 1 },
+      { kind: 'cultureCap', amount: 50 },
+    ],
   },
   {
     id: 'sacred-grove',

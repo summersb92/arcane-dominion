@@ -254,7 +254,7 @@ describe('the Entertainer draws on the treasury', () => {
     // Upkeep is NOT scaled by efficiency, so a Workshop doesn't make performers cheaper.
     s.run.buildings.workshop = 1;
     expect(productionRates(s).gold).toBeCloseTo(-0.2, 6);
-    expect(effectsFor(s, 'amphitheater')).toEqual(['+1 Entertainer job']);
+    expect(effectsFor(s, 'amphitheater')).toEqual(['+1 Entertainer job', '+50 Culture cap']);
   });
 
   it('never drives the treasury below zero', () => {
@@ -301,13 +301,14 @@ describe('the Shrine — the first building, and the first culture', () => {
     s.run.resources.stone = 200;
     build(s, 'wayside-shrine');
     build(s, 'wayside-shrine');
-    expect(productionRates(s).culture).toBeCloseTo(0.02, 6); // 0.01 per Shrine
+    expect(productionRates(s).culture).toBeCloseTo(0.04, 6); // 0.02 per Shrine
     expect(productionRates(s).mana).toBeCloseTo(0, 6);
-    expect(effectsFor(s, 'wayside-shrine')).toEqual(['+0.01 Culture/s']); // mana stays hidden
+    // Mana stays hidden until Folk Lore; the culture it keeps does not.
+    expect(effectsFor(s, 'wayside-shrine')).toEqual(['+0.02 Culture/s', '+10 Culture cap']);
 
     s.run.tech.push('folk-lore');
-    expect(productionRates(s).mana).toBeCloseTo(0.02, 6); // 0.01 per Shrine
-    expect(effectsFor(s, 'wayside-shrine')).toContain('+0.01 Mana/s');
+    expect(productionRates(s).mana).toBeCloseTo(0.04, 6); // 0.02 per Shrine
+    expect(effectsFor(s, 'wayside-shrine')).toContain('+0.02 Mana/s');
   });
 
   it('Folk Lore costs 10 research AND 10 culture, and needs no prerequisite', () => {
@@ -336,14 +337,15 @@ describe('the Shrine — the first building, and the first culture', () => {
     const s = newGame(1);
     s.run.resources.stone = 500;
     for (let i = 0; i < 5; i++) build(s, 'wayside-shrine');
-    // Three settlers trickle the research half (0.02/s each); at 3 pop they are inside the
-    // happiness buffer and forage more than they eat, so nobody starves during the wait.
-    s.run.population.total = 3;
-    runProduction(s, 200); // 5 Shrines × 0.01/s × 200s = 10 culture
+    // Settlers trickle the research half (0.02/s each). Five Shrines now make culture twice
+    // as fast, so the wait is half as long — which needs twice as many settlers to cover the
+    // research. At 5 pop they are still inside the happiness buffer and feed themselves.
+    s.run.population.total = 5;
+    runProduction(s, 100); // 5 Shrines × 0.02/s × 100s = 10 culture
     expect(s.run.resources.culture).toBeCloseTo(10, 6);
     expect(s.run.resources.research).toBeGreaterThanOrEqual(10);
     expect(research(s, 'folk-lore')).toBe(true);
-    expect(productionRates(s).mana).toBeCloseTo(0.05, 6); // 5 Shrines × 0.01
+    expect(productionRates(s).mana).toBeCloseTo(0.1, 6); // 5 Shrines × 0.02
   });
 });
 

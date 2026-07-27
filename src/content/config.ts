@@ -50,6 +50,9 @@ export const STARTING = {
   manaCrystalsCap: 200,
   /** The four elemental essences are SCARCE — a smaller base cap than the materials. */
   essenceCap: 100,
+  /** BASE culture cap. Culture is capped like everything else now; the civic works that
+   *  produce it also raise the ceiling (see systems/caps.ts cultureCap). */
+  cultureCap: 100,
   /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
    *  techs require science buildings (Library +50 — doubled by the Decimal System — and
    *  Academy +600 each) to raise the ceiling
