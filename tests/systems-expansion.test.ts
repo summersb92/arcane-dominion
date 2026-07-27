@@ -8,6 +8,7 @@ import { productionRates, runProduction, jobEffectiveProduces } from '../src/eng
 import { effectiveCap, researchCap } from '../src/engine/systems/caps';
 import { happiness } from '../src/engine/systems/happiness';
 import { growthStatus } from '../src/engine/systems/population';
+import { TECH_BY_ID } from '../src/content/tech';
 
 describe('techs can cost materials (resourceCost)', () => {
   it('refuses stone-axe without the stone, with NO mutation', () => {
@@ -38,21 +39,45 @@ describe('research is capped by science buildings', () => {
     expect(effectiveCap(s, 'research')).toBe(300);
   });
 
-  it('the Library (+100) and Academy (+600) raise the research cap', () => {
+  it('the Library (+50) and Academy (+600) raise the research cap', () => {
     const s = newGame(1);
     expect(researchCap(s)).toBe(300); // base
     s.run.tech.push('writing'); // unlocks the Library
     s.run.resources.wood = 500;
     s.run.resources.stone = 500;
     expect(build(s, 'library')).toBe(true);
-    expect(researchCap(s)).toBe(400); // 300 base + 100 library
+    expect(researchCap(s)).toBe(350); // 300 base + 50 library
     expect(build(s, 'academy')).toBe(false); // the Academy needs Mathematics now
     s.run.tech.push('mathematics');
     expect(build(s, 'academy')).toBe(true);
-    expect(researchCap(s)).toBe(1000); // + 600 academy
+    expect(researchCap(s)).toBe(950); // + 600 academy
     // A Scholar can be assigned to the Library.
     s.run.population.total = 1;
     expect(assignJob(s, 'scholar', 1)).toBe(1);
+  });
+
+  it('the Decimal System DOUBLES every Library, and leaves the Academy alone', () => {
+    const s = newGame(1);
+    s.run.tech.push('writing');
+    s.run.resources.wood = 2000;
+    s.run.resources.stone = 2000;
+    expect(build(s, 'library')).toBe(true);
+    expect(build(s, 'library')).toBe(true);
+    expect(build(s, 'library')).toBe(true);
+    expect(researchCap(s)).toBe(450); // 300 + 3 × 50
+
+    s.run.tech.push('decimal-system');
+    expect(researchCap(s)).toBe(600); // 300 + 3 × 100 — the gated half switched on
+
+    // The Academy's +600 is NOT doubled; only Libraries scale with the Decimal System.
+    s.run.tech.push('mathematics');
+    expect(build(s, 'academy')).toBe(true);
+    expect(researchCap(s)).toBe(1200); // 600 + 600, not 600 + 1200
+  });
+
+  it('the Decimal System sits behind Mathematics and costs 1000', () => {
+    expect(TECH_BY_ID['decimal-system'].cost).toBe(1000);
+    expect(TECH_BY_ID['decimal-system'].requires).toContain('mathematics');
   });
 
   it('research clamps at its effective cap in a tick (excess is lost)', () => {

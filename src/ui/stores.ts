@@ -323,9 +323,11 @@ function effectLines(id: BuildingId): TooltipLine[] {
       case 'manaUpkeep':
         lines.push({ text: `-${numStr(e.perSec)} Mana/s upkeep`, cls: 'life' });
         break;
-      case 'researchCap':
-        lines.push({ text: `+${e.amount} Research cap`, cls: 'ok' });
+      case 'researchCap': {
+        const gate = e.requiresTech ? ` (requires ${TECH_BY_ID[e.requiresTech as TechId]?.name ?? e.requiresTech})` : '';
+        lines.push({ text: `+${e.amount} Research cap${gate}`, cls: 'ok' });
         break;
+      }
       case 'happiness':
         lines.push({ text: `+${e.amount} happiness`, cls: 'ok' });
         break;

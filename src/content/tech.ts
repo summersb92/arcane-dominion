@@ -35,6 +35,7 @@ export type TechId =
   | 'agriculture'
   | 'masonry'
   | 'writing'
+  | 'decimal-system'
   | 'bookbinding'
   | 'compendia'
   | 'calendar'
@@ -258,6 +259,14 @@ export const TECHS: TechDef[] = [
     cost: 700,
     requires: ['writing', 'masonry'], // a classic combination tech
     unlocks: ['Observatory (building)', 'Academy (building)'],
+  },
+  {
+    id: 'decimal-system',
+    name: 'Decimal System',
+    blurb: 'Place value, and a zero to hold the empty column. The shelves suddenly hold twice as much.',
+    cost: 1000,
+    requires: ['mathematics'],
+    unlocks: ['Doubles every Library’s research cap bonus'],
   },
   {
     id: 'construction',

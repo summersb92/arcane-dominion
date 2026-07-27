@@ -17,7 +17,10 @@ export function researchCap(state: GameState): number {
     const count = state.run.buildings[b.id] ?? 0;
     if (count <= 0) continue;
     for (const eff of b.effects) {
-      if (eff.kind === 'researchCap') cap += count * eff.amount;
+      if (eff.kind !== 'researchCap') continue;
+      // A gated bonus only counts once its tech is in — see the Library's Decimal System half.
+      if (eff.requiresTech && !state.run.tech.includes(eff.requiresTech as never)) continue;
+      cap += count * eff.amount;
     }
   }
   // Held compendiums lift the ceiling (capped) — a knowledge-chain payoff.

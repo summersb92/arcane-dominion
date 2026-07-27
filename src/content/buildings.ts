@@ -110,7 +110,9 @@ export type BuildingEffect =
       requiresWorker?: JobId;
     }
   | { kind: 'manaUpkeep'; perSec: number } // mana drained per second
-  | { kind: 'researchCap'; amount: number } // +N to the RESEARCH cap (science buildings; caps.ts)
+  // +N to the RESEARCH cap (science buildings; caps.ts). An optional `requiresTech` gates the
+  // bonus, which is how the Decimal System DOUBLES the Library: a second, gated +50.
+  | { kind: 'researchCap'; amount: number; requiresTech?: string }
   | { kind: 'happiness'; amount: number }; // +N happiness (luxury buildings; systems/happiness.ts)
 
 /** Build-tab section a building files under. Constructs render in their own "Arcane
@@ -291,7 +293,9 @@ export const BUILDINGS: BuildingDef[] = [
     effects: [
       { kind: 'jobCapacity', job: 'scholar', slots: 1 },
       { kind: 'produce', resource: 'research', perSec: 0.1 },
-      { kind: 'researchCap', amount: 100 },
+      { kind: 'researchCap', amount: 50 },
+      // The Decimal System doubles what every Library holds — a second +50 per copy.
+      { kind: 'researchCap', amount: 50, requiresTech: 'decimal-system' },
       { kind: 'cap', amount: STRUCT_CAP },
     ],
   },
