@@ -52,7 +52,7 @@ import type { OfflineSummary } from '../engine/offline';
 import { serialize, LOCALSTORAGE_KEY } from '../engine/save';
 import type { Notation } from '../engine/format';
 import { setNotation, fmt, fmtCost } from './format';
-import { applyFont } from './font';
+import { applyFont, applyFontScale } from './font';
 
 const EPS = 1e-9;
 
@@ -108,6 +108,9 @@ export interface BuildingRowView {
   blurb: string;
   count: number;
   costText: string; // e.g. "🪵15"
+  /** The cost split per resource, each flagged if THIS resource is the one you're short of,
+   *  so a two-resource building only reddens the half you can't pay (as research does). */
+  costParts: { text: string; short: boolean }[];
   unlocked: boolean;
   affordable: boolean;
   maxed: boolean;
@@ -309,7 +312,7 @@ function effectLines(id: BuildingId, techs: readonly string[] = []): TooltipLine
         lines.push({ text: `+${e.amount} Food cap` });
         break;
       case 'jobCapacity':
-        lines.push({ text: `+${e.slots} ${JOB_BY_ID[e.job].name} slot${e.slots > 1 ? 's' : ''}`, cls: 'ok' });
+        lines.push({ text: `+${e.slots} ${JOB_BY_ID[e.job].name} job${e.slots > 1 ? 's' : ''}`, cls: 'ok' });
         break;
       case 'jobOutputMult':
         lines.push({ text: `+${Math.round(e.amount * 100)}% to every worker's output`, cls: 'ok' });
@@ -458,6 +461,11 @@ export function toView(state: GameState): UiState {
       blurb: b.blurb,
       count: b.count,
       costText: costText(b.cost),
+      costParts: (Object.entries(b.cost) as [ResourceId, number][]).map(([id, amt]) => ({
+        text: `${RESOURCE_BY_ID[id].label} ${fmtCost(amt)}`,
+        // Matches the engine's affordability tolerance (systems/buildings.ts).
+        short: (run.resources[id] ?? 0) < amt - 1e-6,
+      })),
       unlocked: b.unlocked,
       affordable: b.affordable,
       maxed: b.maxed,
@@ -636,7 +644,13 @@ export function actionTooltip(a: ActionRowView): TooltipContent {
  *  numbers can never drift from the engine). The blurb stays pure flavor. */
 export function buildingTooltip(b: BuildingRowView): TooltipContent {
   const sections: TooltipSection[] = [
-    { label: 'Cost', lines: [{ text: b.costText || '—', cls: b.affordable ? undefined : 'life' }] },
+    {
+      label: 'Cost',
+      // One line per resource: only the one you're actually short of reads red.
+      lines: b.costParts.length
+        ? b.costParts.map((p) => ({ text: p.text, cls: p.short ? 'life' : undefined }))
+        : [{ text: '—' }],
+    },
   ];
   const fx = effectLines(b.id, b.techs);
   if (fx.length) sections.push({ label: 'Effects', lines: fx });
@@ -769,6 +783,7 @@ export function resetGame(): void {
   state = newGame();
   setNotation(state.settings.notation);
   applyFont(state.settings.font);
+  applyFontScale(state.settings.fontScale);
   activeTab.set('build');
   persist();
   publish();
@@ -792,6 +807,14 @@ export function setChronicleLinesSetting(n: number): void {
 /** Change the UI font key: persist + re-render (the panel applies the family). */
 export function setFontSetting(f: string): void {
   state.settings.font = f;
+  persist();
+  publish();
+}
+
+/** Change the UI scale (percent, clamped 80..160): persist + apply + re-render. */
+export function setFontScaleSetting(pct: number): void {
+  state.settings.fontScale = Math.max(80, Math.min(160, Math.round(pct)));
+  applyFontScale(state.settings.fontScale);
   persist();
   publish();
 }

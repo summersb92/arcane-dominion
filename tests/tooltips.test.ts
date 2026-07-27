@@ -39,7 +39,7 @@ describe('building tooltips hide effects still behind a tech gate', () => {
     expect(effectsFor(newGame(1), 'hut')).toContain('+100 Gold cap (with Currency)');
   });
 
-  it('the Farm House is housing and a Farm slot — no storage at all', () => {
+  it('the Farm House is housing and a Farm job — no storage at all', () => {
     const s = newGame(1);
     s.run.tech.push('agriculture');
     const fx = effectsFor(s, 'farm-house');
@@ -95,5 +95,43 @@ describe('a multi-resource research cost only reddens the half you cannot pay', 
 
   it('a single-resource tech still renders one line', () => {
     expect(costLines(newGame(1), 'writing')).toEqual([['Research 20', 'life']]);
+  });
+});
+
+describe('build costs colour per resource, exactly as research does', () => {
+  function costLines(s: ReturnType<typeof newGame>, id: string): [string, string | undefined][] {
+    const row = toView(s).buildings.find((b) => b.id === id)!;
+    const cost = buildingTooltip(row).sections.find((x) => x.label === 'Cost')!;
+    return cost.lines.map((l) => [l.text, l.cls]);
+  }
+
+  it('the Farm House (50 wood + 5 stone) reddens only the half you cannot pay', () => {
+    const s = newGame(1);
+    s.run.tech.push('agriculture');
+    expect(costLines(s, 'farm-house')).toEqual([
+      ['Wood 50', 'life'],
+      ['Stone 5', 'life'],
+    ]);
+
+    s.run.resources.wood = 100; // wood covered, stone still missing
+    expect(costLines(s, 'farm-house')).toEqual([
+      ['Wood 50', undefined],
+      ['Stone 5', 'life'],
+    ]);
+
+    s.run.resources.stone = 20;
+    expect(costLines(s, 'farm-house')).toEqual([
+      ['Wood 50', undefined],
+      ['Stone 5', undefined],
+    ]);
+  });
+
+  it('job capacity reads as JOBS, not slots', () => {
+    const s = newGame(1);
+    s.run.resources.wood = 500;
+    build(s, 'woodcutters-lodge');
+    expect(effectsFor(s, 'woodcutters-lodge')).toContain('+1 Woodcutter job');
+    s.run.tech.push('writing');
+    expect(effectsFor(s, 'academy')).toContain('+2 Scholar jobs'); // pluralized
   });
 });

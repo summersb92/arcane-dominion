@@ -165,7 +165,7 @@
       </div>
 
       {#if openJobs.length === 0}
-        <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open job slots.</div>
+        <div class="empty">No jobs yet — build a workplace (e.g. a Woodcutter's Lodge) to open jobs.</div>
       {:else}
         <div class="jobs">
           {#each openJobs as j (j.id)}

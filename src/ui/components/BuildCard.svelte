@@ -39,8 +39,12 @@
     </span>
     <!-- At-a-glance cost. Once one copy stands the price has ESCALATED, so the line says so
          explicitly — the cost shown is always for the NEXT copy, never the base. -->
-    <span class="cost" class:short={!b.affordable && !b.maxed}>
-      {#if b.count > 0}<span class="nextlbl">next</span> {/if}{b.costText}
+    <span class="cost">
+      {#if b.count > 0}<span class="nextlbl">next</span> {/if}{#each b.costParts as p, i (p.text)}{#if i > 0}<span
+            class="dot"
+          >
+            ·
+          </span>{/if}<span class:short={p.short && !b.maxed}>{p.text}</span>{/each}
     </span>
   </button>
   {#if b.converter && b.count > 0}
@@ -122,9 +126,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cost.short {
+  /* Only the resource you're actually short of reads red — the rest stay muted, so a
+     two-resource cost says WHICH half is the blocker. */
+  .cost .short {
     color: var(--life);
     opacity: 0.85;
+  }
+  .cost .dot {
+    padding: 0 3px;
   }
   .nextlbl {
     display: inline-block;

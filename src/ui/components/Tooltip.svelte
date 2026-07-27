@@ -14,20 +14,32 @@
   const M = 8; // viewport margin
   const GAP = 8; // gap between anchor and tooltip
 
+  /** The UI-scale zoom on <html> (Settings → Text size), or 1. Anchors come from
+   *  getBoundingClientRect, which reports SCREEN px — already multiplied by the zoom — while
+   *  this tooltip's own left/top are in the zoomed element's LOCAL units, and innerWidth/Height
+   *  are screen px too. Dividing anchor and viewport by the zoom puts all three in local units
+   *  so the tooltip lands on its anchor at every text size. */
+  function rootZoom(): number {
+    const z = Number(getComputedStyle(document.documentElement).zoom);
+    return Number.isFinite(z) && z > 0 ? z : 1;
+  }
+
   afterUpdate(() => {
     const { visible, anchor } = $tooltip;
     if (!visible || !el || !anchor) return;
+    const z = rootZoom();
     const tw = el.offsetWidth;
     const th = el.offsetHeight;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const vw = window.innerWidth / z;
+    const vh = window.innerHeight / z;
+    const a = { left: anchor.left / z, top: anchor.top / z, bottom: anchor.bottom / z };
 
-    let l = anchor.left;
+    let l = a.left;
     if (l + tw > vw - M) l = vw - M - tw;
     if (l < M) l = M;
 
-    let t = anchor.bottom + GAP; // prefer below the anchor
-    if (t + th > vh - M) t = anchor.top - th - GAP; // not enough room → flip above
+    let t = a.bottom + GAP; // prefer below the anchor
+    if (t + th > vh - M) t = a.top - th - GAP; // not enough room → flip above
     if (t < M) t = M;
 
     // Assign only on change so afterUpdate settles after one reflow (no loop).

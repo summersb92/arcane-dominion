@@ -15,3 +15,15 @@ export function isFontKey(v: unknown): v is FontKey {
 export function applyFont(f: string | undefined): void {
   document.documentElement.dataset.font = isFontKey(f) ? f : DEFAULT_FONT;
 }
+
+/** The UI scale steps offered in Settings, as percentages. */
+export const FONT_SCALES = [80, 90, 100, 110, 125, 150] as const;
+export const DEFAULT_FONT_SCALE = 100;
+
+/** Reflect the UI scale onto the document. app.css sizes everything in px, so scaling the
+ *  root FONT-SIZE would move almost nothing — `zoom` scales the whole layout instead, which
+ *  is what "bigger text" actually means here. Out-of-range/missing → 100%. */
+export function applyFontScale(pct: number | undefined): void {
+  const n = typeof pct === 'number' && Number.isFinite(pct) ? Math.max(80, Math.min(160, pct)) : DEFAULT_FONT_SCALE;
+  document.documentElement.style.zoom = n === 100 ? '' : String(n / 100);
+}

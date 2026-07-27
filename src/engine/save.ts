@@ -247,11 +247,16 @@ export function normalize(state: GameState): void {
   if (!state || typeof state !== 'object') return; // nothing to backfill (validate rejects)
 
   // settings — read on boot before the first run-based render, outside safeLoad's guard.
-  state.settings ??= { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono' };
+  state.settings ??= { notation: 'suffix', theme: 'system', chronicleLines: 8, font: 'mono', fontScale: 100 };
   state.settings.notation ??= 'suffix';
   state.settings.theme ??= 'system';
   if (typeof state.settings.chronicleLines !== 'number') state.settings.chronicleLines = 8;
   if (typeof state.settings.font !== 'string') state.settings.font = 'mono';
+  // UI scale: backfilled for saves written before the setting existed, and clamped here so a
+  // hand-edited save can never leave the app zoomed to something unreadable.
+  const fs = state.settings.fontScale;
+  state.settings.fontScale =
+    typeof fs === 'number' && Number.isFinite(fs) ? Math.max(80, Math.min(160, Math.round(fs))) : 100;
 
   const run = state.run;
   if (!run || typeof run !== 'object') return; // validate() will reject a missing run

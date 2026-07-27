@@ -11,12 +11,13 @@
     setNotationSetting,
     setChronicleLinesSetting,
     setFontSetting,
+    setFontScaleSetting,
     resetGame,
   } from '../stores';
   import { exportString, safeLoad } from '../../engine/save';
   import type { Notation } from '../../engine/format';
   import { downloadSave, readFileText } from '../saveio';
-  import { applyFont } from '../font';
+  import { applyFont, applyFontScale, FONT_SCALES } from '../font';
 
   const NOTATIONS: { id: Notation; label: string }[] = [
     { id: 'suffix', label: 'Suffix — 1.9K' },
@@ -37,6 +38,7 @@
   let notation: Notation = 'suffix';
   let chronicleLines = 8;
   let font = 'mono';
+  let fontScale = 100;
   let msg: { kind: 'ok' | 'err'; text: string } | null = null;
   let importText = '';
   let stringOut = '';
@@ -55,6 +57,7 @@
     notation = s.notation;
     chronicleLines = s.chronicleLines;
     font = s.font;
+    fontScale = s.fontScale;
   }
 
   function setMsg(kind: 'ok' | 'err', text: string): void {
@@ -100,6 +103,12 @@
     setMsg('ok', `Font set to ${font}.`);
   }
 
+  function onFontScale(e: Event): void {
+    fontScale = Number((e.currentTarget as HTMLSelectElement).value);
+    setFontScaleSetting(fontScale); // persists AND applies the zoom
+    setMsg('ok', `Text size set to ${fontScale}%.`);
+  }
+
   async function copyString(): Promise<void> {
     const s = exportString(getState());
     try {
@@ -140,6 +149,7 @@
     // The imported save carries its own settings (font/notation/chronicle lines) — reflect
     // the font onto <html> now and refresh the controls to match the loaded values.
     applyFont(getState().settings.font);
+    applyFontScale(getState().settings.fontScale);
     refreshSettings();
     const migrated = res.migratedFrom !== undefined ? ` (migrated from v${res.migratedFrom})` : '';
     setMsg('ok', `Loaded ${source}${migrated}. Your game is updated.`);
@@ -233,6 +243,14 @@
         <select class="sel" aria-label="Font" value={font} on:change={onFont}>
           {#each FONTS as ft (ft.id)}
             <option value={ft.id}>{ft.label}</option>
+          {/each}
+        </select>
+      </label>
+      <label class="field">
+        <span>Text size</span>
+        <select class="sel" aria-label="Text size" value={fontScale} on:change={onFontScale}>
+          {#each FONT_SCALES as n (n)}
+            <option value={n}>{n}%{n === 100 ? ' (default)' : ''}</option>
           {/each}
         </select>
       </label>

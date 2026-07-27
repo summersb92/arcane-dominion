@@ -60,6 +60,7 @@ export interface Settings {
   theme: string;
   chronicleLines: number; // how many Chronicle lines to show (clamped 5..10)
   font: string; // UI font family key ('mono' default)
+  fontScale: number; // UI scale as a PERCENT (100 = default), clamped 80..160
 }
 
 export interface GameState {
@@ -158,7 +159,7 @@ export function newGame(seed: number = seedFrom(Date.now())): GameState {
       flags: {},
       chronicle: [{ at: 0, text: OPENINGS[(seed >>> 0) % OPENINGS.length] }],
     },
-    settings: { notation: 'suffix', theme: 'kittens', chronicleLines: 8, font: 'mono' },
+    settings: { notation: 'suffix', theme: 'kittens', chronicleLines: 8, font: 'mono', fontScale: 100 },
     playtime: 0,
     lastSaved: now,
   };
