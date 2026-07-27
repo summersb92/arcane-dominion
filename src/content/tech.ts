@@ -177,8 +177,8 @@ export const TECHS: TechDef[] = [
     id: 'folk-lore',
     name: 'Folk Lore',
     blurb: 'The stories people already tell, written down and taken seriously. The stones answer.',
-    // Costs CULTURE, not research — the first tech the Shrine's own trickle pays for.
-    cost: 0,
+    // Cheap in both currencies — the first tech a Shrine's own trickle pays for.
+    cost: 10,
     resourceCost: { culture: 10 },
     unlocks: ['Shrines draw mana'],
   },

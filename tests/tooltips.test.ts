@@ -309,24 +309,38 @@ describe('the Shrine — the first building, and the first culture', () => {
     expect(effectsFor(s, 'wayside-shrine')).toContain('+0.10 Mana/s');
   });
 
-  it('Folk Lore costs 10 culture and no research at all', () => {
-    expect(TECH_BY_ID['folk-lore'].cost).toBe(0);
+  it('Folk Lore costs 10 research AND 10 culture, and needs no prerequisite', () => {
+    expect(TECH_BY_ID['folk-lore'].cost).toBe(10);
     expect(TECH_BY_ID['folk-lore'].resourceCost).toEqual({ culture: 10 });
     expect(TECH_BY_ID['folk-lore'].requires).toBeUndefined();
 
-    // The card shows only the real price — no "Research 0" line.
     const s = newGame(1);
     const row = toView(s).tech.find((t) => t.id === 'folk-lore')!;
-    expect(row.costParts.map((p) => p.text)).toEqual(['Culture 10']);
-    expect(row.costText).toBe('Culture 10');
+    expect(row.costParts.map((p) => p.text)).toEqual(['Research 10', 'Culture 10']);
+    expect(row.costText).toBe('Research 10 · Culture 10');
+  });
+
+  it('the culture half is the binding one — research alone will not buy it', () => {
+    const s = newGame(1);
+    s.run.resources.research = 500;
+    expect(research(s, 'folk-lore')).toBe(false); // no culture yet
+    const row = toView(s).tech.find((t) => t.id === 'folk-lore')!;
+    expect(row.costParts).toEqual([
+      { text: 'Research 10', short: false },
+      { text: 'Culture 10', short: true }, // only the half you can't pay reads red
+    ]);
   });
 
   it('the Shrine can pay for Folk Lore by itself — the loop closes', () => {
     const s = newGame(1);
     s.run.resources.stone = 500;
     for (let i = 0; i < 5; i++) build(s, 'wayside-shrine');
+    // Three settlers trickle the research half (0.02/s each); at 3 pop they are inside the
+    // happiness buffer and forage more than they eat, so nobody starves during the wait.
+    s.run.population.total = 3;
     runProduction(s, 200); // 5 Shrines × 0.01/s × 200s = 10 culture
     expect(s.run.resources.culture).toBeCloseTo(10, 6);
+    expect(s.run.resources.research).toBeGreaterThanOrEqual(10);
     expect(research(s, 'folk-lore')).toBe(true);
     expect(productionRates(s).mana).toBeCloseTo(0.5, 6);
   });
