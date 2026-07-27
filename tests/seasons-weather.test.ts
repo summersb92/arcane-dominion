@@ -8,6 +8,7 @@ import { foodAllowsGrowth, growthStatus } from '../src/engine/systems/population
 import { happiness } from '../src/engine/systems/happiness';
 import { seasonFoodMult, foodEnvMult, weather, weatherAt } from '../src/engine/systems/weather';
 import { CALENDAR, SEASON, WEATHER } from '../src/content/config';
+import { toView } from '../src/ui/stores';
 import { BUILDING_BY_ID } from '../src/content/buildings';
 import { JOB_BY_ID } from '../src/content/jobs';
 
@@ -93,6 +94,39 @@ describe('weather is a short, deterministic spell', () => {
     // And the producer figures still add up to the net, multipliers included.
     const sum = bd.producers.reduce((n, p) => n + p.amount, 0) + bd.consumers.reduce((n, c) => n + c.amount, 0);
     expect(sum).toBeCloseTo(bd.net, 6);
+  });
+});
+
+describe('the Food row wears its season', () => {
+  const foodMod = (playtime: number) => {
+    const s = newGame(1);
+    s.playtime = playtime;
+    return toView(s).resources.find((r) => r.id === 'food')!.mod;
+  };
+
+  it('brackets the modifier in the seasons that move the number', () => {
+    expect(foodMod(intoSeason(0))?.text).toBe('+50%'); // Spring
+    expect(foodMod(intoSeason(3))?.text).toBe('-50%'); // Winter
+  });
+
+  it('shows nothing at all in the seasons that do not', () => {
+    expect(foodMod(intoSeason(1))).toBeUndefined(); // Summer
+    expect(foodMod(intoSeason(2))).toBeUndefined(); // Autumn
+  });
+
+  it('reads as a gain in Spring and a loss in Winter, and says Hunters are spared', () => {
+    expect(foodMod(intoSeason(0))!.good).toBe(true);
+    const winter = foodMod(intoSeason(3))!;
+    expect(winter.good).toBe(false);
+    expect(winter.title).toMatch(/Hunters are unaffected/);
+  });
+
+  it('is a FOOD affair — no other resource carries one', () => {
+    const s = newGame(1);
+    s.playtime = intoSeason(3); // the season with the loudest modifier
+    for (const r of toView(s).resources) {
+      if (r.id !== 'food') expect(r.mod, r.id).toBeUndefined();
+    }
   });
 });
 

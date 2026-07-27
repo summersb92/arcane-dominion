@@ -25,7 +25,7 @@ import {
 import { growthStatus, foodAllowsGrowth, type GrowthInfo } from '../engine/systems/population';
 import { happiness, type HappinessInfo } from '../engine/systems/happiness';
 import { calendar, type CalendarInfo } from '../engine/systems/calendar';
-import { weather, type WeatherInfo } from '../engine/systems/weather';
+import { seasonFoodMult, weather, type WeatherInfo } from '../engine/systems/weather';
 import { effectiveCap } from '../engine/systems/caps';
 import {
   jobsView,
@@ -80,6 +80,9 @@ export interface ResourceView {
    *  growth) — the row shows a `!`. Distinct from atCap, which is about waste, not stalling. */
   warn?: boolean;
   warnText?: string; // hover title for the `!`
+  /** A standing environmental modifier on this resource, shown in brackets beside the name
+   *  (today: the SEASON on food). Absent when nothing is currently moving the number. */
+  mod?: { text: string; good: boolean; title: string };
 }
 export interface PopulationView {
   total: number;
@@ -506,6 +509,21 @@ export function toView(state: GameState): UiState {
     // Food carries a growth warning: when neither a surplus nor a deep enough reserve is
     // there, the settlement simply stops growing — and that is invisible from the rate alone.
     const warn = def.id === 'food' && !foodAllowsGrowth(state);
+    // …and the SEASON, in brackets, whenever it is moving the number. A rate that halves
+    // overnight needs to say why on the row itself, not only in the hover.
+    const seasonMult = def.id === 'food' ? seasonFoodMult(state) : 1;
+    const mod =
+      seasonMult === 1
+        ? undefined
+        : {
+            text: `${seasonMult > 1 ? '+' : ''}${Math.round((seasonMult - 1) * 100)}%`,
+            good: seasonMult > 1,
+            // Winter spares the Hunter, so the headline figure isn't the whole story.
+            title:
+              seasonMult > 1
+                ? `${calendar(state).season} — food production is up by half`
+                : `${calendar(state).season} — the fields yield half. Hunters are unaffected.`,
+          };
     return {
       id: def.id,
       label: def.label,
@@ -520,6 +538,7 @@ export function toView(state: GameState): UiState {
       show,
       warn,
       warnText: warn ? 'Population growth is paused — food is neither in surplus nor deeply stocked.' : undefined,
+      mod,
     };
   });
 

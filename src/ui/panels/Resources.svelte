@@ -61,6 +61,11 @@
             {fmtHeld(r.amount)}{#if r.capped}<span class="lockt"> / {fmtHeld(r.cap)}</span>{/if}
           </span>
           <span class="rt" class:drain={draining(r)}>{fmtRate(r.rate)}</span>
+          <!-- A standing environmental modifier (the season on food), bracketed straight
+               after the rate it is acting on, so the cause sits beside the effect. -->
+          {#if r.mod}<span class="mod" class:good={r.mod.good} class:bad={!r.mod.good} title={r.mod.title}
+            >[{r.mod.text}]</span
+          >{/if}
           <!-- A blocking condition the rate alone can't show (food stalling growth). -->
           {#if r.warn}<span class="warn" title={r.warnText}>!</span>{/if}
         </span>
@@ -135,6 +140,19 @@
   }
   .val {
     white-space: nowrap;
+  }
+  /* The bracketed season modifier, sitting with the rate it modifies. */
+  .mod {
+    margin-left: 5px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    cursor: help;
+  }
+  .mod.good {
+    color: var(--ok);
+  }
+  .mod.bad {
+    color: var(--life);
   }
   /* The growth-blocked marker. Sits after the rate so it never shifts the number column. */
   .warn {
