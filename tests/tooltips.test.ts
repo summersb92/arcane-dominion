@@ -408,3 +408,38 @@ describe('mana finds early uses: the Ward Stone and the elemental attunements', 
     }
   });
 });
+
+describe('the Academy is where mana starts having kinds', () => {
+  const ATTUNEMENTS = ['earth-attunement', 'water-attunement', 'air-attunement', 'fire-attunement'] as const;
+
+  it('all four attunements stay INVISIBLE until an Academy stands', () => {
+    const s = newGame(1);
+    // Every research prerequisite met — only the building is missing.
+    s.run.tech.push('folk-lore', 'masonry', 'sailing', 'milling', 'iron-working', 'writing', 'mathematics');
+    const visible = () => toView(s).tech.filter((t) => t.available).map((t) => t.id);
+    for (const id of ATTUNEMENTS) expect(visible(), `${id} before the Academy`).not.toContain(id);
+
+    s.run.resources.wood = 2000;
+    s.run.resources.stone = 2000;
+    expect(build(s, 'academy')).toBe(true);
+    for (const id of ATTUNEMENTS) expect(visible(), `${id} after the Academy`).toContain(id);
+  });
+
+  it('research REFUSES an attunement with no Academy, even when affordable', () => {
+    const s = newGame(1);
+    s.run.tech.push('folk-lore', 'masonry');
+    s.run.resources.research = 5000;
+    expect(research(s, 'earth-attunement')).toBe(false);
+    expect(s.run.tech).not.toContain('earth-attunement');
+    expect(s.run.resources.research).toBe(5000); // untouched on refusal
+  });
+
+  it('and so the four essences stay hidden until then', () => {
+    const s = newGame(1);
+    s.run.tech.push('folk-lore', 'masonry');
+    const shown = () => toView(s).resources.filter((r) => r.show).map((r) => r.id);
+    for (const id of ['airEssence', 'earthEssence', 'fireEssence', 'waterEssence']) {
+      expect(shown()).not.toContain(id);
+    }
+  });
+});

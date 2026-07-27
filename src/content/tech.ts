@@ -23,6 +23,7 @@
 //
 // Framework-agnostic — imported by the engine, the CLI, and (later) the UI.
 
+import type { BuildingId } from './buildings';
 import type { ResourceId } from './resources';
 
 export type TechId =
@@ -119,6 +120,10 @@ export interface TechDef {
   /** Run flag that must be true before this node is available (e.g. 'magicDiscovered' for the
    *  mana-costed magic techs). Mirrors BuildingDef.requiresFlag. */
   requiresFlag?: string;
+  /** Building that must STAND (count ≥ 1) before this node is even visible. The elemental
+   *  attunements need an Academy: telling one kind of magic from another is scholarship, and
+   *  it is the moment mana stops being one undifferentiated pool. */
+  requiresBuilding?: BuildingId;
   /** Human-readable list of what this node opens (for the UI). */
   unlocks: string[];
 }
@@ -194,14 +199,16 @@ export const TECHS: TechDef[] = [
     unlocks: ['Every settler draws a trickle of mana'],
   },
   // ---- ELEMENTAL ATTUNEMENTS — each teaches ONE building to spend mana for its element.
-  // Every attunement is a toggled recipe that starts OFF, so unlocking one can never crash
-  // an economy on its own. Ordered by how early their building arrives.
+  // All four are hidden until an ACADEMY stands: that is where mana stops being one pool and
+  // starts being four kinds of thing. Every attunement is a toggled recipe that starts OFF,
+  // so unlocking one can never crash an economy on its own.
   {
     id: 'earth-attunement',
     name: 'Earth Attunement',
     blurb: 'The quarry stops fighting the rock and starts asking it.',
     cost: 400,
     requires: ['folk-lore', 'masonry'],
+    requiresBuilding: 'academy',
     unlocks: ['Quarries can spend mana for Earth'],
   },
   {
@@ -210,6 +217,7 @@ export const TECHS: TechDef[] = [
     blurb: 'The tide keeps its own time. Learn it and the harbour keeps more than fish.',
     cost: 500,
     requires: ['folk-lore', 'sailing'],
+    requiresBuilding: 'academy',
     unlocks: ['Harbours can spend mana for Water'],
   },
   {
@@ -218,6 +226,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Sails already catch the wind. This catches what the wind is carrying.',
     cost: 600,
     requires: ['folk-lore', 'milling'],
+    requiresBuilding: 'academy',
     unlocks: ['Windmills can spend mana for Air'],
   },
   {
@@ -226,6 +235,7 @@ export const TECHS: TechDef[] = [
     blurb: 'Every forge has been half a ritual all along. Finish the other half.',
     cost: 700,
     requires: ['folk-lore', 'iron-working'],
+    requiresBuilding: 'academy',
     unlocks: ['Forges can spend mana for Fire'],
   },
   {

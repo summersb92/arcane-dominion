@@ -16,6 +16,8 @@ const EPS = 1e-6;
  *  gate behind `magicDiscovered`, like the magic buildings). */
 export function prereqsMet(state: GameState, def: TechDef): boolean {
   if (def.requiresFlag && state.run.flags[def.requiresFlag] !== true) return false;
+  // A standing building can gate a node too — the attunements need an Academy.
+  if (def.requiresBuilding && (state.run.buildings[def.requiresBuilding] ?? 0) < 1) return false;
   for (const pre of def.requires ?? []) {
     if (!state.run.tech.includes(pre)) return false;
   }
