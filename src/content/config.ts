@@ -49,7 +49,8 @@ export const STARTING = {
   /** The four elemental essences are SCARCE — a smaller base cap than the materials. */
   essenceCap: 100,
   /** BASE research cap. Research is capped — this base holds the first (≈300) techs; pricier
-   *  techs require science buildings (Library +100, Academy +600 each) to raise the ceiling
+   *  techs require science buildings (Library +50 — doubled by the Decimal System — and
+   *  Academy +600 each) to raise the ceiling
    *  toward the ~3000 needed by Steelmaking. See systems/caps.ts effectiveCap. */
   researchCap: 300,
   popCap: 0, // no housing yet — build a House to admit settlers
@@ -86,7 +87,7 @@ export const CALENDAR = {
 /** Once a resource's storage cap reaches this, hand-gathering that resource is RETIRED
  *  (the manual button turns off) — by then jobs/constructs out-produce a click, so the
  *  bootstrap is no longer needed. Per-resource: each retires as its own cap crosses this. */
-export const MANUAL_GATHER_RETIRE_CAP = 1000;
+export const MANUAL_GATHER_RETIRE_CAP = 4000;
 
 /** Population dynamics (systems/population.ts). Deterministic, tick-driven. */
 export const POPULATION = {

@@ -192,16 +192,18 @@ describe('calendar (100 days/season, 2s/day, 4 seasons; hidden until unlocked)',
   });
 });
 
-describe('manual gather retires at a 1000 cap', () => {
-  it('turns off hand-gathering for a resource once its cap reaches 1000', () => {
+describe('manual gather retires at a 4000 cap', () => {
+  it('turns off hand-gathering for a resource once its cap reaches 4000', () => {
     const s = newGame(1);
-    expect(doGather(s, 'gather-wood')).toBe(true); // works at the base 200 cap
-    s.run.caps.wood = 1000; // storage scaled up — production now covers it
+    expect(doGather(s, 'gather-wood')).toBe(true); // works at the base 500 cap
+    s.run.caps.wood = 3999; // just short — still worth a click
+    expect(actionsView(s).find((a) => a.resource === 'wood')!.retired).toBe(false);
+    s.run.caps.wood = 4000; // storage scaled up — production now covers it
     const wood = actionsView(s).find((a) => a.resource === 'wood')!;
     expect(wood.retired).toBe(true);
     expect(wood.available).toBe(false);
     expect(doGather(s, 'gather-wood')).toBe(false); // manual earning is off
-    // Other resources still hand-gatherable while their cap is below 1000.
+    // Other resources still hand-gatherable while their cap is below 4000.
     expect(actionsView(s).find((a) => a.resource === 'stone')!.retired).toBe(false);
     expect(doGather(s, 'quarry-stone')).toBe(true);
   });
